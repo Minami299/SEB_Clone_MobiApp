@@ -4,6 +4,6 @@ import 'package:frontend/app/app.dart';
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const App());
-    expect(find.text('Books'), findsOneWidget);
+    expect(find.text('Login'), findsOneWidget);
   });
 }
