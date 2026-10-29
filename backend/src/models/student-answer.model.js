@@ -24,6 +24,14 @@ const studentAnswerSchema = new mongoose.Schema(
     score_awarded: {
       type: Number,
       default: 0
+    },
+    is_flagged: {
+      type: Boolean,
+      default: false
+    },
+    answered_at: {
+      type: Date,
+      default: null
     }
   },
   {

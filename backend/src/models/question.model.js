@@ -17,10 +17,21 @@ const questionSchema = new mongoose.Schema(
       ref: 'User',
       required: true
     },
+    question_code: {
+      type: String,
+      trim: true,
+      maxlength: 20,
+      default: null
+    },
     question_type: {
       type: String,
       required: true,
       maxlength: 20
+    },
+    difficulty_level: {
+      type: String,
+      maxlength: 10,
+      default: 'MEDIUM'
     },
     content: {
       type: String,

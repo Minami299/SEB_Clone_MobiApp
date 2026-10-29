@@ -65,6 +65,56 @@ const examSchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
+    shuffle_questions: {
+      type: Boolean,
+      default: false
+    },
+    shuffle_options: {
+      type: Boolean,
+      default: false
+    },
+    max_violations: {
+      type: Number,
+      default: 3
+    },
+    access_pin: {
+      type: String,
+      maxlength: 6,
+      default: null
+    },
+    exit_pin_hash: {
+      type: String,
+      default: null
+    },
+    qr_secret: {
+      type: String,
+      default: null
+    },
+    qr_refresh_seconds: {
+      type: Number,
+      default: 30
+    },
+    venue_name: {
+      type: String,
+      maxlength: 150,
+      default: null
+    },
+    venue_latitude: {
+      type: Number,
+      default: null
+    },
+    venue_longitude: {
+      type: Number,
+      default: null
+    },
+    venue_radius_meters: {
+      type: Number,
+      default: null
+    },
+    url_whitelist: {
+      type: [String],
+      default: []
+    },
     status: {
       type: String,
       maxlength: 20,

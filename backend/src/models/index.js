@@ -16,8 +16,14 @@ const ExamEligibility = require('./exam-eligibility.model');
 const ExamAttempt = require('./exam-attempt.model');
 const StudentAnswer = require('./student-answer.model');
 const ViolationLog = require('./violation-log.model');
+const ImportBatch = require('./import-batch.model');
+const ProctorAuthorization = require('./proctor-authorization.model');
+const ProctorMessage = require('./proctor-message.model');
 
 module.exports = {
+  ImportBatch,
+  ProctorAuthorization,
+  ProctorMessage,
   Department,
   User,
   SystemConfig,

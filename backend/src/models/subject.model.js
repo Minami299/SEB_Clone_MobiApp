@@ -23,6 +23,11 @@ const subjectSchema = new mongoose.Schema(
       type: Boolean,
       default: false
     },
+    status: {
+      type: String,
+      maxlength: 20,
+      default: 'ACTIVE'
+    },
     department_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Department',

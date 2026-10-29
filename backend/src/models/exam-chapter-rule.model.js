@@ -17,6 +17,11 @@ const examChapterRuleSchema = new mongoose.Schema(
       required: true,
       maxlength: 20
     },
+    difficulty_level: {
+      type: String,
+      maxlength: 10,
+      default: null
+    },
     question_count: {
       type: Number,
       required: true,

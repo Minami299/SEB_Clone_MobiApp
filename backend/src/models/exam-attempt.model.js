@@ -32,6 +32,24 @@ const examAttemptSchema = new mongoose.Schema(
       type: String,
       maxlength: 20,
       default: 'IN_PROGRESS'
+    },
+    end_reason: {
+      type: String,
+      maxlength: 30,
+      default: null
+    },
+    violation_count: {
+      type: Number,
+      default: 0
+    },
+    device_info: {
+      type: String,
+      maxlength: 150,
+      default: null
+    },
+    last_synced_at: {
+      type: Date,
+      default: null
     }
   },
   {
