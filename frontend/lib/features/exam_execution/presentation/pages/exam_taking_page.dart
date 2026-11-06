@@ -282,12 +282,12 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
     final currentQuestion = widget.questions[_currentIndex];
     final selectedOption = _selectedAnswers[currentQuestion.id];
 
-    return WillPopScope(
-      onWillPop: () async {
-        if (_canExit) return true;
+    return PopScope(
+      canPop: _canExit,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
         // Chặn nút Back cứng của Android để chống thoát bài thi
         _triggerViolation('Cố ý nhấn nút Back để thoát ứng dụng');
-        return false;
       },
       child: Scaffold(
         appBar: AppBar(
@@ -397,8 +397,8 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.white,
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, -2)),
+                boxShadow: const [
+                  BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.05), blurRadius: 4, offset: Offset(0, -2)),
                 ],
               ),
               child: Row(

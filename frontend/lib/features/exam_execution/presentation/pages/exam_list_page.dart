@@ -215,7 +215,7 @@ class _ExamListPageState extends State<ExamListPage> {
                         : ListView.separated(
                             padding: const EdgeInsets.all(16),
                             itemCount: _exams.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 12),
+                            separatorBuilder: (context, _) => const SizedBox(height: 12),
                             itemBuilder: (context, index) {
                               final exam = _exams[index];
                               return Card(
