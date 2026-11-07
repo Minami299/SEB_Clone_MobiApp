@@ -134,13 +134,62 @@ const reviewRequest = async (req, res) => {
 
 const getAllSubjects = async (req, res) => {
   try {
-    const subjects = await Subject.find({ status: 'ACTIVE' })
+    const { status } = req.query;
+    const filter = {};
+    if (status) {
+      filter.status = status;
+    } else if (req.user && (req.user.role === 'LECTURER' || req.user.role === 'STUDENT')) {
+      filter.status = 'ACTIVE';
+    }
+
+    const subjects = await Subject.find(filter)
       .populate('department_id', 'department_code department_name')
-      .populate('created_by', 'full_name email');
+      .populate('created_by', 'full_name email')
+      .sort({ subject_code: 1 });
 
     res.status(200).json({
       success: true,
       data: subjects
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+const updateSubjectStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['ACTIVE', 'INACTIVE'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Trạng thái môn học không hợp lệ (phải là ACTIVE hoặc INACTIVE)'
+      });
+    }
+
+    const updated = await Subject.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    )
+      .populate('department_id', 'department_code department_name')
+      .populate('created_by', 'full_name email');
+
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy môn học'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Đã cập nhật trạng thái môn học thành ${status}`,
+      data: updated
     });
   } catch (error) {
     res.status(500).json({
@@ -155,6 +204,7 @@ module.exports = {
   getMyRequests,
   getPendingRequests,
   reviewRequest,
-  getAllSubjects
+  getAllSubjects,
+  updateSubjectStatus
 };
 

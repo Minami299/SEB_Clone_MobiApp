@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../../../core/network/api_endpoints.dart';
 import '../../data/datasources/auth_remote_datasource.dart';
 import '../../../exam_execution/presentation/pages/exam_list_page.dart';
+import '../../../admin_system/presentation/pages/user_management_page.dart';
+import '../../../subject_access/presentation/pages/head_of_subject_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -48,14 +51,34 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const ExamListPage()),
-      );
+      if (user.role == 'ADMIN') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const UserManagementPage()),
+        );
+      } else if (user.role == 'HEAD_OF_SUBJECT') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HeadOfSubjectPage()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ExamListPage()),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
+      String msg = e.toString().replaceAll('Exception:', '').trim();
+      if (msg.contains('Connection refused') || msg.contains('Failed host lookup') || msg.contains('Network Connection Error')) {
+        msg = 'Không thể kết nối đến máy chủ (${ApiEndpoints.baseUrl}).\n'
+            'Hãy đảm bảo:\n'
+            '1. Backend đang chạy (npm run dev trong thư mục backend)\n'
+            '2. Nếu cắm cáp USB máy thật: Hãy chạy lệnh "adb reverse tcp:5000 tcp:5000"\n'
+            '3. Hoặc bấm biểu tượng Cài đặt góc trên để đổi Host IP.';
+      }
       setState(() {
-        _errorMessage = e.toString().replaceAll('Exception:', '').trim();
+        _errorMessage = msg;
       });
     } finally {
       if (mounted) {
@@ -66,10 +89,64 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  void _showServerConfigDialog() {
+    final hostController = TextEditingController(text: ApiEndpoints.host);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cấu hình kết nối Server'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '• Thiết bị thật (cắm USB): Dùng 127.0.0.1 (chạy adb reverse tcp:5000 tcp:5000)\n'
+              '• Thiết bị thật (Wi-Fi): Nhập IP LAN máy tính (VD: 192.168.1.15)\n'
+              '• Máy ảo Android: Dùng 10.0.2.2',
+              style: TextStyle(fontSize: 12, color: Colors.black87, height: 1.4),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: hostController,
+              decoration: const InputDecoration(
+                labelText: 'Host IP hoặc Domain',
+                hintText: '127.0.0.1 hoặc 192.168.x.x',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Hủy')),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                ApiEndpoints.host = hostController.text.trim();
+              });
+              Navigator.pop(ctx);
+            },
+            child: const Text('Lưu'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings, color: Colors.blueGrey),
+            tooltip: 'Cấu hình Server IP',
+            onPressed: _showServerConfigDialog,
+          ),
+        ],
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),

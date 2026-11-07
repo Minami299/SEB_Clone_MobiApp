@@ -140,7 +140,7 @@ class _ExamListPageState extends State<ExamListPage> {
   @override
   Widget build(BuildContext context) {
     final user = SessionService().currentUser;
-    final isProctor = user != null && ['LECTURER', 'HEAD_OF_SUBJECT', 'ADMIN'].contains(user.role);
+    final isProctor = user != null && ['LECTURER', 'HEAD_OF_SUBJECT'].contains(user.role);
 
     return Scaffold(
       appBar: AppBar(
