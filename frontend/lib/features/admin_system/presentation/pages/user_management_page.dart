@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/session_service.dart';
 import '../../../auth/data/datasources/auth_remote_datasource.dart';
 import '../../../auth/data/models/user_model.dart';
+import '../../../auth/presentation/pages/login_page.dart';
 
 class UserManagementPage extends StatefulWidget {
   const UserManagementPage({super.key});
@@ -266,6 +268,17 @@ class _UserManagementPageState extends State<UserManagementPage> {
             icon: const Icon(Icons.refresh),
             onPressed: _fetchUsers,
             tooltip: 'Làm mới',
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Đăng xuất',
+            onPressed: () {
+              SessionService().clearSession();
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+              );
+            },
           ),
         ],
       ),

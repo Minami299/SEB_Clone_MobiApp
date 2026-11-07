@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../data/datasources/auth_remote_datasource.dart';
 import '../../../exam_execution/presentation/pages/exam_list_page.dart';
+import '../../../admin_system/presentation/pages/user_management_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -49,10 +50,17 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const ExamListPage()),
-      );
+      if (user.role == 'ADMIN') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const UserManagementPage()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ExamListPage()),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       String msg = e.toString().replaceAll('Exception:', '').trim();
