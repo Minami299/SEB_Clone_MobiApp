@@ -3,6 +3,7 @@ import '../../../../core/network/api_endpoints.dart';
 import '../../data/datasources/auth_remote_datasource.dart';
 import '../../../exam_execution/presentation/pages/exam_list_page.dart';
 import '../../../admin_system/presentation/pages/user_management_page.dart';
+import '../../../subject_access/presentation/pages/head_of_subject_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -54,6 +55,11 @@ class _LoginPageState extends State<LoginPage> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const UserManagementPage()),
+        );
+      } else if (user.role == 'HEAD_OF_SUBJECT') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HeadOfSubjectPage()),
         );
       } else {
         Navigator.pushReplacement(

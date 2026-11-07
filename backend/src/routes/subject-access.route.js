@@ -4,6 +4,7 @@ const controller = require('../controllers/subject-access.controller');
 const { authenticate, authorize } = require('../middlewares/auth.middleware');
 
 router.get('/subjects', authenticate, controller.getAllSubjects);
+router.patch('/subjects/:id/status', authenticate, authorize('HEAD_OF_SUBJECT', 'ADMIN'), controller.updateSubjectStatus);
 router.post('/request', authenticate, authorize('LECTURER'), controller.requestAccess);
 router.get('/my-requests', authenticate, authorize('LECTURER'), controller.getMyRequests);
 router.get('/pending', authenticate, authorize('HEAD_OF_SUBJECT', 'ADMIN'), controller.getPendingRequests);

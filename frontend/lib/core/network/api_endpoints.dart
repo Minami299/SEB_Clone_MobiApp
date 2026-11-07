@@ -25,6 +25,12 @@ class ApiEndpoints {
   static String authUserDetail(String id) => '$baseUrl/auth/users/$id';
   static String authUserRole(String id) => '$baseUrl/auth/users/$id/role';
 
+  // Subject Access & Head of Subject
+  static String get subjectAccessSubjects => '$baseUrl/subject-access/subjects';
+  static String subjectStatus(String id) => '$baseUrl/subject-access/subjects/$id/status';
+  static String get subjectAccessPending => '$baseUrl/subject-access/pending';
+  static String subjectAccessReview(String id) => '$baseUrl/subject-access/$id/review';
+
   // Exams
   static String get exams => '$baseUrl/exams';
   static String examDetail(String id) => '$baseUrl/exams/$id';
