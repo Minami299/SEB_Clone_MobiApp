@@ -4,11 +4,13 @@ import '../pages/question_detail_page.dart';
 class QuestionItemCard extends StatelessWidget {
   final Map<String, dynamic> question;
   final Function(String id, String content) onDelete;
+  final VoidCallback? onRefresh;
 
   const QuestionItemCard({
     super.key,
     required this.question,
     required this.onDelete,
+    this.onRefresh,
   });
 
   Color _getDifficultyColor(String diff) {
@@ -68,8 +70,8 @@ class QuestionItemCard extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          final res = await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => QuestionDetailPage(
@@ -78,6 +80,9 @@ class QuestionItemCard extends StatelessWidget {
               ),
             ),
           );
+          if (res == true && onRefresh != null) {
+            onRefresh!();
+          }
         },
         child: Padding(
           padding: const EdgeInsets.all(14.0),

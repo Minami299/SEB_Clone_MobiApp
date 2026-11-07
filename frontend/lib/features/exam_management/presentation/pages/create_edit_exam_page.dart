@@ -22,11 +22,14 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
   final _durationController = TextEditingController(text: '60');
   final _maxViolationsController = TextEditingController(text: '3');
   final _pinController = TextEditingController();
+  final _minPassController = TextEditingController(text: '50');
 
   DateTime _startTime = DateTime.now().add(const Duration(minutes: 10));
   DateTime _endTime = DateTime.now().add(const Duration(hours: 3));
 
   String? _selectedSubjectId;
+  String? _selectedClassId;
+  String _selectedGradingMethod = 'ALL_CORRECT'; // ALL_CORRECT vs PARTIAL
   bool _allowReview = false;
   bool _shuffleQuestions = true;
   bool _shuffleOptions = true;
@@ -38,11 +41,17 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
   final Map<int, Map<String, int>> _matrixConfigRules = {};
 
   List<dynamic> _subjects = [];
+  List<dynamic> _classes = [];
+  List<dynamic> _classStudents = [];
+  final Set<String> _selectedStudentIds = {};
+
   List<dynamic> _availableQuestions = [];
   final Set<String> _selectedQuestionIds = {};
 
   bool _isLoading = true;
   bool _isLoadingQuestions = false;
+  bool _isLoadingClasses = false;
+  bool _isLoadingStudents = false;
   bool _isSaving = false;
 
   bool get isEditing => widget.examId != null;
@@ -61,6 +70,7 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
     _durationController.dispose();
     _maxViolationsController.dispose();
     _pinController.dispose();
+    _minPassController.dispose();
     super.dispose();
   }
 
@@ -83,7 +93,10 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
         _subjects = subRes['data'] as List;
         if (!isEditing && _subjects.isNotEmpty) {
           _selectedSubjectId = _subjects[0]['_id'];
-          await _fetchQuestionsAndChapters(_selectedSubjectId!);
+          await Future.wait([
+            _fetchQuestionsAndChapters(_selectedSubjectId!),
+            _fetchClassesBySubject(_selectedSubjectId!),
+          ]);
         }
       }
 
@@ -96,6 +109,8 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
           _durationController.text = (exam['duration_minutes'] ?? 60).toString();
           _maxViolationsController.text = (exam['max_violations'] ?? 3).toString();
           _pinController.text = exam['access_pin'] ?? '';
+          _minPassController.text = (exam['min_pass_percentage'] ?? 50).toString();
+          _selectedGradingMethod = exam['mcq_grading_method'] ?? 'ALL_CORRECT';
           _allowReview = exam['allow_review'] == true;
           _shuffleQuestions = exam['shuffle_questions'] == true;
           _shuffleOptions = exam['shuffle_options'] == true;
@@ -113,8 +128,21 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
             _selectedSubjectId = exam['subject_id'];
           }
 
+          if (exam['class_id'] is Map) {
+            _selectedClassId = exam['class_id']['_id'];
+          } else {
+            _selectedClassId = exam['class_id'];
+          }
+
           if (_selectedSubjectId != null) {
-            await _fetchQuestionsAndChapters(_selectedSubjectId!);
+            await Future.wait([
+              _fetchQuestionsAndChapters(_selectedSubjectId!),
+              _fetchClassesBySubject(_selectedSubjectId!),
+            ]);
+          }
+
+          if (_selectedClassId != null) {
+            await _fetchClassStudents(_selectedClassId!);
           }
 
           // Kiểm tra cấu hình ma trận
@@ -137,6 +165,13 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
               _selectedQuestionIds.add(q['_id']);
             }
           }
+
+          final assignedStudents = examRes['data']['students'] as List? ?? [];
+          for (var s in assignedStudents) {
+            if (s is Map && s['_id'] != null) {
+              _selectedStudentIds.add(s['_id']);
+            }
+          }
         }
       }
 
@@ -154,6 +189,58 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
           SnackBar(content: Text('Lỗi tải dữ liệu: $e'), backgroundColor: Colors.red),
         );
       }
+    }
+  }
+
+  Future<void> _fetchClassesBySubject(String subjectId) async {
+    setState(() => _isLoadingClasses = true);
+    try {
+      final res = await _apiClient.get(ApiEndpoints.examClassesBySubject(subjectId));
+      if (res['success'] == true && res['data'] is List) {
+        final list = res['data'] as List;
+        if (mounted) {
+          setState(() {
+            _classes = list;
+            if (!isEditing && _classes.isNotEmpty) {
+              _selectedClassId = _classes[0]['_id'];
+              _fetchClassStudents(_selectedClassId!);
+            }
+            _isLoadingClasses = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => _isLoadingClasses = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingClasses = false);
+    }
+  }
+
+  Future<void> _fetchClassStudents(String classId) async {
+    setState(() => _isLoadingStudents = true);
+    try {
+      final res = await _apiClient.get(ApiEndpoints.examClassStudents(classId));
+      if (res['success'] == true && res['data'] is List) {
+        final students = res['data'] as List;
+        if (mounted) {
+          setState(() {
+            _classStudents = students;
+            if (!isEditing) {
+              _selectedStudentIds.clear();
+              for (var s in _classStudents) {
+                if (s['_id'] != null) {
+                  _selectedStudentIds.add(s['_id']);
+                }
+              }
+            }
+            _isLoadingStudents = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => _isLoadingStudents = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingStudents = false);
     }
   }
 
@@ -343,6 +430,7 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
 
       final body = {
         'subject_id': _selectedSubjectId,
+        'class_id': _selectedClassId,
         'exam_title': _titleController.text.trim(),
         'description': _descController.text.trim(),
         'start_time': _startTime.toIso8601String(),
@@ -350,9 +438,12 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
         'duration_minutes': int.tryParse(_durationController.text.trim()) ?? 60,
         'max_violations': int.tryParse(_maxViolationsController.text.trim()) ?? 3,
         'access_pin': _pinController.text.trim(),
+        'min_pass_percentage': int.tryParse(_minPassController.text.trim()) ?? 50,
+        'mcq_grading_method': _selectedGradingMethod,
         'allow_review': _allowReview,
         'shuffle_questions': _shuffleQuestions,
         'shuffle_options': _shuffleOptions,
+        'student_ids': _selectedStudentIds.toList(),
         'matrix_config': {
           'is_dynamic': _isDynamicMatrix,
           'rules': compiledRules,
@@ -383,7 +474,15 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
         );
       }
 
-      // Công bố ca thi
+      // Gán danh sách sinh viên
+      if (_selectedStudentIds.isNotEmpty) {
+        await _apiClient.post(
+          ApiEndpoints.examStudents(examId),
+          body: {'student_ids': _selectedStudentIds.toList()},
+        );
+      }
+
+      // Công bố ca thi nếu tạo mới
       if (!isEditing) {
         await _apiClient.patch(ApiEndpoints.examPublish(examId));
       }
@@ -426,28 +525,75 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Subject Selector
+                    // Môn học & Lớp học
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: _selectedSubjectId,
+                            decoration: const InputDecoration(
+                              labelText: 'Môn học *',
+                              border: OutlineInputBorder(),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            ),
+                            items: _subjects.map((s) {
+                              return DropdownMenuItem<String>(
+                                value: s['_id'],
+                                child: Text('${s['subject_code']} - ${s['subject_name']}', overflow: TextOverflow.ellipsis),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(() {
+                                  _selectedSubjectId = val;
+                                  _selectedQuestionIds.clear();
+                                  _selectedClassId = null;
+                                  _classStudents.clear();
+                                  _selectedStudentIds.clear();
+                                });
+                                _fetchQuestionsAndChapters(val);
+                                _fetchClassesBySubject(val);
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Lớp học
                     DropdownButtonFormField<String>(
-                      value: _selectedSubjectId,
-                      decoration: const InputDecoration(
-                        labelText: 'Môn học',
-                        border: OutlineInputBorder(),
+                      value: _selectedClassId,
+                      decoration: InputDecoration(
+                        labelText: 'Lớp học ca thi',
+                        border: const OutlineInputBorder(),
                         filled: true,
                         fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        suffixIcon: _isLoadingClasses
+                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                            : null,
                       ),
-                      items: _subjects.map((s) {
-                        return DropdownMenuItem<String>(
-                          value: s['_id'],
-                          child: Text('${s['subject_code']} - ${s['subject_name']}', overflow: TextOverflow.ellipsis),
-                        );
-                      }).toList(),
+                      items: [
+                        const DropdownMenuItem<String>(value: null, child: Text('Không gắn theo lớp cụ thể')),
+                        ..._classes.map((c) {
+                          return DropdownMenuItem<String>(
+                            value: c['_id'],
+                            child: Text('Lớp ${c['class_code']} (${c['semester']})', overflow: TextOverflow.ellipsis),
+                          );
+                        }),
+                      ],
                       onChanged: (val) {
+                        setState(() {
+                          _selectedClassId = val;
+                          _classStudents.clear();
+                          _selectedStudentIds.clear();
+                        });
                         if (val != null) {
-                          setState(() {
-                            _selectedSubjectId = val;
-                            _selectedQuestionIds.clear();
-                          });
-                          _fetchQuestionsAndChapters(val);
+                          _fetchClassStudents(val);
                         }
                       },
                     ),
@@ -458,7 +604,7 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                     TextFormField(
                       controller: _titleController,
                       decoration: const InputDecoration(
-                        labelText: 'Tiêu đề ca thi',
+                        labelText: 'Tiêu đề ca thi *',
                         hintText: 'VD: Thi kết thúc học phần Kỳ Fall 2026',
                         border: OutlineInputBorder(),
                         filled: true,
@@ -477,7 +623,7 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                             onTap: () => _pickDateTime(isStart: true),
                             child: InputDecorator(
                               decoration: const InputDecoration(
-                                labelText: 'Bắt đầu',
+                                labelText: 'Bắt đầu *',
                                 border: OutlineInputBorder(),
                                 filled: true,
                                 fillColor: Colors.white,
@@ -495,7 +641,7 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                             onTap: () => _pickDateTime(isStart: false),
                             child: InputDecorator(
                               decoration: const InputDecoration(
-                                labelText: 'Kết thúc',
+                                labelText: 'Kết thúc *',
                                 border: OutlineInputBorder(),
                                 filled: true,
                                 fillColor: Colors.white,
@@ -512,7 +658,7 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
 
                     const SizedBox(height: 14),
 
-                    // Duration & Max violations
+                    // Duration (30-300 min) & Max violations
                     Row(
                       children: [
                         Expanded(
@@ -520,12 +666,20 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                             controller: _durationController,
                             keyboardType: TextInputType.number,
                             decoration: const InputDecoration(
-                              labelText: 'Thời lượng (phút)',
+                              labelText: 'Thời lượng (30-300 phút) *',
                               border: OutlineInputBorder(),
                               filled: true,
                               fillColor: Colors.white,
+                              helperText: 'Tối thiểu 30, tối đa 300p',
                             ),
-                            validator: (v) => (v == null || int.tryParse(v) == null) ? 'Hợp lệ' : null,
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return 'Bắt buộc';
+                              final d = int.tryParse(v.trim());
+                              if (d == null || d < 30 || d > 300) {
+                                return 'Từ 30 - 300 phút';
+                              }
+                              return null;
+                            },
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -538,8 +692,65 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                               border: OutlineInputBorder(),
                               filled: true,
                               fillColor: Colors.white,
+                              helperText: 'Mặc định 3 lần',
                             ),
                             validator: (v) => (v == null || int.tryParse(v) == null) ? 'Hợp lệ' : null,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // Cách chấm điểm trắc nghiệm & Điểm sàn yêu cầu tối thiểu
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: DropdownButtonFormField<String>(
+                            value: _selectedGradingMethod,
+                            decoration: const InputDecoration(
+                              labelText: 'Cách chấm điểm trắc nghiệm',
+                              border: OutlineInputBorder(),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                            ),
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'ALL_CORRECT',
+                                child: Text('Đúng tất cả mới tính điểm (All or Nothing)', overflow: TextOverflow.ellipsis),
+                              ),
+                              DropdownMenuItem(
+                                value: 'PARTIAL',
+                                child: Text('Tính điểm từng phần (Partial Credit)', overflow: TextOverflow.ellipsis),
+                              ),
+                            ],
+                            onChanged: (val) {
+                              if (val != null) setState(() => _selectedGradingMethod = val);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          flex: 2,
+                          child: TextFormField(
+                            controller: _minPassController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Điểm sàn (%)',
+                              border: OutlineInputBorder(),
+                              filled: true,
+                              fillColor: Colors.white,
+                              contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                              helperText: 'Mặc định 50%',
+                            ),
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) return 'Bắt buộc';
+                              final p = int.tryParse(v.trim());
+                              if (p == null || p < 0 || p > 100) return 'Từ 0 - 100';
+                              return null;
+                            },
                           ),
                         ),
                       ],
@@ -555,7 +766,7 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                             controller: _pinController,
                             maxLength: 6,
                             decoration: const InputDecoration(
-                              labelText: 'Mã PIN ca thi (6 số)',
+                              labelText: 'Mã PIN ca thi (6 số) *',
                               counterText: '',
                               border: OutlineInputBorder(),
                               filled: true,
@@ -621,6 +832,89 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
 
                     const SizedBox(height: 20),
 
+                    // Phân bổ danh sách sinh viên dự thi theo Lớp
+                    if (_selectedClassId != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Danh sách thí sinh (${_selectedStudentIds.length}/${_classStudents.length}):',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      if (_selectedStudentIds.length == _classStudents.length) {
+                                        _selectedStudentIds.clear();
+                                      } else {
+                                        for (var s in _classStudents) {
+                                          if (s['_id'] != null) _selectedStudentIds.add(s['_id']);
+                                        }
+                                      }
+                                    });
+                                  },
+                                  child: Text(_selectedStudentIds.length == _classStudents.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'),
+                                ),
+                              ],
+                            ),
+                            if (_isLoadingStudents)
+                              const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()))
+                            else if (_classStudents.isEmpty)
+                              const Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Text('Lớp học này chưa có sinh viên nào ghi danh.', style: TextStyle(color: Colors.orange, fontSize: 12)),
+                              )
+                            else
+                              Container(
+                                constraints: const BoxConstraints(maxHeight: 180),
+                                child: ListView.separated(
+                                  shrinkWrap: true,
+                                  itemCount: _classStudents.length,
+                                  separatorBuilder: (context, _) => const Divider(height: 1),
+                                  itemBuilder: (context, index) {
+                                    final stu = _classStudents[index];
+                                    final sId = stu['_id'];
+                                    final isEligible = _selectedStudentIds.contains(sId);
+
+                                    return CheckboxListTile(
+                                      dense: true,
+                                      contentPadding: EdgeInsets.zero,
+                                      value: isEligible,
+                                      activeColor: const Color(0xFF10B981),
+                                      title: Text('${stu['user_code'] ?? ""} - ${stu['full_name'] ?? ""}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                      subtitle: Text(stu['email'] ?? '', style: const TextStyle(fontSize: 11, color: Colors.black54)),
+                                      secondary: isEligible
+                                          ? const Chip(label: Text('Đủ điều kiện', style: TextStyle(color: Colors.white, fontSize: 9)), backgroundColor: Color(0xFF10B981), padding: EdgeInsets.zero)
+                                          : const Chip(label: Text('Cấm thi', style: TextStyle(color: Colors.white, fontSize: 9)), backgroundColor: Colors.red, padding: EdgeInsets.zero),
+                                      onChanged: (val) {
+                                        setState(() {
+                                          if (val == true) {
+                                            _selectedStudentIds.add(sId);
+                                          } else {
+                                            _selectedStudentIds.remove(sId);
+                                          }
+                                        });
+                                      },
+                                    );
+                                  },
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+
                     // Tiêu đề & Nút chuyển đổi Phương thức ra đề
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -633,7 +927,7 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'Phương thức tạo đề thi',
+                            'Phương thức thiết lập đề thi Trắc nghiệm',
                             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
                           ),
                           const SizedBox(height: 10),
