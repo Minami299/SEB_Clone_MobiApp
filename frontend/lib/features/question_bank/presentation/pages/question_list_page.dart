@@ -436,6 +436,7 @@ class _QuestionListPageState extends State<QuestionListPage> {
                               return QuestionItemCard(
                                 question: filtered[index] as Map<String, dynamic>,
                                 onDelete: _handleDelete,
+                                onRefresh: _loadData,
                               );
                             },
                           ),

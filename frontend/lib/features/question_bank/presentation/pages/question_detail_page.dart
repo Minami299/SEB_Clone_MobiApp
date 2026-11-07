@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
+import 'create_question_page.dart';
 
 class QuestionDetailPage extends StatefulWidget {
   final String questionId;
@@ -95,6 +96,71 @@ class _QuestionDetailPageState extends State<QuestionDetailPage> {
     }
   }
 
+  Future<void> _handleDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xác nhận xóa'),
+        content: const Text('Bạn có chắc chắn muốn xóa câu hỏi này khỏi ngân hàng câu hỏi không? Thao tác này không thể hoàn tác.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final res = await _apiClient.delete('${ApiEndpoints.questions}/${widget.questionId}');
+        if (!mounted) return;
+        if (res['success'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đã xóa câu hỏi thành công'), backgroundColor: Colors.green),
+          );
+          Navigator.pop(context, true);
+        } else {
+          throw Exception(res['message'] ?? 'Xóa câu hỏi thất bại');
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleEdit() async {
+    if (_questionData == null) return;
+    final subjectObj = _questionData!['subject_id'];
+    final subId = subjectObj is Map ? subjectObj['_id'] : subjectObj?.toString() ?? '';
+    final subCode = subjectObj is Map ? (subjectObj['subject_code'] ?? '') : '';
+    final subName = subjectObj is Map ? (subjectObj['subject_name'] ?? '') : '';
+
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CreateQuestionPage(
+          subjectId: subId,
+          subjectCode: subCode,
+          subjectName: subName,
+          questionId: widget.questionId,
+        ),
+      ),
+    );
+
+    if (result == true) {
+      _fetchDetail();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final title = widget.questionCode?.isNotEmpty == true
@@ -108,6 +174,20 @@ class _QuestionDetailPageState extends State<QuestionDetailPage> {
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1E293B),
         elevation: 0.5,
+        actions: [
+          if (_questionData != null) ...[
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, color: Color(0xFF2563EB)),
+              tooltip: 'Chỉnh sửa câu hỏi',
+              onPressed: _handleEdit,
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+              tooltip: 'Xóa câu hỏi',
+              onPressed: _handleDelete,
+            ),
+          ],
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

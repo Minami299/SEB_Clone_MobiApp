@@ -3,7 +3,9 @@ const {
   ExamQuestion,
   ExamEligibility,
   ExamAttempt,
-  Question
+  Question,
+  Class,
+  ClassEnrollment
 } = require('../models');
 
 const createExam = async (req, res) => {
@@ -19,10 +21,12 @@ const createExam = async (req, res) => {
       max_violations,
       access_pin,
       min_pass_percentage,
+      mcq_grading_method,
       shuffle_questions,
       shuffle_options,
       allow_review,
       question_ids,
+      student_ids,
       matrix_config
     } = req.body;
 
@@ -44,6 +48,7 @@ const createExam = async (req, res) => {
       duration_minutes: Number(duration_minutes),
       max_violations: max_violations !== undefined ? Number(max_violations) : 3,
       access_pin: access_pin || null,
+      mcq_grading_method: mcq_grading_method || 'ALL_CORRECT',
       min_pass_percentage: min_pass_percentage !== undefined ? Number(min_pass_percentage) : 50,
       shuffle_questions: !!shuffle_questions,
       shuffle_options: !!shuffle_options,
@@ -63,6 +68,15 @@ const createExam = async (req, res) => {
         question_id: qId
       }));
       await ExamQuestion.insertMany(examQuestionDocs);
+    }
+
+    if (Array.isArray(student_ids) && student_ids.length > 0) {
+      const eligDocs = student_ids.map((sId) => ({
+        exam_id: exam._id,
+        student_id: sId,
+        is_banned: false
+      }));
+      await ExamEligibility.insertMany(eligDocs);
     }
 
     res.status(201).json({
@@ -288,6 +302,7 @@ const updateExam = async (req, res) => {
     }
 
     const {
+      class_id,
       exam_title,
       description,
       start_time,
@@ -296,14 +311,17 @@ const updateExam = async (req, res) => {
       max_violations,
       access_pin,
       min_pass_percentage,
+      mcq_grading_method,
       shuffle_questions,
       shuffle_options,
       allow_review,
       question_ids,
+      student_ids,
       matrix_config,
       status
     } = req.body;
 
+    if (class_id !== undefined) exam.class_id = class_id || null;
     if (exam_title) exam.exam_title = exam_title;
     if (description !== undefined) exam.description = description;
     if (start_time) exam.start_time = new Date(start_time);
@@ -312,6 +330,7 @@ const updateExam = async (req, res) => {
     if (max_violations !== undefined) exam.max_violations = Number(max_violations);
     if (access_pin !== undefined) exam.access_pin = access_pin;
     if (min_pass_percentage !== undefined) exam.min_pass_percentage = Number(min_pass_percentage);
+    if (mcq_grading_method !== undefined) exam.mcq_grading_method = mcq_grading_method;
     if (shuffle_questions !== undefined) exam.shuffle_questions = !!shuffle_questions;
     if (shuffle_options !== undefined) exam.shuffle_options = !!shuffle_options;
     if (allow_review !== undefined) exam.allow_review = !!allow_review;
@@ -324,6 +343,15 @@ const updateExam = async (req, res) => {
         question_id: qId
       }));
       await ExamQuestion.insertMany(examQuestionDocs);
+    }
+    if (Array.isArray(student_ids)) {
+      await ExamEligibility.deleteMany({ exam_id: id });
+      const eligDocs = student_ids.map((sId) => ({
+        exam_id: id,
+        student_id: sId,
+        is_banned: false
+      }));
+      await ExamEligibility.insertMany(eligDocs);
     }
     if (status) exam.status = status;
 
@@ -585,6 +613,43 @@ const exportExamGrades = async (req, res) => {
   }
 };
 
+const getClassesBySubject = async (req, res) => {
+  try {
+    const { subject_id } = req.params;
+    const filter = { subject_id };
+    if (req.user.role === 'LECTURER') {
+      filter.lecturer_id = req.user._id;
+    }
+    const classes = await Class.find(filter).populate('lecturer_id', 'full_name email');
+    res.status(200).json({
+      success: true,
+      data: classes
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+const getClassStudents = async (req, res) => {
+  try {
+    const { class_id } = req.params;
+    const enrollments = await ClassEnrollment.find({ class_id }).populate('student_id', 'full_name user_code email');
+    const students = enrollments.map((e) => e.student_id).filter(Boolean);
+    res.status(200).json({
+      success: true,
+      data: students
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 module.exports = {
   createExam,
   assignQuestions,
@@ -595,6 +660,8 @@ module.exports = {
   updateExam,
   deleteExam,
   getExamStatistics,
-  exportExamGrades
+  exportExamGrades,
+  getClassesBySubject,
+  getClassStudents
 };
 
