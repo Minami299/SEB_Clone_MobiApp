@@ -1,0 +1,309 @@
+---
+title: SEB Clone - MongoDB (database seb_clone), 21 collections
+---
+erDiagram
+    Department {
+        ObjectId _id PK
+        string department_code UK
+        string department_name
+        date created_at
+        date updated_at
+    }
+
+    User {
+        ObjectId _id PK
+        string user_code UK
+        string email UK
+        string password_hash
+        string full_name
+        string role "ADMIN | HEAD_OF_SUBJECT | LECTURER | STUDENT"
+        ObjectId department_id FK "nullable"
+        string status "ACTIVE | INACTIVE"
+        date created_at
+        date updated_at
+    }
+
+    SystemConfig {
+        ObjectId _id PK
+        string config_key UK
+        string config_value
+        string description
+        ObjectId updated_by FK "nullable"
+        date created_at
+        date updated_at
+    }
+
+    SystemLog {
+        ObjectId _id PK
+        ObjectId user_id FK
+        string action "audit log"
+        date created_at
+        date updated_at
+    }
+
+    ImportBatch {
+        ObjectId _id PK
+        ObjectId imported_by FK
+        string file_name
+        int total_rows
+        int valid_rows
+        int duplicate_rows
+        int error_rows
+        array error_details "row, message"
+        string status "PREVIEW | CONFIRMED | CANCELLED"
+        date created_at
+        date updated_at
+    }
+
+    Subject {
+        ObjectId _id PK
+        string subject_code UK
+        string subject_name
+        string description
+        boolean allow_auto_grading
+        string status "ACTIVE | INACTIVE"
+        ObjectId department_id FK
+        ObjectId created_by FK
+        date created_at
+        date updated_at
+    }
+
+    Chapter {
+        ObjectId _id PK
+        ObjectId subject_id FK
+        int chapter_number
+        string chapter_title
+        date created_at
+        date updated_at
+    }
+
+    SubjectAccess {
+        ObjectId _id PK
+        ObjectId subject_id FK
+        ObjectId lecturer_id FK
+        string grant_type "REQUEST | INVITATION"
+        string status "PENDING | APPROVED | REJECTED"
+        ObjectId approved_by FK "nullable"
+        date created_at
+        date updated_at
+    }
+
+    Class {
+        ObjectId _id PK
+        string class_code UK
+        ObjectId subject_id FK
+        ObjectId lecturer_id FK
+        string semester
+        date created_at
+        date updated_at
+    }
+
+    ClassEnrollment {
+        ObjectId _id PK
+        ObjectId class_id FK "unique with student_id"
+        ObjectId student_id FK
+        date created_at
+        date updated_at
+    }
+
+    Question {
+        ObjectId _id PK
+        ObjectId subject_id FK
+        ObjectId chapter_id FK
+        ObjectId created_by FK
+        string question_code "e.g. DB-001"
+        string question_type "MULTIPLE_CHOICE | ESSAY"
+        string difficulty_level "EASY | MEDIUM | HARD"
+        string content
+        string description
+        string learning_outcome
+        float default_score
+        boolean is_public
+        date created_at
+        date updated_at
+    }
+
+    QuestionOption {
+        ObjectId _id PK
+        ObjectId question_id FK
+        string option_content
+        string matching_answer "nullable"
+        boolean is_correct
+        string hint "nullable"
+        date created_at
+        date updated_at
+    }
+
+    Exam {
+        ObjectId _id PK
+        ObjectId subject_id FK
+        ObjectId class_id FK "nullable"
+        ObjectId created_by FK
+        string exam_title
+        string description
+        int importance_level
+        date start_time
+        date end_time
+        int duration_minutes
+        string mcq_grading_method "AUTO"
+        float min_pass_percentage
+        string question_source_mode "RANDOM | FIXED"
+        float mcq_weight_percent
+        float essay_weight_percent
+        boolean shuffle_questions
+        boolean shuffle_options
+        int max_violations
+        string access_pin "6 digits"
+        string exit_pin_hash "proctor exit PIN"
+        string qr_secret
+        int qr_refresh_seconds
+        string venue_name
+        float venue_latitude
+        float venue_longitude
+        float venue_radius_meters
+        array url_whitelist
+        string status "DRAFT | SCHEDULED | ONGOING | COMPLETED"
+        date created_at
+        date updated_at
+    }
+
+    ExamChapterRule {
+        ObjectId _id PK
+        ObjectId exam_id FK
+        ObjectId chapter_id FK
+        string question_type
+        string difficulty_level "nullable"
+        int question_count
+        date created_at
+        date updated_at
+    }
+
+    ExamQuestion {
+        ObjectId _id PK
+        ObjectId exam_id FK "unique with question_id"
+        ObjectId question_id FK
+        date created_at
+        date updated_at
+    }
+
+    ExamEligibility {
+        ObjectId _id PK
+        ObjectId exam_id FK "unique with student_id"
+        ObjectId student_id FK
+        boolean is_banned
+        date created_at
+        date updated_at
+    }
+
+    ExamAttempt {
+        ObjectId _id PK
+        ObjectId exam_id FK
+        ObjectId student_id FK
+        date started_at
+        date submitted_at "nullable"
+        float total_score
+        boolean is_passed
+        string status "IN_PROGRESS | SUBMITTED | GRADED | TERMINATED"
+        string end_reason "SUBMITTED | AUTO_SUBMIT_TIMEOUT | TERMINATED_VIOLATION | EMERGENCY_EXIT"
+        int violation_count
+        string device_info
+        date last_synced_at
+        date created_at
+        date updated_at
+    }
+
+    StudentAnswer {
+        ObjectId _id PK
+        ObjectId attempt_id FK
+        ObjectId question_id FK
+        ObjectId selected_option_id FK "nullable"
+        string answer_text "nullable"
+        float score_awarded
+        boolean is_flagged "Review Later"
+        date answered_at
+        date created_at
+        date updated_at
+    }
+
+    ViolationLog {
+        ObjectId _id PK
+        ObjectId attempt_id FK
+        string violation_type "SCREEN_FOCUS_LOST | APP_MINIMIZED | BLOCKED_SHORTCUT | SCREENSHOT_ATTEMPT | FORCE_CLOSE"
+        string violation_details
+        date detected_at
+        date created_at
+        date updated_at
+    }
+
+    ProctorAuthorization {
+        ObjectId _id PK
+        ObjectId attempt_id FK
+        ObjectId proctor_id FK
+        string reason "MEDICAL_EMERGENCY | TECHNICAL_FAULT | MISCONDUCT | EARLY_SUBMISSION"
+        string auth_method "PIN | NFC"
+        string action "UNLOCK_KIOSK | RESUME_EXAM"
+        string notes
+        date authorized_at
+        date created_at
+        date updated_at
+    }
+
+    ProctorMessage {
+        ObjectId _id PK
+        ObjectId exam_id FK
+        ObjectId sender_id FK
+        ObjectId recipient_id FK
+        string content
+        boolean is_read
+        date sent_at
+        date created_at
+        date updated_at
+    }
+
+    %% Users & organization
+    Department ||--o{ User : "has members"
+    Department ||--o{ Subject : "owns"
+    User |o--o{ SystemConfig : "updated_by"
+    User ||--o{ SystemLog : "performs"
+    User ||--o{ ImportBatch : "imported_by"
+
+    %% Subjects, access, classes
+    User ||--o{ Subject : "created_by"
+    Subject ||--o{ Chapter : "contains"
+    Subject ||--o{ SubjectAccess : "grants"
+    User ||--o{ SubjectAccess : "lecturer_id"
+    User |o--o{ SubjectAccess : "approved_by"
+    Subject ||--o{ Class : "taught in"
+    User ||--o{ Class : "lecturer_id"
+    Class ||--o{ ClassEnrollment : "enrolls"
+    User ||--o{ ClassEnrollment : "student_id"
+
+    %% Question bank
+    Subject ||--o{ Question : "bank"
+    Chapter ||--o{ Question : "groups"
+    User ||--o{ Question : "created_by"
+    Question ||--o{ QuestionOption : "has options"
+
+    %% Exam setup
+    Subject ||--o{ Exam : "tested by"
+    Class |o--o{ Exam : "sat by"
+    User ||--o{ Exam : "created_by"
+    Exam ||--o{ ExamChapterRule : "random rules"
+    Chapter ||--o{ ExamChapterRule : "source chapter"
+    Exam ||--o{ ExamQuestion : "fixed list"
+    Question ||--o{ ExamQuestion : "used in"
+    Exam ||--o{ ExamEligibility : "eligible students"
+    User ||--o{ ExamEligibility : "student_id"
+
+    %% Exam execution
+    Exam ||--o{ ExamAttempt : "attempts"
+    User ||--o{ ExamAttempt : "student_id"
+    ExamAttempt ||--o{ StudentAnswer : "answers"
+    Question ||--o{ StudentAnswer : "answered"
+    QuestionOption |o--o{ StudentAnswer : "selected"
+    ExamAttempt ||--o{ ViolationLog : "violations"
+    ExamAttempt ||--o{ ProctorAuthorization : "exit authorizations"
+    User ||--o{ ProctorAuthorization : "proctor_id"
+    Exam ||--o{ ProctorMessage : "chat"
+    User ||--o{ ProctorMessage : "sender_id"
+    User ||--o{ ProctorMessage : "recipient_id"

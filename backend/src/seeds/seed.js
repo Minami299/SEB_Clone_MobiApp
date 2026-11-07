@@ -631,6 +631,11 @@ async function main() {
     [M.ViolationLog, violationLogs], [M.ProctorAuthorization, proctorAuths], [M.ProctorMessage, proctorMessages]
   ];
   for (const [model, docs] of plan) {
+    // Audit timestamps: backdated mock records get created_at/updated_at = their event time
+    for (const d of docs) {
+      if (!d.created_at) d.created_at = d.detected_at || NOW;
+      if (!d.updated_at) d.updated_at = d.created_at;
+    }
     await model.insertMany(docs);
     console.log(`  ${model.collection.name.padEnd(24)} ${docs.length}`);
   }
