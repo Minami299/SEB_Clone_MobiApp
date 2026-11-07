@@ -2,12 +2,16 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 
 class ApiEndpoints {
+  // Đối với máy ảo Android: dùng 10.0.2.2
+  // Đối với thiết bị thật (cắm cáp USB): dùng 127.0.0.1 (kết hợp lệnh adb reverse tcp:5000 tcp:5000) hoặc IP Wi-Fi máy tính
+  static String host = '127.0.0.1';
+
   static String get baseUrl {
     if (kIsWeb) {
       return 'http://localhost:5000/api';
     }
     if (Platform.isAndroid) {
-      return 'http://10.0.2.2:5000/api';
+      return 'http://$host:5000/api';
     }
     return 'http://localhost:5000/api';
   }
