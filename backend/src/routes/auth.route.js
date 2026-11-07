@@ -8,6 +8,8 @@ router.post('/login', authController.login);
 
 // Authenticated
 router.get('/me', authenticate, authController.getMe);
+router.put('/me', authenticate, authController.updateProfile);
+router.patch('/me', authenticate, authController.updateProfile);
 
 // Admin User Management & Role Assignment
 router.get('/users', authenticate, authorize('ADMIN'), authController.getAllUsers);

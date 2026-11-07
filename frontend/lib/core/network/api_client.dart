@@ -33,7 +33,25 @@ class ApiClient {
         headers: _buildHeaders(headers),
       );
 
-      final data = jsonDecode(response.body);
+      final contentType = response.headers['content-type'] ?? '';
+      if (contentType.contains('text/csv') || contentType.contains('text/plain')) {
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          return response.body;
+        } else {
+          throw ServerException(response.body);
+        }
+      }
+
+      dynamic data;
+      try {
+        data = jsonDecode(response.body);
+      } catch (_) {
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          return response.body;
+        }
+        rethrow;
+      }
+
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return data;
       } else {
@@ -55,6 +73,33 @@ class ApiClient {
   }) async {
     try {
       final response = await client.post(
+        Uri.parse(url),
+        headers: _buildHeaders(headers),
+        body: body != null ? jsonEncode(body) : null,
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return data;
+      } else {
+        final message = data is Map && data.containsKey('message')
+            ? data['message']
+            : 'Status code: ${response.statusCode}';
+        throw ServerException(message);
+      }
+    } catch (e) {
+      if (e is ServerException) rethrow;
+      throw NetworkException(e.toString());
+    }
+  }
+
+  Future<dynamic> put(
+    String url, {
+    Map<String, String>? headers,
+    dynamic body,
+  }) async {
+    try {
+      final response = await client.put(
         Uri.parse(url),
         headers: _buildHeaders(headers),
         body: body != null ? jsonEncode(body) : null,

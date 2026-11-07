@@ -33,6 +33,20 @@ const questionSchema = new mongoose.Schema(
       maxlength: 10,
       default: 'MEDIUM'
     },
+    difficulty: {
+      type: String,
+      enum: ['EASY', 'MEDIUM', 'HARD'],
+      default: 'MEDIUM'
+    },
+    chapter_num: {
+      type: Number,
+      default: 1
+    },
+    scope: {
+      type: String,
+      enum: ['PUBLIC', 'PRIVATE'],
+      default: 'PUBLIC'
+    },
     content: {
       type: String,
       required: true
@@ -52,7 +66,7 @@ const questionSchema = new mongoose.Schema(
     },
     is_public: {
       type: Boolean,
-      default: false
+      default: true
     }
   },
   {
@@ -60,7 +74,21 @@ const questionSchema = new mongoose.Schema(
   }
 );
 
-questionSchema.index({ subject_id: 1, chapter_id: 1 });
+questionSchema.pre('save', function (next) {
+  if (this.difficulty && !this.difficulty_level) {
+    this.difficulty_level = this.difficulty;
+  } else if (this.difficulty_level && !this.difficulty) {
+    this.difficulty = this.difficulty_level;
+  }
+  if (this.scope === 'PUBLIC') {
+    this.is_public = true;
+  } else if (this.scope === 'PRIVATE') {
+    this.is_public = false;
+  }
+  next();
+});
+
+questionSchema.index({ subject_id: 1, chapter_id: 1, scope: 1 });
 
 module.exports = mongoose.model('Question', questionSchema);
 

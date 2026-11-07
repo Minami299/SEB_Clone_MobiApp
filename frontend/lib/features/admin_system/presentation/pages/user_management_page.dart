@@ -4,6 +4,7 @@ import '../../../../core/services/session_service.dart';
 import '../../../auth/data/datasources/auth_remote_datasource.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../../auth/presentation/pages/login_page.dart';
+import '../../../auth/presentation/pages/profile_page.dart';
 
 class UserManagementPage extends StatefulWidget {
   const UserManagementPage({super.key});
@@ -285,9 +286,55 @@ class _UserManagementPageState extends State<UserManagementPage> {
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = SessionService().currentUser;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quản lý Tài khoản & Phân quyền'),
+        title: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfilePage()),
+            ).then((_) => setState(() {}));
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: Colors.white24,
+                  child: Text(
+                    (currentUser?.fullName.isNotEmpty == true)
+                        ? currentUser!.fullName[0].toUpperCase()
+                        : 'A',
+                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        currentUser?.fullName ?? 'Admin',
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        currentUser?.role ?? 'ADMIN',
+                        style: const TextStyle(fontSize: 11, color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         backgroundColor: Colors.blueAccent,
         foregroundColor: Colors.white,
         actions: [
@@ -297,14 +344,13 @@ class _UserManagementPageState extends State<UserManagementPage> {
             tooltip: 'Làm mới',
           ),
           IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Đăng xuất',
+            icon: const Icon(Icons.account_circle_outlined),
+            tooltip: 'Thông tin cá nhân',
             onPressed: () {
-              SessionService().clearSession();
-              Navigator.pushReplacement(
+              Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const LoginPage()),
-              );
+                MaterialPageRoute(builder: (_) => const ProfilePage()),
+              ).then((_) => setState(() {}));
             },
           ),
         ],

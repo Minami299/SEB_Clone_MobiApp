@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/services/session_service.dart';
-import '../../../auth/presentation/pages/login_page.dart';
+import '../../../auth/presentation/pages/profile_page.dart';
+import '../../../question_bank/presentation/pages/question_list_page.dart';
+import '../widgets/subject_card_widget.dart';
+import '../widgets/pending_access_request_card.dart';
+import '../widgets/exam_summary_report_card.dart';
 
 class SubjectItem {
   final String id;
@@ -28,7 +33,9 @@ class SubjectItem {
   factory SubjectItem.fromJson(Map<String, dynamic> json) {
     String? dept;
     if (json['department_id'] is Map) {
-      dept = json['department_id']['department_name'] ?? json['department_id']['department_code'];
+      dept =
+          json['department_id']['department_name'] ??
+          json['department_id']['department_code'];
     }
     String? creator;
     if (json['created_by'] is Map) {
@@ -69,6 +76,27 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
   List<dynamic> _pendingRequests = [];
   bool _isLoadingRequests = false;
 
+  // Reports / Exams tab data
+  List<dynamic> _exams = [];
+  bool _isLoadingExams = false;
+
+  Future<void> _fetchExams() async {
+    setState(() => _isLoadingExams = true);
+    try {
+      final res = await _apiClient.get(ApiEndpoints.exams);
+      if (res['success'] == true && res['data'] is List) {
+        if (mounted) {
+          setState(() {
+            _exams = res['data'] as List;
+            _isLoadingExams = false;
+          });
+        }
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingExams = false);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -94,7 +122,9 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
           });
         }
       } else {
-        throw Exception(response['message'] ?? 'Không thể tải danh sách môn học');
+        throw Exception(
+          response['message'] ?? 'Không thể tải danh sách môn học',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -106,7 +136,10 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
     }
   }
 
-  Future<void> _toggleSubjectStatus(SubjectItem subject, bool nextActive) async {
+  Future<void> _toggleSubjectStatus(
+    SubjectItem subject,
+    bool nextActive,
+  ) async {
     final originalStatus = subject.status;
     final nextStatus = nextActive ? 'ACTIVE' : 'INACTIVE';
 
@@ -127,7 +160,9 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Đã chuyển ${subject.code} sang ${nextActive ? "Active" : "Inactive"}'),
+            content: Text(
+              'Đã chuyển ${subject.code} sang ${nextActive ? "Active" : "Inactive"}',
+            ),
             duration: const Duration(seconds: 2),
             backgroundColor: nextActive ? Colors.green : Colors.blueGrey,
           ),
@@ -140,7 +175,9 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi: ${e.toString().replaceAll("Exception:", "").trim()}'),
+            content: Text(
+              'Lỗi: ${e.toString().replaceAll("Exception:", "").trim()}',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -182,7 +219,11 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(status == 'APPROVED' ? 'Đã phê duyệt yêu cầu' : 'Đã từ chối yêu cầu'),
+              content: Text(
+                status == 'APPROVED'
+                    ? 'Đã phê duyệt yêu cầu'
+                    : 'Đã từ chối yêu cầu',
+              ),
               backgroundColor: status == 'APPROVED' ? Colors.green : Colors.red,
             ),
           );
@@ -215,12 +256,21 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
               children: [
                 Text(
                   subject.code,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: subject.isActive ? Colors.green.withAlpha(30) : Colors.grey.withAlpha(40),
+                    color: subject.isActive
+                        ? Colors.green.withAlpha(30)
+                        : Colors.grey.withAlpha(40),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -237,16 +287,34 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
             const SizedBox(height: 6),
             Text(
               subject.name,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF334155),
+              ),
             ),
             const Divider(height: 24),
-            _buildDetailRow('Khoa / Bộ môn:', subject.departmentName ?? 'Chưa cập nhật'),
+            _buildDetailRow(
+              'Khoa / Bộ môn:',
+              subject.departmentName ?? 'Chưa cập nhật',
+            ),
             const SizedBox(height: 8),
-            _buildDetailRow('Người tạo môn:', subject.creatorName ?? 'Trưởng bộ môn'),
+            _buildDetailRow(
+              'Người tạo môn:',
+              subject.creatorName ?? 'Trưởng bộ môn',
+            ),
             const SizedBox(height: 8),
-            _buildDetailRow('Chấm tự động:', subject.allowAutoGrading ? 'Cho phép' : 'Không'),
+            _buildDetailRow(
+              'Chấm tự động:',
+              subject.allowAutoGrading ? 'Cho phép' : 'Không',
+            ),
             const SizedBox(height: 8),
-            _buildDetailRow('Mô tả:', subject.description.isNotEmpty ? subject.description : 'Không có mô tả'),
+            _buildDetailRow(
+              'Mô tả:',
+              subject.description.isNotEmpty
+                  ? subject.description
+                  : 'Không có mô tả',
+            ),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
@@ -255,7 +323,9 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1E3A5F),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 child: const Text('Đóng'),
               ),
@@ -272,10 +342,16 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
       children: [
         SizedBox(
           width: 130,
-          child: Text(label, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+          child: Text(
+            label,
+            style: const TextStyle(color: Colors.black54, fontSize: 13),
+          ),
         ),
         Expanded(
-          child: Text(value, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+          child: Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+          ),
         ),
       ],
     );
@@ -308,10 +384,7 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
                 const SizedBox(height: 4),
                 const Text(
                   'Manage subject availability and teaching assignments.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF64748B),
-                  ),
+                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -343,30 +416,37 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _errorMessage != null
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
-                            const SizedBox(height: 12),
-                            ElevatedButton(
-                              onPressed: _fetchSubjects,
-                              child: const Text('Thử lại'),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: Colors.red),
                         ),
-                      )
-                    : _subjects.isEmpty
-                        ? const Center(child: Text('Không có môn học nào'))
-                        : ListView.separated(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            itemCount: _subjects.length,
-                            separatorBuilder: (context, _) => const SizedBox(height: 12),
-                            itemBuilder: (context, index) {
-                              final subject = _subjects[index];
-                              return _buildSubjectCard(subject);
-                            },
-                          ),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: _fetchSubjects,
+                          child: const Text('Thử lại'),
+                        ),
+                      ],
+                    ),
+                  )
+                : _subjects.isEmpty
+                ? const Center(child: Text('Không có môn học nào'))
+                : ListView.separated(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    itemCount: _subjects.length,
+                    separatorBuilder: (context, _) =>
+                        const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final subject = _subjects[index];
+                      return _buildSubjectCard(subject);
+                    },
+                  ),
           ),
         ],
       ),
@@ -374,101 +454,12 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
   }
 
   Widget _buildSubjectCard(SubjectItem subject) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(14.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Row 1: Code and Switch toggle
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                subject.code,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF64748B),
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    height: 28,
-                    child: Switch(
-                      value: subject.isActive,
-                      activeColor: Colors.white,
-                      activeTrackColor: const Color(0xFF1E3A5F),
-                      inactiveThumbColor: Colors.white,
-                      inactiveTrackColor: const Color(0xFFCBD5E1),
-                      onChanged: (val) => _toggleSubjectStatus(subject, val),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subject.isActive ? 'Active' : 'Inactive',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          // Row 2: Subject name
-          Text(
-            subject.name,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0F172A),
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Row 3: Status label & View Details button
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Subject availability',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF64748B),
-                ),
-              ),
-              OutlinedButton(
-                onPressed: () => _showSubjectDetails(subject),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF1E293B),
-                  side: const BorderSide(color: Color(0xFFCBD5E1)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                ),
-                child: const Text(
-                  'View Details',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    return SubjectCardWidget(
+      code: subject.code,
+      name: subject.name,
+      isActive: subject.isActive,
+      onToggleStatus: (val) => _toggleSubjectStatus(subject, val),
+      onViewDetails: () => _showSubjectDetails(subject),
     );
   }
 
@@ -480,7 +471,11 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
         children: [
           const Text(
             'Q-Bank',
-            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+            ),
           ),
           const SizedBox(height: 4),
           const Text(
@@ -493,7 +488,8 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
                 ? const Center(child: Text('Chưa có môn học nào'))
                 : ListView.separated(
                     itemCount: _subjects.length,
-                    separatorBuilder: (context, _) => const SizedBox(height: 10),
+                    separatorBuilder: (context, _) =>
+                        const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final s = _subjects[index];
                       return ListTile(
@@ -502,13 +498,29 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
                           borderRadius: BorderRadius.circular(8),
                           side: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
-                        leading: const Icon(Icons.menu_book, color: Color(0xFF1E3A5F)),
-                        title: Text('${s.code} - ${s.name}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        leading: const Icon(
+                          Icons.menu_book,
+                          color: Color(0xFF1E3A5F),
+                        ),
+                        title: Text(
+                          '${s.code} - ${s.name}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
                         subtitle: Text('Trạng thái: ${s.status}'),
                         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Xem câu hỏi môn ${s.code}')),
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => QuestionListPage(
+                                subjectId: s.id,
+                                subjectCode: s.code,
+                                subjectName: s.name,
+                              ),
+                            ),
                           );
                         },
                       );
@@ -531,7 +543,11 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
             children: [
               const Text(
                 'Requests',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
               ),
               IconButton(
                 icon: const Icon(Icons.refresh),
@@ -549,63 +565,20 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
             child: _isLoadingRequests
                 ? const Center(child: CircularProgressIndicator())
                 : _pendingRequests.isEmpty
-                    ? const Center(child: Text('Hiện không có yêu cầu nào đang chờ duyệt'))
-                    : ListView.separated(
-                        itemCount: _pendingRequests.length,
-                        separatorBuilder: (context, _) => const SizedBox(height: 10),
-                        itemBuilder: (context, index) {
-                          final req = _pendingRequests[index];
-                          final id = req['_id'] ?? '';
-                          final lecName = req['lecturer_id']?['full_name'] ?? 'Giảng viên';
-                          final lecEmail = req['lecturer_id']?['email'] ?? '';
-                          final subjCode = req['subject_id']?['subject_code'] ?? '';
-                          final subjName = req['subject_id']?['subject_name'] ?? '';
-                          final grantType = req['grant_type'] ?? 'QUESTION_CONTRIBUTION';
-
-                          return Card(
-                            elevation: 1,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              side: const BorderSide(color: Color(0xFFE2E8F0)),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    lecName,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                  ),
-                                  Text('$lecEmail | Môn: $subjCode ($subjName)', style: const TextStyle(color: Colors.black54, fontSize: 13)),
-                                  const SizedBox(height: 4),
-                                  Text('Loại quyền: $grantType', style: const TextStyle(color: Colors.blueGrey, fontSize: 12)),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      TextButton(
-                                        onPressed: () => _reviewRequest(id, 'REJECTED'),
-                                        style: TextButton.styleFrom(foregroundColor: Colors.red),
-                                        child: const Text('Từ chối'),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      ElevatedButton(
-                                        onPressed: () => _reviewRequest(id, 'APPROVED'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.green,
-                                          foregroundColor: Colors.white,
-                                        ),
-                                        child: const Text('Phê duyệt'),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                ? const Center(
+                    child: Text('Hiện không có yêu cầu nào đang chờ duyệt'),
+                  )
+                : ListView.separated(
+                    itemCount: _pendingRequests.length,
+                    separatorBuilder: (context, _) =>
+                        const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      return PendingAccessRequestCard(
+                        request: _pendingRequests[index] as Map<String, dynamic>,
+                        onReview: _reviewRequest,
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -618,29 +591,44 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Reports',
-            style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Reports',
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: _fetchExams,
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           const Text(
             'Báo cáo và thống kê các kỳ thi của bộ môn.',
             style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
           ),
-          const SizedBox(height: 20),
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            child: const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Tổng quan vi phạm', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  SizedBox(height: 8),
-                  Text('Chưa ghi nhận vi phạm nghiêm trọng nào trong các ca thi gần đây.', style: TextStyle(color: Colors.black54)),
-                ],
-              ),
-            ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: _isLoadingExams
+                ? const Center(child: CircularProgressIndicator())
+                : _exams.isEmpty
+                ? const Center(child: Text('Chưa có ca thi nào'))
+                : ListView.separated(
+                    itemCount: _exams.length,
+                    separatorBuilder: (context, _) =>
+                        const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      return ExamSummaryReportCard(
+                        exam: _exams[index] as Map<String, dynamic>,
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -661,27 +649,77 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
         currentBody = _buildRequestsView();
         break;
       case 3:
-      default:
         currentBody = _buildReportsView();
         break;
+      case 4:
+      default:
+        currentBody = const ProfilePage(showAppBar: false);
+        break;
     }
+
+    final currentUser = SessionService().currentUser;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: Text(
-          _currentTabIndex == 0
-              ? 'Trưởng bộ môn'
-              : _currentTabIndex == 1
-                  ? 'Ngân hàng câu hỏi'
-                  : _currentTabIndex == 2
-                      ? 'Duyệt yêu cầu'
-                      : 'Báo cáo',
-          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
-        ),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1E293B),
         elevation: 0.5,
+        title: InkWell(
+          onTap: () {
+            setState(() => _currentTabIndex = 4);
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircleAvatar(
+                  radius: 17,
+                  backgroundColor: const Color(0xFF1E3A5F),
+                  child: Text(
+                    (currentUser?.fullName.isNotEmpty == true)
+                        ? currentUser!.fullName[0].toUpperCase()
+                        : 'U',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        currentUser?.fullName ?? 'Trưởng bộ môn',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        currentUser?.userCode.isNotEmpty == true
+                            ? 'Mã: ${currentUser!.userCode}'
+                            : (currentUser?.role ?? ''),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -689,17 +727,7 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
             onPressed: () {
               if (_currentTabIndex == 0) _fetchSubjects();
               if (_currentTabIndex == 2) _fetchPendingRequests();
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Đăng xuất',
-            onPressed: () {
-              SessionService().clearSession();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginPage()),
-              );
+              if (_currentTabIndex == 3) _fetchExams();
             },
           ),
         ],
@@ -714,12 +742,16 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
           onTap: (index) {
             setState(() => _currentTabIndex = index);
             if (index == 2) _fetchPendingRequests();
+            if (index == 3) _fetchExams();
           },
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,
           selectedItemColor: const Color(0xFF1E3A5F),
           unselectedItemColor: const Color(0xFF94A3B8),
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+          selectedLabelStyle: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
           unselectedLabelStyle: const TextStyle(fontSize: 12),
           items: const [
             BottomNavigationBarItem(
@@ -741,6 +773,11 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
               icon: Icon(Icons.pie_chart_outline),
               activeIcon: Icon(Icons.pie_chart),
               label: 'Reports',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: 'Profile',
             ),
           ],
         ),

@@ -47,6 +47,10 @@ const examAttemptSchema = new mongoose.Schema(
       maxlength: 150,
       default: null
     },
+    assigned_questions: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Question'
+    }],
     last_synced_at: {
       type: Date,
       default: null

@@ -34,7 +34,9 @@ class QuestionItemModel {
   });
 
   factory QuestionItemModel.fromJson(Map<String, dynamic> json) {
-    final q = json['question'] ?? {};
+    final Map<String, dynamic> q = (json['question'] is Map<String, dynamic>)
+        ? json['question'] as Map<String, dynamic>
+        : json;
     final rawOptions = json['options'] as List? ?? [];
 
     return QuestionItemModel(

@@ -95,6 +95,83 @@ const getMe = async (req, res) => {
   }
 };
 
+const updateProfile = async (req, res) => {
+  try {
+    const { full_name, email, current_password, new_password, password } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Người dùng không tồn tại'
+      });
+    }
+
+    if (full_name && full_name.trim()) {
+      user.full_name = full_name.trim();
+    }
+
+    if (email && email.trim().toLowerCase() !== user.email) {
+      const emailExists = await User.findOne({
+        email: email.trim().toLowerCase(),
+        _id: { $ne: user._id }
+      });
+      if (emailExists) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email này đã được sử dụng bởi tài khoản khác'
+        });
+      }
+      user.email = email.trim().toLowerCase();
+    }
+
+    const targetNewPassword = new_password || password;
+    if (targetNewPassword && targetNewPassword.trim().length > 0) {
+      if (!current_password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Vui lòng nhập mật khẩu hiện tại để xác nhận đổi mật khẩu mới'
+        });
+      }
+
+      const isMatch = await bcrypt.compare(current_password, user.password_hash);
+      if (!isMatch) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mật khẩu hiện tại không chính xác'
+        });
+      }
+
+      if (targetNewPassword.trim().length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mật khẩu mới phải có ít nhất 6 ký tự'
+        });
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      user.password_hash = await bcrypt.hash(targetNewPassword.trim(), salt);
+    }
+
+    await user.save();
+
+    const updatedUser = await User.findById(user._id)
+      .select('-password_hash')
+      .populate('department_id', 'department_code department_name');
+
+    res.status(200).json({
+      success: true,
+      message: 'Cập nhật thông tin cá nhân thành công',
+      data: updatedUser
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 const getAllUsers = async (req, res) => {
   try {
     const { role, department_id, status, search } = req.query;
@@ -362,6 +439,7 @@ const deleteUser = async (req, res) => {
 module.exports = {
   login,
   getMe,
+  updateProfile,
   getAllUsers,
   getUserById,
   createUser,

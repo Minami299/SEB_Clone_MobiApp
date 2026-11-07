@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../../../core/services/session_service.dart';
 import '../../../auth/presentation/pages/login_page.dart';
+import '../../../auth/presentation/pages/profile_page.dart';
 import '../../data/datasources/exam_remote_datasource.dart';
 import '../../data/models/exam_model.dart';
 import 'exam_taking_page.dart';
-import '../../../monitoring_reports/presentation/pages/live_monitoring_page.dart';
+import 'exam_lobby_page.dart';
+import '../widgets/exam_card_widget.dart';
+import '../../../exam_management/presentation/pages/create_edit_exam_page.dart';
 
 class ExamListPage extends StatefulWidget {
   const ExamListPage({super.key});
@@ -94,46 +97,22 @@ class _ExamListPageState extends State<ExamListPage> {
 
     if (!mounted) return;
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ExamLobbyPage(
+          examId: exam.id,
+          accessPin: pin ?? '',
+          examTitle: exam.title,
+          subjectCode: exam.subjectCode,
+          durationMinutes: exam.durationMinutes,
+          maxViolations: exam.maxViolations,
+        ),
+      ),
     );
 
-    try {
-      final examData = await _examDataSource.startAttempt(
-        examId: exam.id,
-        accessPin: pin,
-      );
-
-      if (!mounted) return;
-      Navigator.pop(context); // Đóng loading
-
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ExamTakingPage(
-            examId: exam.id,
-            attemptId: examData['attempt_id'],
-            examTitle: examData['exam_title'],
-            durationMinutes: examData['duration_minutes'],
-            maxViolations: examData['max_violations'],
-            questions: examData['questions'],
-          ),
-        ),
-      );
-      if (mounted) {
-        _fetchExams();
-      }
-    } catch (e) {
-      if (!mounted) return;
-      Navigator.pop(context); // Đóng loading
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceAll('Exception:', '').trim()),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (mounted) {
+      _fetchExams();
     }
   }
 
@@ -144,7 +123,49 @@ class _ExamListPageState extends State<ExamListPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Danh sách Kỳ thi'),
+        title: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfilePage()),
+            ).then((_) => setState(() {}));
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: Colors.white24,
+                  child: Text(
+                    (user?.fullName.isNotEmpty == true) ? user!.fullName[0].toUpperCase() : 'U',
+                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        user?.fullName ?? 'Kỳ thi',
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        user?.role ?? '',
+                        style: const TextStyle(fontSize: 11, color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         backgroundColor: Colors.blueAccent,
         foregroundColor: Colors.white,
         actions: [
@@ -154,9 +175,14 @@ class _ExamListPageState extends State<ExamListPage> {
             tooltip: 'Làm mới',
           ),
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _handleLogout,
-            tooltip: 'Đăng xuất',
+            icon: const Icon(Icons.account_circle_outlined),
+            tooltip: 'Thông tin cá nhân',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfilePage()),
+              ).then((_) => setState(() {}));
+            },
           ),
         ],
       ),
@@ -218,110 +244,32 @@ class _ExamListPageState extends State<ExamListPage> {
                             separatorBuilder: (context, _) => const SizedBox(height: 12),
                             itemBuilder: (context, index) {
                               final exam = _exams[index];
-                              return Card(
-                                elevation: 2,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              exam.title,
-                                              style: const TextStyle(
-                                                fontSize: 17,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: exam.status == 'PUBLISHED'
-                                                  ? Colors.green[50]
-                                                  : Colors.orange[50],
-                                              borderRadius: BorderRadius.circular(6),
-                                              border: Border.all(
-                                                color: exam.status == 'PUBLISHED'
-                                                    ? Colors.green
-                                                    : Colors.orange,
-                                              ),
-                                            ),
-                                            child: Text(
-                                              exam.status,
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                color: exam.status == 'PUBLISHED'
-                                                    ? Colors.green[800]
-                                                    : Colors.orange[800],
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'Thời lượng: ${exam.durationMinutes} phút | Số lỗi tối đa: ${exam.maxViolations}',
-                                        style: const TextStyle(fontSize: 13, color: Colors.black87),
-                                      ),
-                                      if (exam.description != null && exam.description!.isNotEmpty) ...[
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          exam.description!,
-                                          style: const TextStyle(fontSize: 12, color: Colors.black54),
-                                        ),
-                                      ],
-                                      const SizedBox(height: 12),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.end,
-                                        children: [
-                                          if (isProctor)
-                                            OutlinedButton.icon(
-                                              onPressed: () {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (_) => LiveMonitoringPage(
-                                                      examId: exam.id,
-                                                      examTitle: exam.title,
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                              icon: const Icon(Icons.monitor_heart, size: 18),
-                                              label: const Text('Giám sát vi phạm'),
-                                            ),
-                                          const SizedBox(width: 8),
-                                          ElevatedButton.icon(
-                                            onPressed: () => _handleEnterExam(exam),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.blueAccent,
-                                              foregroundColor: Colors.white,
-                                            ),
-                                            icon: const Icon(Icons.play_arrow, size: 18),
-                                            label: const Text('Vào làm bài'),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                              return ExamCardWidget(
+                                exam: exam,
+                                isProctor: isProctor,
+                                onEnterExam: () => _handleEnterExam(exam),
+                                onRefresh: _fetchExams,
                               );
                             },
                           ),
           ),
         ],
       ),
+      floatingActionButton: isProctor
+          ? FloatingActionButton.extended(
+              onPressed: () async {
+                final created = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CreateEditExamPage()),
+                );
+                if (created == true) _fetchExams();
+              },
+              backgroundColor: const Color(0xFF1E3A5F),
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add),
+              label: const Text('Tạo ca thi mới'),
+            )
+          : null,
     );
   }
 }
