@@ -135,6 +135,7 @@ async function main() {
   });
 
   const admin = mkUser('AD001', 'System Administrator', 'ADMIN', null, 'ACTIVE', 200);
+  const adminAlias = mkUser('admin', 'Administrator', 'ADMIN', null, 'ACTIVE', 200);
   const hos = {
     HOS001: mkUser('HOS001', 'Hoàng Thị Lan', 'HEAD_OF_SUBJECT', dept.SE, 'ACTIVE', 180),
     HOS002: mkUser('HOS002', 'Bùi Quang Minh', 'HEAD_OF_SUBJECT', dept.SE, 'ACTIVE', 180)
@@ -151,7 +152,7 @@ async function main() {
   const students = STUDENT_NAMES.map((name, i) =>
     mkUser(`SE18${String(i + 1).padStart(4, '0')}`, name, 'STUDENT', dept.SE, i === 28 ? 'INACTIVE' : 'ACTIVE', 60)
   );
-  const users = [admin, ...Object.values(hos), ...lecturers, ...students];
+  const users = [admin, adminAlias, ...Object.values(hos), ...lecturers, ...students];
 
   // ------------------------------------------------ system configs
   const cfgRows = [

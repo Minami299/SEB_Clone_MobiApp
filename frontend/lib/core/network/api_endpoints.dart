@@ -21,6 +21,9 @@ class ApiEndpoints {
   // Auth
   static String get authLogin => '$baseUrl/auth/login';
   static String get authMe => '$baseUrl/auth/me';
+  static String get authUsers => '$baseUrl/auth/users';
+  static String authUserDetail(String id) => '$baseUrl/auth/users/$id';
+  static String authUserRole(String id) => '$baseUrl/auth/users/$id/role';
 
   // Exams
   static String get exams => '$baseUrl/exams';

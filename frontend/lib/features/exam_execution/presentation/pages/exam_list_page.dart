@@ -5,6 +5,7 @@ import '../../data/datasources/exam_remote_datasource.dart';
 import '../../data/models/exam_model.dart';
 import 'exam_taking_page.dart';
 import '../../../monitoring_reports/presentation/pages/live_monitoring_page.dart';
+import '../../../admin_system/presentation/pages/user_management_page.dart';
 
 class ExamListPage extends StatefulWidget {
   const ExamListPage({super.key});
@@ -141,6 +142,7 @@ class _ExamListPageState extends State<ExamListPage> {
   Widget build(BuildContext context) {
     final user = SessionService().currentUser;
     final isProctor = user != null && ['LECTURER', 'HEAD_OF_SUBJECT', 'ADMIN'].contains(user.role);
+    final isAdmin = user != null && user.role == 'ADMIN';
 
     return Scaffold(
       appBar: AppBar(
@@ -148,6 +150,17 @@ class _ExamListPageState extends State<ExamListPage> {
         backgroundColor: Colors.blueAccent,
         foregroundColor: Colors.white,
         actions: [
+          if (isAdmin)
+            IconButton(
+              icon: const Icon(Icons.manage_accounts),
+              tooltip: 'Quản trị Người dùng & Phân quyền',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const UserManagementPage()),
+                );
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _fetchExams,
