@@ -3,6 +3,7 @@ const router = express.Router();
 const controller = require('../controllers/exam-execution.controller');
 const { authenticate, authorize } = require('../middlewares/auth.middleware');
 
+router.get('/my-submissions', authenticate, controller.getMySubmissions);
 router.post('/start', authenticate, authorize('STUDENT'), controller.startAttempt);
 router.post('/answer', authenticate, authorize('STUDENT'), controller.saveAnswer);
 router.post('/violation', authenticate, authorize('STUDENT'), controller.reportViolation);

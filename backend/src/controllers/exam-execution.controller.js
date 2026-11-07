@@ -598,6 +598,36 @@ const forceSuspendAttempt = async (req, res) => {
   }
 };
 
+const getMySubmissions = async (req, res) => {
+  try {
+    const studentId = req.user._id;
+    const attempts = await ExamAttempt.find({
+      student_id: studentId,
+      status: { $in: ['SUBMITTED', 'DISQUALIFIED'] }
+    })
+      .populate({
+        path: 'exam_id',
+        select: 'exam_title duration_minutes max_violations',
+        populate: {
+          path: 'subject_id',
+          select: 'subject_code subject_name'
+        }
+      })
+      .sort({ submitted_at: -1 })
+      .limit(10);
+
+    res.status(200).json({
+      success: true,
+      data: attempts
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 module.exports = {
   startAttempt,
   saveAnswer,
@@ -605,6 +635,7 @@ module.exports = {
   reportViolation,
   getExamViolationLogs,
   getAttemptResult,
-  forceSuspendAttempt
+  forceSuspendAttempt,
+  getMySubmissions
 };
 
