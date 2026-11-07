@@ -356,23 +356,20 @@ class _UserManagementPageState extends State<UserManagementPage> {
                                 elevation: 2,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 child: ListTile(
-                                  leading: CircleAvatar(
-                                    backgroundColor: _getRoleColor(user.role),
-                                    child: Text(
-                                      user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : 'U',
-                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
+                                  onTap: () => _handleUpdateRole(user),
                                   title: Text(
                                     user.fullName,
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                   ),
-                                  subtitle: Text('${user.userCode} | ${user.email}'),
+                                  subtitle: Text(
+                                    'Mã SV: ${user.userCode}',
+                                    style: const TextStyle(fontSize: 13, color: Colors.black54),
+                                  ),
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                         decoration: BoxDecoration(
                                           color: _getRoleColor(user.role).withAlpha(30),
                                           borderRadius: BorderRadius.circular(12),
@@ -386,11 +383,6 @@ class _UserManagementPageState extends State<UserManagementPage> {
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.edit, color: Colors.blueGrey, size: 20),
-                                        tooltip: 'Phân vai trò',
-                                        onPressed: () => _handleUpdateRole(user),
                                       ),
                                       IconButton(
                                         icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
