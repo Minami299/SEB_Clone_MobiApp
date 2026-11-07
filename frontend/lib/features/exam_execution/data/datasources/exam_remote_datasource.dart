@@ -15,6 +15,12 @@ class ExamRemoteDataSource {
     return list.map((e) => ExamModel.fromJson(e)).toList();
   }
 
+  Future<Map<String, dynamic>> startExam({
+    required String examId,
+    String? accessPin,
+  }) =>
+      startAttempt(examId: examId, accessPin: accessPin);
+
   Future<Map<String, dynamic>> startAttempt({
     required String examId,
     String? accessPin,

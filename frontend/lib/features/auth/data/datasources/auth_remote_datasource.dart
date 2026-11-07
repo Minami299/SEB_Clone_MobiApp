@@ -29,6 +29,41 @@ class AuthRemoteDataSource {
     return user;
   }
 
+  Future<UserModel> getProfile() async {
+    final response = await apiClient.get(ApiEndpoints.authMe);
+    final user = UserModel.fromJson(response['data'] as Map<String, dynamic>);
+    final currentToken = SessionService().token;
+    if (currentToken != null) {
+      SessionService().saveSession(newToken: currentToken, user: user);
+    }
+    return user;
+  }
+
+  Future<UserModel> updateProfile({
+    String? fullName,
+    String? email,
+    String? currentPassword,
+    String? newPassword,
+  }) async {
+    final body = <String, dynamic>{};
+    if (fullName != null && fullName.isNotEmpty) body['full_name'] = fullName;
+    if (email != null && email.isNotEmpty) body['email'] = email;
+    if (currentPassword != null && currentPassword.isNotEmpty) body['current_password'] = currentPassword;
+    if (newPassword != null && newPassword.isNotEmpty) body['new_password'] = newPassword;
+
+    final response = await apiClient.put(
+      ApiEndpoints.authMe,
+      body: body,
+    );
+
+    final updated = UserModel.fromJson(response['data'] as Map<String, dynamic>);
+    final currentToken = SessionService().token;
+    if (currentToken != null) {
+      SessionService().saveSession(newToken: currentToken, user: updated);
+    }
+    return updated;
+  }
+
   Future<List<UserModel>> getAllUsers({String? role, String? search}) async {
     final queryParams = <String, String>{};
     if (role != null && role.isNotEmpty) queryParams['role'] = role;

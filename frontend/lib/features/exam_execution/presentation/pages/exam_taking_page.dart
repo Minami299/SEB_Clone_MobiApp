@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../data/datasources/exam_remote_datasource.dart';
 import '../../data/models/question_item_model.dart';
+import 'exam_result_page.dart';
+import 'exam_suspended_page.dart';
 
 class ExamTakingPage extends StatefulWidget {
   final String examId;
@@ -181,11 +183,35 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
     });
 
     try {
-      final result = await _examDataSource.submitExam(attemptId: widget.attemptId);
+      await _examDataSource.submitExam(attemptId: widget.attemptId);
+      _canExit = true;
       if (!mounted) return;
-      _showResultDialog(result, forceReason: reason);
+
+      if (_isTerminated) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ExamSuspendedPage(
+              examTitle: widget.examTitle,
+              violationCount: _violationCount,
+              maxViolations: widget.maxViolations,
+              endReason: reason,
+            ),
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ExamResultPage(attemptId: widget.attemptId),
+          ),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi nộp bài: $e')),
       );

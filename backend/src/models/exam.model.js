@@ -73,6 +73,31 @@ const examSchema = new mongoose.Schema(
       type: Boolean,
       default: false
     },
+    allow_review: {
+      type: Boolean,
+      default: false
+    },
+    question_ids: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Question'
+    }],
+    matrix_config: {
+      is_dynamic: {
+        type: Boolean,
+        default: false
+      },
+      rules: [
+        {
+          chapter_num: { type: Number, required: true },
+          difficulty: { type: String, enum: ['EASY', 'MEDIUM', 'HARD'], default: 'MEDIUM' },
+          count: { type: Number, required: true, default: 1 }
+        }
+      ],
+      include_private: {
+        type: Boolean,
+        default: true
+      }
+    },
     max_violations: {
       type: Number,
       default: 3

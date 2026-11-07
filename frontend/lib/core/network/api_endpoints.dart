@@ -31,14 +31,27 @@ class ApiEndpoints {
   static String get subjectAccessPending => '$baseUrl/subject-access/pending';
   static String subjectAccessReview(String id) => '$baseUrl/subject-access/$id/review';
 
+  // Question Bank
+  static String get questions => '$baseUrl/questions';
+  static String questionsBySubject(String subjectId) => '$baseUrl/questions/subject/$subjectId';
+  static String questionDetail(String id) => '$baseUrl/questions/$id';
+  static String chaptersBySubject(String subjectId) => '$baseUrl/questions/chapters/subject/$subjectId';
+
   // Exams
   static String get exams => '$baseUrl/exams';
   static String examDetail(String id) => '$baseUrl/exams/$id';
+  static String examStatistics(String id) => '$baseUrl/exams/$id/statistics';
+  static String examExport(String id) => '$baseUrl/exams/$id/export';
+  static String examQuestions(String id) => '$baseUrl/exams/$id/questions';
+  static String examStudents(String id) => '$baseUrl/exams/$id/students';
+  static String examPublish(String id) => '$baseUrl/exams/$id/publish';
 
   // Exam Execution
   static String get examStart => '$baseUrl/exam-execution/start';
   static String get examAnswer => '$baseUrl/exam-execution/answer';
   static String get examViolation => '$baseUrl/exam-execution/violation';
   static String examSubmit(String attemptId) => '$baseUrl/exam-execution/$attemptId/submit';
+  static String examResult(String attemptId) => '$baseUrl/exam-execution/$attemptId/result';
+  static String examForceSuspend(String attemptId) => '$baseUrl/exam-execution/$attemptId/force-suspend';
   static String examViolations(String examId) => '$baseUrl/exam-execution/violations/$examId';
 }
