@@ -256,6 +256,21 @@ class _UserManagementPageState extends State<UserManagementPage> {
     }
   }
 
+  String _getUserCodeLabel(String role) {
+    switch (role) {
+      case 'STUDENT':
+        return 'Mã học sinh';
+      case 'LECTURER':
+        return 'Mã giảng viên';
+      case 'HEAD_OF_SUBJECT':
+        return 'Mã trưởng bộ môn';
+      case 'ADMIN':
+        return 'Mã quản trị viên';
+      default:
+        return 'Mã định danh';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -362,7 +377,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
                                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                                   ),
                                   subtitle: Text(
-                                    'Mã SV: ${user.userCode}',
+                                    '${_getUserCodeLabel(user.role)}: ${user.userCode}',
                                     style: const TextStyle(fontSize: 13, color: Colors.black54),
                                   ),
                                   trailing: Row(
