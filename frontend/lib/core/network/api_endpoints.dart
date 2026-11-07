@@ -49,6 +49,7 @@ class ApiEndpoints {
   static String examClassStudents(String classId) => '$baseUrl/exams/classes/$classId/students';
 
   // Exam Execution
+  static String get examMySubmissions => '$baseUrl/exam-execution/my-submissions';
   static String get examStart => '$baseUrl/exam-execution/start';
   static String get examAnswer => '$baseUrl/exam-execution/answer';
   static String get examViolation => '$baseUrl/exam-execution/violation';
