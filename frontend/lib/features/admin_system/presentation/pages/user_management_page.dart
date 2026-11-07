@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/services/session_service.dart';
 import '../../../auth/data/datasources/auth_remote_datasource.dart';
@@ -18,6 +19,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
   String? _errorMessage;
   String _selectedRoleFilter = 'ALL';
   final _searchController = TextEditingController();
+  Timer? _searchDebounce;
 
   final List<String> _roles = ['ADMIN', 'HEAD_OF_SUBJECT', 'LECTURER', 'STUDENT'];
 
@@ -29,15 +31,25 @@ class _UserManagementPageState extends State<UserManagementPage> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
 
-  Future<void> _fetchUsers() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
+  void _onSearchChanged(String query) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 250), () {
+      _fetchUsers(showLoading: false);
     });
+  }
+
+  Future<void> _fetchUsers({bool showLoading = true}) async {
+    if (showLoading) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
       final role = _selectedRoleFilter == 'ALL' ? null : _selectedRoleFilter;
@@ -326,6 +338,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
+                    onChanged: _onSearchChanged,
                     onSubmitted: (_) => _fetchUsers(),
                   ),
                 ),
