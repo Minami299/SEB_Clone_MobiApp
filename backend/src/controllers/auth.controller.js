@@ -359,7 +359,7 @@ const createUser = async (req, res) => {
       full_name,
       role,
       department_id: department_id || null,
-      status: 'ACTIVE'
+      status: req.body.status || 'ACTIVE'
     });
 
     res.status(201).json({

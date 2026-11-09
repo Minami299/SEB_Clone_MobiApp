@@ -128,17 +128,41 @@ class AuthRemoteDataSource {
     required String fullName,
     required String role,
     String? departmentId,
+    String? status,
   }) async {
+    final body = <String, dynamic>{
+      'user_code': userCode,
+      'email': email,
+      'password': password,
+      'full_name': fullName,
+      'role': role,
+    };
+    if (departmentId != null) body['department_id'] = departmentId;
+    if (status != null) body['status'] = status;
+
     final response = await apiClient.post(
       ApiEndpoints.authUsers,
-      body: {
-        'user_code': userCode,
-        'email': email,
-        'password': password,
-        'full_name': fullName,
-        'role': role,
-        'department_id': ?departmentId,
-      },
+      body: body,
+    );
+    return UserModel.fromJson(response['data'] as Map<String, dynamic>);
+  }
+
+  Future<UserModel> updateUser({
+    required String userId,
+    String? fullName,
+    String? email,
+    String? role,
+    String? status,
+  }) async {
+    final body = <String, dynamic>{};
+    if (fullName != null) body['full_name'] = fullName;
+    if (email != null) body['email'] = email;
+    if (role != null) body['role'] = role;
+    if (status != null) body['status'] = status;
+
+    final response = await apiClient.put(
+      ApiEndpoints.authUserDetail(userId),
+      body: body,
     );
     return UserModel.fromJson(response['data'] as Map<String, dynamic>);
   }
