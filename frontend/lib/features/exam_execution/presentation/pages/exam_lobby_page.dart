@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../data/datasources/exam_remote_datasource.dart';
@@ -56,7 +58,8 @@ class _ExamLobbyPageState extends State<ExamLobbyPage> {
     try {
       // 1. Kiểm tra kết nối tới server (Ping health)
       final healthRes = await _apiClient.get(ApiEndpoints.health);
-      final isHealthy = healthRes['status'] == 'OK' || healthRes['success'] == true;
+      final isHealthy =
+          healthRes['status'] == 'OK' || healthRes['success'] == true;
 
       // Giả lập kiểm tra thiết bị an toàn
       await Future.delayed(const Duration(milliseconds: 600));
@@ -73,7 +76,8 @@ class _ExamLobbyPageState extends State<ExamLobbyPage> {
         setState(() {
           _serverConnected = false;
           _isChecking = false;
-          _errorMessage = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại mạng.';
+          _errorMessage =
+              'Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại mạng.';
         });
       }
     }
@@ -82,14 +86,20 @@ class _ExamLobbyPageState extends State<ExamLobbyPage> {
   Future<void> _handleStartExam() async {
     if (!_serverConnected) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Chưa kết nối được với máy chủ'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Chưa kết nối được với máy chủ'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
 
     if (!_rulesAgreed) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng đọc và đồng ý với nội quy phòng thi'), backgroundColor: Colors.orange),
+        const SnackBar(
+          content: Text('Vui lòng đọc và đồng ý với nội quy phòng thi'),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
@@ -147,18 +157,22 @@ class _ExamLobbyPageState extends State<ExamLobbyPage> {
 
   @override
   Widget build(BuildContext context) {
-    final canStart = _serverConnected && _batterySufficient && _rulesAgreed && !_isStarting;
+    final canStart =
+        _serverConnected && _batterySufficient && _rulesAgreed && !_isStarting;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF3F4F6),
       appBar: AppBar(
-        title: const Text('Phòng Chờ Thi (Lobby)', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1E293B),
-        elevation: 0.5,
+        title: const Text(
+          'Kiểm tra điều kiện dự thi',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+        ),
+        backgroundColor: const Color(0xFF173A5E),
+        foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -175,8 +189,12 @@ class _ExamLobbyPageState extends State<ExamLobbyPage> {
 
             // Pre-flight Checklist Card
             const Text(
-              'Kiểm tra điều kiện thiết bị (Pre-flight):',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              'Điều kiện trước khi vào thi',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF173A5E),
+              ),
             ),
             const SizedBox(height: 10),
 
@@ -189,28 +207,48 @@ class _ExamLobbyPageState extends State<ExamLobbyPage> {
 
             // Rules Card
             const Text(
-              'Nội quy phòng thi an toàn:',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              'Cam kết phòng thi an toàn',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF173A5E),
+              ),
             ),
             const SizedBox(height: 10),
 
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(4),
                 border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
               padding: const EdgeInsets.all(16),
               child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('• Không rời khỏi ứng dụng, không mở danh sách ứng dụng gần đây (Recent Apps).', style: TextStyle(fontSize: 13, height: 1.4)),
+                  Text(
+                    'Không rời khỏi ứng dụng hoặc mở danh sách ứng dụng gần đây.',
+                    style: TextStyle(fontSize: 13, height: 1.45),
+                  ),
                   SizedBox(height: 6),
-                  Text('• Nghiêm cấm chụp ảnh, quay màn hình hoặc chia sẻ câu hỏi thi.', style: TextStyle(fontSize: 13, height: 1.4)),
+                  Text(
+                    'Không chụp ảnh, quay màn hình hoặc chia sẻ câu hỏi thi.',
+                    style: TextStyle(fontSize: 13, height: 1.45),
+                  ),
                   SizedBox(height: 6),
-                  Text('• Mọi hành vi mất tiêu điểm màn hình sẽ được ghi nhận và gửi trực tiếp tới giám thị.', style: TextStyle(fontSize: 13, height: 1.4)),
+                  Text(
+                    'Mọi lần mất tiêu điểm màn hình sẽ được ghi nhận.',
+                    style: TextStyle(fontSize: 13, height: 1.45),
+                  ),
                   SizedBox(height: 6),
-                  Text('• Vượt quá số lần vi phạm cho phép sẽ dẫn đến việc đình chỉ thi tự động.', style: TextStyle(fontSize: 13, height: 1.4, color: Colors.red)),
+                  Text(
+                    'Vượt giới hạn vi phạm sẽ đình chỉ bài thi tự động.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.45,
+                      color: Color(0xFFB42318),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -223,8 +261,12 @@ class _ExamLobbyPageState extends State<ExamLobbyPage> {
               value: _rulesAgreed,
               activeColor: const Color(0xFF1E3A5F),
               title: const Text(
-                'Tôi đã đọc, hiểu rõ và cam kết tuân thủ toàn bộ nội quy phòng thi an toàn.',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                'Tôi đã đọc và đồng ý tuân thủ nội quy phòng thi.',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E293B),
+                ),
               ),
               onChanged: (val) => setState(() => _rulesAgreed = val ?? false),
             ),
@@ -238,17 +280,29 @@ class _ExamLobbyPageState extends State<ExamLobbyPage> {
               child: ElevatedButton.icon(
                 onPressed: canStart ? _handleStartExam : null,
                 icon: _isStarting
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
                     : const Icon(Icons.play_arrow),
                 label: Text(
                   _isStarting ? 'Đang khởi tạo ca thi...' : 'Bắt đầu làm bài',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E3A5F),
+                  backgroundColor: const Color(0xFF173A5E),
                   foregroundColor: Colors.white,
                   disabledBackgroundColor: Colors.grey.shade300,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(3),
+                  ),
                 ),
               ),
             ),

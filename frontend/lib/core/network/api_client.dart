@@ -1,5 +1,7 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
+
 import '../error/exceptions.dart';
 import '../services/session_service.dart';
 
@@ -34,7 +36,8 @@ class ApiClient {
       );
 
       final contentType = response.headers['content-type'] ?? '';
-      if (contentType.contains('text/csv') || contentType.contains('text/plain')) {
+      if (contentType.contains('text/csv') ||
+          contentType.contains('text/plain')) {
         if (response.statusCode >= 200 && response.statusCode < 300) {
           return response.body;
         } else {
@@ -147,10 +150,7 @@ class ApiClient {
     }
   }
 
-  Future<dynamic> delete(
-    String url, {
-    Map<String, String>? headers,
-  }) async {
+  Future<dynamic> delete(String url, {Map<String, String>? headers}) async {
     try {
       final response = await client.delete(
         Uri.parse(url),

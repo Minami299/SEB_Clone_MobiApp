@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+
 import '../../data/datasources/exam_remote_datasource.dart';
 import '../../data/models/question_item_model.dart';
 import 'exam_result_page.dart';
@@ -27,7 +29,8 @@ class ExamTakingPage extends StatefulWidget {
   State<ExamTakingPage> createState() => _ExamTakingPageState();
 }
 
-class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObserver {
+class _ExamTakingPageState extends State<ExamTakingPage>
+    with WidgetsBindingObserver {
   final _examDataSource = ExamRemoteDataSource();
 
   int _currentIndex = 0;
@@ -35,6 +38,8 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
   int _violationCount = 0;
   bool _isTerminated = false;
   bool _isSubmitting = false;
+  bool _isSaving = false;
+  String? _saveError;
   bool _canExit = false;
   DateTime? _lastViolationTime;
 
@@ -78,11 +83,15 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
     if (_isTerminated || _isSubmitting || _canExit) return;
 
     // Khi thí sinh rời app, chuyển app hoặc mở đa nhiệm/thanh thông báo
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       final now = DateTime.now();
-      if (_lastViolationTime == null || now.difference(_lastViolationTime!).inSeconds >= 2) {
+      if (_lastViolationTime == null ||
+          now.difference(_lastViolationTime!).inSeconds >= 2) {
         _lastViolationTime = now;
-        _triggerViolation('Ứng dụng bị mất tiêu điểm (chuyển màn hình hoặc mở ứng dụng khác)');
+        _triggerViolation(
+          'Ứng dụng bị mất tiêu điểm (chuyển màn hình hoặc mở ứng dụng khác)',
+        );
       }
     }
   }
@@ -102,7 +111,9 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
       if (res['is_disqualified'] == true && !_isTerminated) {
         _isTerminated = true;
         _timer?.cancel();
-        _handleForceSubmit('Bài thi bị đình chỉ tự động: Vượt quá số lần vi phạm an toàn');
+        _handleForceSubmit(
+          'Bài thi bị đình chỉ tự động: Vượt quá số lần vi phạm an toàn',
+        );
         return;
       }
     } catch (_) {
@@ -113,7 +124,9 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
       if (!_isTerminated) {
         _isTerminated = true;
         _timer?.cancel();
-        _handleForceSubmit('Bài thi bị đình chỉ tự động: Vượt quá số lần vi phạm an toàn (${widget.maxViolations})');
+        _handleForceSubmit(
+          'Bài thi bị đình chỉ tự động: Vượt quá số lần vi phạm an toàn (${widget.maxViolations})',
+        );
       }
     } else {
       _showViolationWarningDialog(reason);
@@ -129,7 +142,10 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
           children: [
             Icon(Icons.warning_amber_rounded, color: Colors.red),
             SizedBox(width: 8),
-            Text('CẢNH BÁO VI PHẠM', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            Text(
+              'CẢNH BÁO VI PHẠM',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
         content: Column(
@@ -140,7 +156,10 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
             const SizedBox(height: 12),
             Text(
               'Số lần vi phạm: $_violationCount / ${widget.maxViolations}',
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.redAccent,
+              ),
             ),
             const SizedBox(height: 4),
             const Text(
@@ -152,7 +171,10 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
         actions: [
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Đã hiểu và tiếp tục'),
           ),
         ],
@@ -163,6 +185,8 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
   Future<void> _handleOptionSelect(String questionId, String optionId) async {
     setState(() {
       _selectedAnswers[questionId] = optionId;
+      _isSaving = true;
+      _saveError = null;
     });
 
     // Auto-save câu trả lời
@@ -173,7 +197,13 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
         selectedOptionId: optionId,
       );
     } catch (_) {
-      // Bỏ qua lỗi mạng nền để không gián đoạn thao tác của thí sinh
+      if (mounted) {
+        setState(
+          () => _saveError = 'Chưa lưu được. Kiểm tra mạng và chọn lại đáp án.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -212,9 +242,8 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
       setState(() {
         _isSubmitting = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi nộp bài: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Lỗi nộp bài: $e')));
     }
   }
 
@@ -227,10 +256,16 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
           'Bạn đã hoàn thành ${_selectedAnswers.length}/${widget.questions.length} câu. Bạn có chắc chắn muốn kết thúc bài thi?',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Làm tiếp')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Làm tiếp'),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blueAccent,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Nộp bài'),
           ),
         ],
@@ -260,7 +295,10 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (forceReason != null) ...[
-              Text(forceReason, style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                forceReason,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
             ],
             Text('Tổng điểm đạt được: ${result['total_score']}'),
@@ -319,15 +357,17 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
         appBar: AppBar(
           automaticallyImplyLeading: false,
           title: Text(widget.examTitle),
-          backgroundColor: Colors.blueAccent,
+          backgroundColor: const Color(0xFF173A5E),
           foregroundColor: Colors.white,
           actions: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
               decoration: BoxDecoration(
-                color: _remainingSeconds < 300 ? Colors.red : Colors.white24,
-                borderRadius: BorderRadius.circular(16),
+                color: _remainingSeconds < 300
+                    ? const Color(0xFFB42318)
+                    : Colors.white24,
+                borderRadius: BorderRadius.circular(3),
               ),
               child: Row(
                 children: [
@@ -349,10 +389,9 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
         ),
         body: Column(
           children: [
-            // Thanh trạng thái vi phạm
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: _violationCount > 0 ? Colors.red[50] : Colors.blue[50],
+              color: Colors.white,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -362,12 +401,20 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
                   ),
                   Row(
                     children: [
-                      Icon(Icons.shield, size: 16, color: _violationCount > 0 ? Colors.red : Colors.blue),
+                      Icon(
+                        Icons.shield_outlined,
+                        size: 16,
+                        color: _violationCount > 0
+                            ? const Color(0xFFB42318)
+                            : const Color(0xFF26734D),
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         'Vi phạm: $_violationCount / ${widget.maxViolations}',
                         style: TextStyle(
-                          color: _violationCount > 0 ? Colors.red : Colors.black87,
+                          color: _violationCount > 0
+                              ? const Color(0xFFB42318)
+                              : const Color(0xFF26734D),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -380,13 +427,40 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
             // Khung nội dung câu hỏi và các lựa chọn
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Câu ${_currentIndex + 1}: ${currentQuestion.content}',
-                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, height: 1.4),
+                      _isSaving
+                          ? 'Đang lưu câu trả lời...'
+                          : (_saveError ?? 'Câu trả lời được tự động lưu'),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: _saveError == null
+                            ? const Color(0xFF64748B)
+                            : const Color(0xFFB42318),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Câu ${_currentIndex + 1}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF173A5E),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      currentQuestion.content,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        height: 1.4,
+                        color: Color(0xFF17202A),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     ...currentQuestion.options.map((opt) {
@@ -394,10 +468,14 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
                       return Container(
                         margin: const EdgeInsets.only(bottom: 10),
                         decoration: BoxDecoration(
-                          color: isSelected ? Colors.blue[50] : Colors.white,
-                          borderRadius: BorderRadius.circular(8),
+                          color: isSelected
+                              ? const Color(0xFFE7EEF5)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(3),
                           border: Border.all(
-                            color: isSelected ? Colors.blueAccent : Colors.grey.shade300,
+                            color: isSelected
+                                ? const Color(0xFF173A5E)
+                                : const Color(0xFFD7DDE3),
                             width: isSelected ? 2 : 1,
                           ),
                         ),
@@ -420,12 +498,10 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
 
             // Thanh điều hướng Trước / Sau
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
               decoration: BoxDecoration(
                 color: Colors.white,
-                boxShadow: const [
-                  BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.05), blurRadius: 4, offset: Offset(0, -2)),
-                ],
+                border: const Border(top: BorderSide(color: Color(0xFFD7DDE3))),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -449,7 +525,7 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
                             });
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueAccent,
+                            backgroundColor: const Color(0xFF173A5E),
                             foregroundColor: Colors.white,
                           ),
                           icon: const Icon(Icons.arrow_forward),
@@ -473,4 +549,3 @@ class _ExamTakingPageState extends State<ExamTakingPage> with WidgetsBindingObse
     );
   }
 }
-
