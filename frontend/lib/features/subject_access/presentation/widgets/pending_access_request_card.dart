@@ -17,16 +17,18 @@ class PendingAccessRequestCard extends StatelessWidget {
     final lecEmail = request['lecturer_id']?['email'] ?? '';
     final subjCode = request['subject_id']?['subject_code'] ?? '';
     final subjName = request['subject_id']?['subject_name'] ?? '';
-    final grantType = request['grant_type'] ?? 'QUESTION_CONTRIBUTION';
+    final grantType = request['grant_type'] == 'QUESTION_CONTRIBUTION'
+        ? 'Đóng góp câu hỏi'
+        : (request['grant_type'] ?? 'Chưa xác định').toString();
 
     return Card(
-      elevation: 1,
+      elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         side: const BorderSide(color: Color(0xFFE2E8F0)),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -40,7 +42,7 @@ class PendingAccessRequestCard extends StatelessWidget {
             Text(
               '$lecEmail | Môn: $subjCode ($subjName)',
               style: const TextStyle(
-                color: Colors.black54,
+                color: const Color(0xFF64748B),
                 fontSize: 13,
               ),
             ),
@@ -48,7 +50,7 @@ class PendingAccessRequestCard extends StatelessWidget {
             Text(
               'Loại quyền: $grantType',
               style: const TextStyle(
-                color: Colors.blueGrey,
+                color: const Color(0xFF64748B),
                 fontSize: 12,
               ),
             ),
@@ -59,7 +61,7 @@ class PendingAccessRequestCard extends StatelessWidget {
                 TextButton(
                   onPressed: () => onReview(id, 'REJECTED'),
                   style: TextButton.styleFrom(
-                    foregroundColor: Colors.red,
+                    foregroundColor: const Color(0xFFDC2626),
                   ),
                   child: const Text('Từ chối'),
                 ),
@@ -67,7 +69,7 @@ class PendingAccessRequestCard extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () => onReview(id, 'APPROVED'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: const Color(0xFF173A5E),
                     foregroundColor: Colors.white,
                   ),
                   child: const Text('Phê duyệt'),

@@ -14,19 +14,18 @@ class ExamSummaryReportCard extends StatelessWidget {
     final id = exam['_id'] ?? '';
     final title = exam['exam_title'] ?? 'Ca thi';
     final status = exam['status'] ?? 'DRAFT';
-    final pin = exam['access_pin'] ?? exam['exam_pin'] ?? '';
     final subjectName = exam['subject_id']?['subject_name'] ?? '';
     final subjectCode = exam['subject_id']?['subject_code'] ?? '';
 
     return Card(
-      elevation: 1,
+      elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         side: const BorderSide(color: Color(0xFFE2E8F0)),
       ),
       child: ListTile(
         leading: const CircleAvatar(
-          backgroundColor: Color(0xFF1E3A5F),
+          backgroundColor: Color(0xFF173A5E),
           child: Icon(
             Icons.analytics_outlined,
             color: Colors.white,
@@ -41,7 +40,7 @@ class ExamSummaryReportCard extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          '${subjectCode.isNotEmpty ? "$subjectCode - " : ""}$subjectName\nTrạng thái: $status | PIN: $pin',
+          '${subjectCode.isNotEmpty ? "$subjectCode - " : ""}$subjectName\nTrạng thái: ${_statusLabel(status)}',
           style: const TextStyle(fontSize: 12),
         ),
         isThreeLine: true,
@@ -52,7 +51,7 @@ class ExamSummaryReportCard extends StatelessWidget {
             style: TextStyle(fontSize: 12),
           ),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1E3A5F),
+            backgroundColor: const Color(0xFF173A5E),
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(
               horizontal: 10,
@@ -73,5 +72,20 @@ class ExamSummaryReportCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _statusLabel(String status) {
+    switch (status.toUpperCase()) {
+      case 'DRAFT':
+        return 'Bản nháp';
+      case 'PUBLISHED':
+        return 'Đã công bố';
+      case 'ONGOING':
+        return 'Đang diễn ra';
+      case 'COMPLETED':
+        return 'Đã kết thúc';
+      default:
+        return status;
+    }
   }
 }

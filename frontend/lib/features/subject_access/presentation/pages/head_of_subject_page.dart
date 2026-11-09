@@ -75,13 +75,18 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
   // Requests tab data
   List<dynamic> _pendingRequests = [];
   bool _isLoadingRequests = false;
+  String? _requestsError;
 
   // Reports / Exams tab data
   List<dynamic> _exams = [];
   bool _isLoadingExams = false;
+  String? _examsError;
 
   Future<void> _fetchExams() async {
-    setState(() => _isLoadingExams = true);
+    setState(() {
+      _isLoadingExams = true;
+      _examsError = null;
+    });
     try {
       final res = await _apiClient.get(ApiEndpoints.exams);
       if (res['success'] == true && res['data'] is List) {
@@ -91,9 +96,16 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
             _isLoadingExams = false;
           });
         }
+      } else {
+        throw Exception(res['message'] ?? 'Không thể tải danh sách kỳ thi');
       }
-    } catch (_) {
-      if (mounted) setState(() => _isLoadingExams = false);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingExams = false;
+          _examsError = e.toString().replaceAll('Exception:', '').trim();
+        });
+      }
     }
   }
 
@@ -140,6 +152,29 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
     SubjectItem subject,
     bool nextActive,
   ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(nextActive ? 'Kích hoạt môn học?' : 'Ngừng hoạt động môn học?'),
+        content: Text(
+          nextActive
+              ? 'Bạn có chắc muốn kích hoạt ${subject.code} - ${subject.name}?'
+              : 'Bạn có chắc muốn chuyển ${subject.code} - ${subject.name} sang ngừng hoạt động?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Xác nhận'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
     final originalStatus = subject.status;
     final nextStatus = nextActive ? 'ACTIVE' : 'INACTIVE';
 
@@ -161,7 +196,7 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Đã chuyển ${subject.code} sang ${nextActive ? "Active" : "Inactive"}',
+              'Đã chuyển ${subject.code} sang ${nextActive ? "đang hoạt động" : "ngừng hoạt động"}',
             ),
             duration: const Duration(seconds: 2),
             backgroundColor: nextActive ? Colors.green : Colors.blueGrey,
@@ -188,6 +223,7 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
   Future<void> _fetchPendingRequests() async {
     setState(() {
       _isLoadingRequests = true;
+      _requestsError = null;
     });
 
     try {
@@ -199,11 +235,14 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
             _isLoadingRequests = false;
           });
         }
+      } else {
+        throw Exception(response['message'] ?? 'Không thể tải yêu cầu duyệt');
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         setState(() {
           _isLoadingRequests = false;
+          _requestsError = e.toString().replaceAll('Exception:', '').trim();
         });
       }
     }
@@ -228,7 +267,9 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
             ),
           );
         }
-        _fetchPendingRequests();
+        await _fetchPendingRequests();
+      } else {
+        throw Exception(response['message'] ?? 'Không thể xử lý yêu cầu');
       }
     } catch (e) {
       if (mounted) {
@@ -274,7 +315,7 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    subject.status,
+                    _subjectStatusLabel(subject.status),
                     style: TextStyle(
                       color: subject.isActive ? Colors.green : Colors.grey[700],
                       fontWeight: FontWeight.bold,
@@ -357,6 +398,39 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
     );
   }
 
+  String _subjectStatusLabel(String status) {
+    switch (status.toUpperCase()) {
+      case 'ACTIVE':
+        return 'Đang hoạt động';
+      case 'INACTIVE':
+        return 'Ngừng hoạt động';
+      default:
+        return status;
+    }
+  }
+
+  Widget _buildPageHeading(String title, String subtitle) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF1E293B),
+              ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          subtitle,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF64748B),
+              ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildSubjectsView() {
     final activeCount = _subjects.where((s) => s.isActive).length;
     final inactiveCount = _subjects.length - activeCount;
@@ -372,26 +446,16 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Subjects',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Manage subject availability and teaching assignments.',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                _buildPageHeading(
+                  'Môn học',
+                  'Quản lý trạng thái môn học và phân công giảng dạy.',
                 ),
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${_subjects.length} subjects',
+                      '${_subjects.length} môn học',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -399,7 +463,7 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
                       ),
                     ),
                     Text(
-                      '$activeCount active - $inactiveCount inactive',
+                      '$activeCount đang hoạt động · $inactiveCount ngừng hoạt động',
                       style: const TextStyle(
                         fontSize: 13,
                         color: Color(0xFF64748B),
@@ -469,18 +533,9 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Q-Bank',
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
+          _buildPageHeading(
+            'Ngân hàng câu hỏi',
             'Quản lý ngân hàng câu hỏi theo từng môn học.',
-            style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
           ),
           const SizedBox(height: 20),
           Expanded(
@@ -509,7 +564,7 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
                             fontSize: 14,
                           ),
                         ),
-                        subtitle: Text('Trạng thái: ${s.status}'),
+                        subtitle: Text('Trạng thái: ${s.isActive ? "Đang hoạt động" : "Ngừng hoạt động"}'),
                         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                         onTap: () {
                           Navigator.push(
@@ -541,12 +596,10 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Requests',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
+              Expanded(
+                child: _buildPageHeading(
+                  'Yêu cầu cấp quyền',
+                  'Duyệt yêu cầu truy cập môn học từ giảng viên.',
                 ),
               ),
               IconButton(
@@ -555,15 +608,12 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          const Text(
-            'Duyệt yêu cầu đăng ký quyền môn học từ giảng viên.',
-            style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-          ),
           const SizedBox(height: 16),
           Expanded(
             child: _isLoadingRequests
                 ? const Center(child: CircularProgressIndicator())
+                : _requestsError != null
+                ? _buildLoadError(_requestsError!, _fetchPendingRequests)
                 : _pendingRequests.isEmpty
                 ? const Center(
                     child: Text('Hiện không có yêu cầu nào đang chờ duyệt'),
@@ -594,12 +644,10 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Reports',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
+              Expanded(
+                child: _buildPageHeading(
+                  'Báo cáo',
+                  'Báo cáo và thống kê các kỳ thi của bộ môn.',
                 ),
               ),
               IconButton(
@@ -608,15 +656,12 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          const Text(
-            'Báo cáo và thống kê các kỳ thi của bộ môn.',
-            style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-          ),
           const SizedBox(height: 16),
           Expanded(
             child: _isLoadingExams
                 ? const Center(child: CircularProgressIndicator())
+                : _examsError != null
+                ? _buildLoadError(_examsError!, _fetchExams)
                 : _exams.isEmpty
                 ? const Center(child: Text('Chưa có ca thi nào'))
                 : ListView.separated(
@@ -629,6 +674,29 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
                       );
                     },
                   ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadError(String message, VoidCallback onRetry) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.cloud_off_outlined,
+            color: Color(0xFFDC2626),
+            size: 32,
+          ),
+          const SizedBox(height: 8),
+          Text('Không thể tải dữ liệu. $message', textAlign: TextAlign.center),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Thử lại'),
           ),
         ],
       ),
@@ -660,7 +728,7 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
     final currentUser = SessionService().currentUser;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF3F4F6),
       appBar: AppBar(
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1E293B),
@@ -707,7 +775,9 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
                       Text(
                         currentUser?.userCode.isNotEmpty == true
                             ? 'Mã: ${currentUser!.userCode}'
-                            : (currentUser?.role ?? ''),
+                            : (currentUser?.role == 'HEAD_OF_SUBJECT'
+                                  ? 'Trưởng bộ môn'
+                                  : (currentUser?.role ?? '')),
                         style: const TextStyle(
                           fontSize: 11,
                           color: Color(0xFF64748B),
@@ -746,7 +816,7 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
           },
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,
-          selectedItemColor: const Color(0xFF1E3A5F),
+          selectedItemColor: const Color(0xFF173A5E),
           unselectedItemColor: const Color(0xFF94A3B8),
           selectedLabelStyle: const TextStyle(
             fontWeight: FontWeight.bold,
@@ -757,27 +827,27 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
             BottomNavigationBarItem(
               icon: Icon(Icons.menu_book_outlined),
               activeIcon: Icon(Icons.menu_book),
-              label: 'Subjects',
+              label: 'Môn học',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.description_outlined),
               activeIcon: Icon(Icons.description),
-              label: 'Q-Bank',
+              label: 'Câu hỏi',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.group_outlined),
               activeIcon: Icon(Icons.group),
-              label: 'Requests',
+              label: 'Yêu cầu',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.pie_chart_outline),
               activeIcon: Icon(Icons.pie_chart),
-              label: 'Reports',
+              label: 'Báo cáo',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
               activeIcon: Icon(Icons.person),
-              label: 'Profile',
+              label: 'Tài khoản',
             ),
           ],
         ),
