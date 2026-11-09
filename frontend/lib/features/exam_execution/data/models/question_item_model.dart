@@ -1,12 +1,10 @@
-class OptionItemModel {
-  final String id;
-  final String content;
-  final String? hint;
+import '../../domain/entities/question_entity.dart';
 
+class OptionItemModel extends OptionEntity {
   OptionItemModel({
-    required this.id,
-    required this.content,
-    this.hint,
+    required super.id,
+    required super.content,
+    super.hint,
   });
 
   factory OptionItemModel.fromJson(Map<String, dynamic> json) {
@@ -16,21 +14,23 @@ class OptionItemModel {
       hint: json['hint'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'option_content': content,
+      'hint': hint,
+    };
+  }
 }
 
-class QuestionItemModel {
-  final String id;
-  final String content;
-  final String questionType;
-  final double defaultScore;
-  final List<OptionItemModel> options;
-
+class QuestionItemModel extends QuestionEntity {
   QuestionItemModel({
-    required this.id,
-    required this.content,
-    required this.questionType,
-    required this.defaultScore,
-    required this.options,
+    required super.id,
+    required super.content,
+    required super.questionType,
+    required super.defaultScore,
+    required List<OptionItemModel> super.options,
   });
 
   factory QuestionItemModel.fromJson(Map<String, dynamic> json) {
@@ -49,5 +49,21 @@ class QuestionItemModel {
           .toList(),
     );
   }
-}
 
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'content': content,
+      'question_type': questionType,
+      'default_score': defaultScore,
+      'options': options.map((opt) {
+        if (opt is OptionItemModel) return opt.toJson();
+        return {
+          '_id': opt.id,
+          'option_content': opt.content,
+          'hint': opt.hint,
+        };
+      }).toList(),
+    };
+  }
+}

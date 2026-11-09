@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import '../../data/datasources/exam_remote_datasource.dart';
-import '../../data/models/question_item_model.dart';
+import '../../data/repositories/exam_repository_impl.dart';
+import '../../domain/usecases/start_exam_usecase.dart';
 import '../widgets/exam_lobby_header_card.dart';
 import 'exam_taking_page.dart';
 
@@ -29,7 +29,7 @@ class ExamLobbyPage extends StatefulWidget {
 }
 
 class _ExamLobbyPageState extends State<ExamLobbyPage> {
-  final _examDataSource = ExamRemoteDataSource();
+  final _startExamUseCase = StartExamUseCase(ExamRepositoryImpl());
 
   bool _rulesAgreed = false;
   bool _isStarting = false;
@@ -52,23 +52,10 @@ class _ExamLobbyPageState extends State<ExamLobbyPage> {
     });
 
     try {
-      final examData = await _examDataSource.startExam(
+      final attempt = await _startExamUseCase(
         examId: widget.examId,
         accessPin: widget.accessPin,
       );
-
-      final dynamic rawQuestions = examData['questions'];
-      final List<QuestionItemModel> questions;
-      if (rawQuestions is List<QuestionItemModel>) {
-        questions = rawQuestions;
-      } else if (rawQuestions is List) {
-        questions = rawQuestions.map((item) {
-          if (item is QuestionItemModel) return item;
-          return QuestionItemModel.fromJson(item as Map<String, dynamic>);
-        }).toList();
-      } else {
-        questions = [];
-      }
 
       if (!mounted) return;
 
@@ -77,11 +64,11 @@ class _ExamLobbyPageState extends State<ExamLobbyPage> {
         MaterialPageRoute(
           builder: (_) => ExamTakingPage(
             examId: widget.examId,
-            attemptId: examData['attempt_id'],
+            attemptId: attempt.attemptId,
             examTitle: widget.examTitle,
             durationMinutes: widget.durationMinutes,
             maxViolations: widget.maxViolations,
-            questions: questions,
+            questions: attempt.questions,
           ),
         ),
       );
