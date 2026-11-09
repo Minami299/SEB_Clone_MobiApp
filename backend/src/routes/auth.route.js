@@ -5,11 +5,16 @@ const { authenticate, authorize } = require('../middlewares/auth.middleware');
 
 // Public
 router.post('/login', authController.login);
+router.post('/forgot-password/send-otp', authController.sendForgotOtp);
+router.post('/forgot-password/verify-otp', authController.verifyForgotOtpAndReset);
+router.post('/forgot-password', authController.verifyForgotOtpAndReset);
+router.post('/reset-password', authController.verifyForgotOtpAndReset);
 
 // Authenticated
 router.get('/me', authenticate, authController.getMe);
 router.put('/me', authenticate, authController.updateProfile);
 router.patch('/me', authenticate, authController.updateProfile);
+router.post('/profile/send-otp', authenticate, authController.sendProfileOtp);
 
 // Admin User Management & Role Assignment
 router.get('/users', authenticate, authorize('ADMIN'), authController.getAllUsers);

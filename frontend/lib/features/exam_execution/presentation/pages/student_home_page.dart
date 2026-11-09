@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/services/session_service.dart';
@@ -122,7 +123,10 @@ class _StudentHomePageState extends State<StudentHomePage> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, null), child: const Text('Hủy')),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, null),
+                child: const Text('Hủy'),
+              ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(ctx, pinController.text.trim()),
                 child: const Text('Xác nhận'),
@@ -156,7 +160,9 @@ class _StudentHomePageState extends State<StudentHomePage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) {
         final pinController = TextEditingController();
         return Padding(
@@ -173,8 +179,18 @@ class _StudentHomePageState extends State<StudentHomePage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Check-in Phòng Thi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                  IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close)),
+                  const Text(
+                    'Check-in Phòng Thi',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: const Icon(Icons.close),
+                  ),
                 ],
               ),
               const SizedBox(height: 6),
@@ -186,29 +202,45 @@ class _StudentHomePageState extends State<StudentHomePage> {
               ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(ctx);
-                  final availableExams = _exams.where((e) => e.status == 'PUBLISHED').toList();
+                  final availableExams = _exams
+                      .where((e) => e.status == 'PUBLISHED')
+                      .toList();
                   if (availableExams.isNotEmpty) {
                     _handleEnterExam(availableExams.first);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Hiện không có ca thi nào đang mở.'), backgroundColor: Colors.orange),
+                      const SnackBar(
+                        content: Text('Hiện không có ca thi nào đang mở.'),
+                        backgroundColor: Colors.orange,
+                      ),
                     );
                   }
                 },
                 icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
-                label: const Text('Bật Camera Quét Mã QR', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: const Text(
+                  'Bật Camera Quét Mã QR',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0F172A),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
               const Row(
                 children: [
                   Expanded(child: Divider()),
-                  Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Text('HOẶC', style: TextStyle(fontSize: 11, color: Colors.grey))),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10),
+                    child: Text(
+                      'HOẶC',
+                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                  ),
                   Expanded(child: Divider()),
                 ],
               ),
@@ -218,12 +250,21 @@ class _StudentHomePageState extends State<StudentHomePage> {
                 maxLength: 6,
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 22, letterSpacing: 8, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 22,
+                  letterSpacing: 8,
+                  fontWeight: FontWeight.bold,
+                ),
                 decoration: InputDecoration(
                   hintText: '• • • • • •',
-                  hintStyle: const TextStyle(letterSpacing: 8, color: Colors.grey),
+                  hintStyle: const TextStyle(
+                    letterSpacing: 8,
+                    color: Colors.grey,
+                  ),
                   counterText: '',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
               ),
@@ -233,12 +274,19 @@ class _StudentHomePageState extends State<StudentHomePage> {
                   final inputPin = pinController.text.trim();
                   if (inputPin.length == 6) {
                     Navigator.pop(ctx);
-                    final matchedList = _exams.where((e) => e.accessPin == inputPin).toList();
+                    final matchedList = _exams
+                        .where((e) => e.accessPin == inputPin)
+                        .toList();
                     if (matchedList.isNotEmpty) {
                       _handleEnterExam(matchedList.first);
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Không tìm thấy ca thi nào với mã PIN "$inputPin". Vui lòng kiểm tra lại.'), backgroundColor: Colors.red),
+                        SnackBar(
+                          content: Text(
+                            'Không tìm thấy ca thi nào với mã PIN "$inputPin". Vui lòng kiểm tra lại.',
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
                       );
                     }
                   }
@@ -247,9 +295,14 @@ class _StudentHomePageState extends State<StudentHomePage> {
                   backgroundColor: const Color(0xFF2563EB),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
-                child: const Text('Xác thực & Vào phòng thi', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Xác thực & Vào phòng thi',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -261,7 +314,9 @@ class _StudentHomePageState extends State<StudentHomePage> {
   @override
   Widget build(BuildContext context) {
     final user = SessionService().currentUser;
-    final studentName = user?.fullName.isNotEmpty == true ? user!.fullName : 'Sinh viên';
+    final studentName = user?.fullName.isNotEmpty == true
+        ? user!.fullName
+        : 'Sinh viên';
     final studentCode = user?.userCode.isNotEmpty == true
         ? user!.userCode
         : (user?.email.isNotEmpty == true ? user!.email : '');
@@ -294,18 +349,31 @@ class _StudentHomePageState extends State<StudentHomePage> {
                   children: [
                     const Text(
                       'Lịch thi của bạn',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
                     ),
                     Text(
                       '${_exams.length} ca thi',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2563EB)),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2563EB),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
 
                 if (_isLoading)
-                  const Center(child: Padding(padding: EdgeInsets.all(24.0), child: CircularProgressIndicator()))
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
                 else if (_exams.isEmpty)
                   _buildEmptyExamCard()
                 else
@@ -324,13 +392,21 @@ class _StudentHomePageState extends State<StudentHomePage> {
                   children: [
                     const Text(
                       'Bài thi đã hoàn thành',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
                     ),
                     InkWell(
                       onTap: () => setState(() => _currentTabIndex = 1),
                       child: const Text(
                         'Xem tất cả',
-                        style: TextStyle(fontSize: 13, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
@@ -338,11 +414,18 @@ class _StudentHomePageState extends State<StudentHomePage> {
                 const SizedBox(height: 10),
 
                 if (_isLoadingSubmissions)
-                  const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator(strokeWidth: 2)))
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
                 else if (_recentSubmissions.isEmpty)
                   _buildEmptySubmissionCard()
                 else
-                  ..._recentSubmissions.map((sub) => _buildRecentSubmissionItem(sub)),
+                  ..._recentSubmissions.map(
+                    (sub) => _buildRecentSubmissionItem(sub),
+                  ),
               ],
             ),
           ),
@@ -406,7 +489,11 @@ class _StudentHomePageState extends State<StudentHomePage> {
               backgroundColor: const Color(0xFF0F172A),
               child: Text(
                 name.isNotEmpty ? name[0].toUpperCase() : 'S',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -414,43 +501,71 @@ class _StudentHomePageState extends State<StudentHomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Xin chào,', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                  const Text(
+                    'Xin chào,',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  ),
                   Text(
                     name,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                   if (code.isNotEmpty)
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFE2E8F0),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             code,
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF334155),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 6),
-                        const Icon(Icons.verified, size: 14, color: Color(0xFF2563EB)),
+                        const Icon(
+                          Icons.verified,
+                          size: 14,
+                          color: Color(0xFF2563EB),
+                        ),
                       ],
                     ),
                 ],
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.support_agent_outlined, color: Color(0xFF334155)),
+              icon: const Icon(
+                Icons.support_agent_outlined,
+                color: Color(0xFF334155),
+              ),
               tooltip: 'Hỗ trợ kỹ thuật',
               onPressed: () {
                 showDialog(
                   context: context,
                   builder: (ctx) => AlertDialog(
                     title: const Text('Hỗ trợ Phòng thi'),
-                    content: const Text('Nếu gặp sự cố kỹ thuật hoặc mất kết nối, vui lòng liên hệ ngay Giám thị coi thi tại phòng thi để được hỗ trợ xử lý.'),
-                    actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Đã hiểu'))],
+                    content: const Text(
+                      'Nếu gặp sự cố kỹ thuật hoặc mất kết nối, vui lòng liên hệ ngay Giám thị coi thi tại phòng thi để được hỗ trợ xử lý.',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Đã hiểu'),
+                      ),
+                    ],
                   ),
                 );
               },
@@ -460,7 +575,10 @@ class _StudentHomePageState extends State<StudentHomePage> {
               tooltip: 'Đăng xuất',
               onPressed: () {
                 SessionService().clearSession();
-                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginPage()));
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                );
               },
             ),
           ],
@@ -481,7 +599,9 @@ class _StudentHomePageState extends State<StudentHomePage> {
             children: [
               _buildStatusPill(
                 icon: Icons.wifi,
-                color: _isServerConnected ? const Color(0xFF10B981) : Colors.red,
+                color: _isServerConnected
+                    ? const Color(0xFF10B981)
+                    : Colors.red,
                 label: _isServerConnected ? '$_pingMs ms' : 'Mất kết nối',
               ),
               const Text('|', style: TextStyle(color: Color(0xFFCBD5E1))),
@@ -493,7 +613,9 @@ class _StudentHomePageState extends State<StudentHomePage> {
               const Text('|', style: TextStyle(color: Color(0xFFCBD5E1))),
               _buildStatusPill(
                 icon: Icons.verified_user_outlined,
-                color: _isServerConnected ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                color: _isServerConnected
+                    ? const Color(0xFF10B981)
+                    : const Color(0xFFF59E0B),
                 label: _isServerConnected ? 'Sẵn sàng' : 'Chưa sẵn sàng',
               ),
             ],
@@ -503,13 +625,24 @@ class _StudentHomePageState extends State<StudentHomePage> {
     );
   }
 
-  Widget _buildStatusPill({required IconData icon, required Color color, required String label}) {
+  Widget _buildStatusPill({
+    required IconData icon,
+    required Color color,
+    required String label,
+  }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 16, color: color),
         const SizedBox(width: 6),
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1E293B),
+          ),
+        ),
       ],
     );
   }
@@ -530,7 +663,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF0F172A).withOpacity(0.2),
+                color: const Color(0xFF0F172A).withValues(alpha: 0.2),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -543,11 +676,15 @@ class _StudentHomePageState extends State<StudentHomePage> {
                 width: 52,
                 height: 52,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
+                  color: Colors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.white24),
                 ),
-                child: const Icon(Icons.qr_code_scanner, color: Colors.white, size: 28),
+                child: const Icon(
+                  Icons.qr_code_scanner,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
               const SizedBox(width: 14),
               const Expanded(
@@ -556,18 +693,30 @@ class _StudentHomePageState extends State<StudentHomePage> {
                   children: [
                     Text(
                       'Check-in Phòng Thi',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                     SizedBox(height: 3),
                     Text(
                       'Quét mã QR hoặc nhập PIN 6 số do giám thị cấp để bắt đầu kiểm tra an toàn.',
-                      style: TextStyle(fontSize: 12, color: Color(0xFFCBD5E1), height: 1.3),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFCBD5E1),
+                        height: 1.3,
+                      ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
+              const Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.white70,
+                size: 16,
+              ),
             ],
           ),
         ),
@@ -584,12 +733,14 @@ class _StudentHomePageState extends State<StudentHomePage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isPublished ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
+          color: isPublished
+              ? const Color(0xFF10B981)
+              : const Color(0xFFE2E8F0),
           width: isPublished ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -610,19 +761,27 @@ class _StudentHomePageState extends State<StudentHomePage> {
                 ),
                 child: Text(
                   exam.subjectCode.isNotEmpty ? exam.subjectCode : 'SEB EXAM',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF1D4ED8)),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    color: Color(0xFF1D4ED8),
+                  ),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: isPublished ? const Color(0xFFECFDF5) : const Color(0xFFFEF3C7),
+                  color: isPublished
+                      ? const Color(0xFFECFDF5)
+                      : const Color(0xFFFEF3C7),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   isPublished ? 'Đang mở' : 'Chưa tới giờ',
                   style: TextStyle(
-                    color: isPublished ? const Color(0xFF047857) : const Color(0xFFB45309),
+                    color: isPublished
+                        ? const Color(0xFF047857)
+                        : const Color(0xFFB45309),
                     fontWeight: FontWeight.bold,
                     fontSize: 11,
                   ),
@@ -633,22 +792,43 @@ class _StudentHomePageState extends State<StudentHomePage> {
           const SizedBox(height: 8),
           Text(
             exam.title,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF0F172A),
+            ),
           ),
           if (exam.description != null && exam.description!.isNotEmpty) ...[
             const SizedBox(height: 3),
-            Text(exam.description!, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+            Text(
+              exam.description!,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+            ),
           ],
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(Icons.timer_outlined, size: 15, color: Color(0xFF64748B)),
+              const Icon(
+                Icons.timer_outlined,
+                size: 15,
+                color: Color(0xFF64748B),
+              ),
               const SizedBox(width: 4),
-              Text('${exam.durationMinutes} phút', style: const TextStyle(fontSize: 12, color: Color(0xFF475569))),
+              Text(
+                '${exam.durationMinutes} phút',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
+              ),
               const Spacer(),
-              const Icon(Icons.shield_outlined, size: 15, color: Color(0xFF64748B)),
+              const Icon(
+                Icons.shield_outlined,
+                size: 15,
+                color: Color(0xFF64748B),
+              ),
               const SizedBox(width: 4),
-              Text('Tối đa ${exam.maxViolations} vi phạm', style: const TextStyle(fontSize: 12, color: Color(0xFF475569))),
+              Text(
+                'Tối đa ${exam.maxViolations} vi phạm',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -657,15 +837,27 @@ class _StudentHomePageState extends State<StudentHomePage> {
             height: 42,
             child: ElevatedButton.icon(
               onPressed: isPublished ? () => _handleEnterExam(exam) : null,
-              icon: Icon(isPublished ? Icons.lock_open : Icons.lock_outline, size: 18),
+              icon: Icon(
+                isPublished ? Icons.lock_open : Icons.lock_outline,
+                size: 18,
+              ),
               label: Text(
                 isPublished ? 'VÀO PHÒNG THI NGAY' : 'CHỜ MỞ CA THI',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isPublished ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
-                foregroundColor: isPublished ? Colors.white : const Color(0xFF94A3B8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                backgroundColor: isPublished
+                    ? const Color(0xFF10B981)
+                    : const Color(0xFFE2E8F0),
+                foregroundColor: isPublished
+                    ? Colors.white
+                    : const Color(0xFF94A3B8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 elevation: isPublished ? 2 : 0,
               ),
             ),
@@ -688,9 +880,18 @@ class _StudentHomePageState extends State<StudentHomePage> {
         children: [
           Icon(Icons.event_available, size: 40, color: Color(0xFF94A3B8)),
           SizedBox(height: 8),
-          Text('Hiện chưa có ca thi nào cần thực hiện', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+          Text(
+            'Hiện chưa có ca thi nào cần thực hiện',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+            ),
+          ),
           SizedBox(height: 4),
-          Text('Các ca thi mới sẽ tự động hiển thị khi được xuất bản.', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+          Text(
+            'Các ca thi mới sẽ tự động hiển thị khi được xuất bản.',
+            style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+          ),
         ],
       ),
     );
@@ -715,24 +916,36 @@ class _StudentHomePageState extends State<StudentHomePage> {
         children: [
           Row(
             children: [
-              const Icon(Icons.verified_user_outlined, size: 18, color: Color(0xFF0F172A)),
+              const Icon(
+                Icons.verified_user_outlined,
+                size: 18,
+                color: Color(0xFF0F172A),
+              ),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
                   'Kiểm tra điều kiện thiết bị (Security Preflight)',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: Color(0xFF0F172A),
+                  ),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: passed == 4 ? const Color(0xFFECFDF5) : const Color(0xFFFEF3C7),
+                  color: passed == 4
+                      ? const Color(0xFFECFDF5)
+                      : const Color(0xFFFEF3C7),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   '$passed/4 Đạt',
                   style: TextStyle(
-                    color: passed == 4 ? const Color(0xFF047857) : const Color(0xFFB45309),
+                    color: passed == 4
+                        ? const Color(0xFF047857)
+                        : const Color(0xFFB45309),
                     fontWeight: FontWeight.bold,
                     fontSize: 11,
                   ),
@@ -742,11 +955,15 @@ class _StudentHomePageState extends State<StudentHomePage> {
           ),
           const SizedBox(height: 12),
           _buildCheckItem(
-            title: _isServerConnected ? 'Kết nối máy chủ thi ổn định (${_pingMs} ms)' : 'Mất kết nối tới máy chủ thi',
+            title: _isServerConnected
+                ? 'Kết nối máy chủ thi ổn định ($_pingMs ms)'
+                : 'Mất kết nối tới máy chủ thi',
             isOk: _isServerConnected,
           ),
           _buildCheckItem(
-            title: hasUser ? 'Tài khoản thí sinh đã xác thực' : 'Chưa xác thực thông tin thí sinh',
+            title: hasUser
+                ? 'Tài khoản thí sinh đã xác thực'
+                : 'Chưa xác thực thông tin thí sinh',
             isOk: hasUser,
           ),
           _buildCheckItem(
@@ -754,7 +971,9 @@ class _StudentHomePageState extends State<StudentHomePage> {
             isOk: true,
           ),
           _buildCheckItem(
-            title: _exams.isNotEmpty ? 'Danh sách ca thi đã được đồng bộ' : 'Chưa có ca thi khả dụng',
+            title: _exams.isNotEmpty
+                ? 'Danh sách ca thi đã được đồng bộ'
+                : 'Chưa có ca thi khả dụng',
             isOk: _exams.isNotEmpty,
           ),
         ],
@@ -767,9 +986,18 @@ class _StudentHomePageState extends State<StudentHomePage> {
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
-          Icon(isOk ? Icons.check_circle : Icons.cancel, color: isOk ? const Color(0xFF10B981) : Colors.red, size: 16),
+          Icon(
+            isOk ? Icons.check_circle : Icons.cancel,
+            color: isOk ? const Color(0xFF10B981) : Colors.red,
+            size: 16,
+          ),
           const SizedBox(width: 8),
-          Expanded(child: Text(title, style: const TextStyle(fontSize: 12, color: Color(0xFF334155)))),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF334155)),
+            ),
+          ),
         ],
       ),
     );
@@ -809,7 +1037,8 @@ class _StudentHomePageState extends State<StudentHomePage> {
     if (sub['submitted_at'] != null) {
       final dt = DateTime.tryParse(sub['submitted_at']);
       if (dt != null) {
-        dateStr = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+        dateStr =
+            '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
       }
     }
 
@@ -832,7 +1061,11 @@ class _StudentHomePageState extends State<StudentHomePage> {
               color: const Color(0xFFEFF6FF),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.assignment_turned_in_outlined, color: Color(0xFF2563EB), size: 20),
+            child: const Icon(
+              Icons.assignment_turned_in_outlined,
+              color: Color(0xFF2563EB),
+              size: 20,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -840,14 +1073,23 @@ class _StudentHomePageState extends State<StudentHomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  subCode.isNotEmpty ? '$subCode - $subName' : (examTitle.isNotEmpty ? examTitle : 'Bài thi đã nộp'),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                  subCode.isNotEmpty
+                      ? '$subCode - $subName'
+                      : (examTitle.isNotEmpty ? examTitle : 'Bài thi đã nộp'),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: Color(0xFF0F172A),
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
                   '${dateStr.isNotEmpty ? "Nộp: $dateStr | " : ""}Vi phạm: $violations',
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF64748B),
+                  ),
                 ),
               ],
             ),
@@ -861,11 +1103,22 @@ class _StudentHomePageState extends State<StudentHomePage> {
               ),
               child: Text(
                 '$score đ',
-                style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF047857), fontSize: 13),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF047857),
+                  fontSize: 13,
+                ),
               ),
             ),
           ] else ...[
-            const Text('Đã nộp', style: TextStyle(fontSize: 12, color: Color(0xFF10B981), fontWeight: FontWeight.w600)),
+            const Text(
+              'Đã nộp',
+              style: TextStyle(
+                fontSize: 12,
+                color: Color(0xFF10B981),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ],
       ),

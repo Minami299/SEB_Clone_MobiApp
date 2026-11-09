@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/services/session_service.dart';
@@ -28,7 +29,8 @@ class _OptionInput {
   _OptionInput({required this.controller, this.isCorrect = false});
 }
 
-class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTickerProviderStateMixin {
+class _CreateQuestionPageState extends State<CreateQuestionPage>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _apiClient = ApiClient();
   late TabController _tabController;
@@ -89,7 +91,9 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final chRes = await _apiClient.get(ApiEndpoints.chaptersBySubject(widget.subjectId));
+      final chRes = await _apiClient.get(
+        ApiEndpoints.chaptersBySubject(widget.subjectId),
+      );
       if (chRes['success'] == true && chRes['data'] is List) {
         _chapters = chRes['data'] as List;
         if (!isEditing && _chapters.isNotEmpty) {
@@ -98,7 +102,9 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
       }
 
       if (isEditing) {
-        final qRes = await _apiClient.get(ApiEndpoints.questionDetail(widget.questionId!));
+        final qRes = await _apiClient.get(
+          ApiEndpoints.questionDetail(widget.questionId!),
+        );
         if (qRes['success'] == true && qRes['data'] != null) {
           final q = qRes['data']['question'];
           final opts = qRes['data']['options'] as List? ?? [];
@@ -108,9 +114,15 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
           _codeController.text = q['question_code'] ?? '';
           _descriptionController.text = q['description'] ?? '';
           _loController.text = q['learning_outcome'] ?? '';
-          _selectedDifficulty = (q['difficulty'] ?? q['difficulty_level'] ?? 'MEDIUM').toString().toUpperCase();
+          _selectedDifficulty =
+              (q['difficulty'] ?? q['difficulty_level'] ?? 'MEDIUM')
+                  .toString()
+                  .toUpperCase();
           _selectedType = q['question_type'] ?? 'SINGLE_CHOICE';
-          _selectedScope = (q['scope'] ?? (q['is_public'] == true ? 'PUBLIC' : 'PRIVATE')).toString().toUpperCase();
+          _selectedScope =
+              (q['scope'] ?? (q['is_public'] == true ? 'PUBLIC' : 'PRIVATE'))
+                  .toString()
+                  .toUpperCase();
 
           if (q['chapter_id'] is Map) {
             _selectedChapterId = q['chapter_id']['_id'];
@@ -124,10 +136,14 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
             }
             _options.clear();
             for (var opt in opts) {
-              _options.add(_OptionInput(
-                controller: TextEditingController(text: opt['option_content'] ?? ''),
-                isCorrect: opt['is_correct'] == true,
-              ));
+              _options.add(
+                _OptionInput(
+                  controller: TextEditingController(
+                    text: opt['option_content'] ?? '',
+                  ),
+                  isCorrect: opt['is_correct'] == true,
+                ),
+              );
             }
           }
         }
@@ -140,7 +156,10 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi tải dữ liệu: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Lỗi tải dữ liệu: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -161,7 +180,9 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
   void _removeOption(int index) {
     if (_options.length <= 2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Câu hỏi trắc nghiệm cần tối thiểu 2 đáp án')),
+        const SnackBar(
+          content: Text('Câu hỏi trắc nghiệm cần tối thiểu 2 đáp án'),
+        ),
       );
       return;
     }
@@ -191,7 +212,9 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
 
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (ctx) {
         return Container(
           padding: const EdgeInsets.all(16),
@@ -202,11 +225,20 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Chèn công thức Toán học (LaTeX)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close)),
+                  const Text(
+                    'Chèn công thức Toán học (LaTeX)',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: const Icon(Icons.close),
+                  ),
                 ],
               ),
-              const Text('Chọn ký hiệu / công thức để chèn vào vị trí con trỏ:', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
+              const Text(
+                'Chọn ký hiệu / công thức để chèn vào vị trí con trỏ:',
+                style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+              ),
               const SizedBox(height: 12),
               Expanded(
                 child: GridView.builder(
@@ -221,21 +253,34 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
                     final item = equations[i];
                     return OutlinedButton(
                       style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                         alignment: Alignment.centerLeft,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                       ),
                       onPressed: () {
                         final text = controller.text;
                         final selection = controller.selection;
                         final snippet = item['tex']!;
                         if (selection.start >= 0 && selection.end >= 0) {
-                          final newText = text.replaceRange(selection.start, selection.end, snippet);
+                          final newText = text.replaceRange(
+                            selection.start,
+                            selection.end,
+                            snippet,
+                          );
                           controller.text = newText;
-                          controller.selection = TextSelection.collapsed(offset: selection.start + snippet.length);
+                          controller.selection = TextSelection.collapsed(
+                            offset: selection.start + snippet.length,
+                          );
                         } else {
                           controller.text = '$text $snippet';
-                          controller.selection = TextSelection.collapsed(offset: controller.text.length);
+                          controller.selection = TextSelection.collapsed(
+                            offset: controller.text.length,
+                          );
                         }
                         Navigator.pop(ctx);
                       },
@@ -243,9 +288,24 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Flexible(
-                            child: Text(item['label']!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)), overflow: TextOverflow.ellipsis),
+                            child: Text(
+                              item['label']!,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1E293B),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          Text(item['tex']!, style: const TextStyle(fontSize: 11, color: Color(0xFF2563EB), fontFamily: 'monospace')),
+                          Text(
+                            item['tex']!,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF2563EB),
+                              fontFamily: 'monospace',
+                            ),
+                          ),
                         ],
                       ),
                     );
@@ -268,7 +328,10 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
     if (_selectedChapterId == null) {
       _tabController.animateTo(0);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn chương học cho câu hỏi'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Vui lòng chọn chương học cho câu hỏi'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -279,7 +342,10 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
       if (_options.length < 2) {
         _tabController.animateTo(1);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Câu hỏi trắc nghiệm phải tạo từ 2 đáp án trở lên'), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text('Câu hỏi trắc nghiệm phải tạo từ 2 đáp án trở lên'),
+            backgroundColor: Colors.red,
+          ),
         );
         return;
       }
@@ -289,7 +355,12 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
         if (_options[i].controller.text.trim().isEmpty) {
           _tabController.animateTo(1);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Vui lòng nhập nội dung cho đáp án ${String.fromCharCode(65 + i)}'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(
+                'Vui lòng nhập nội dung cho đáp án ${String.fromCharCode(65 + i)}',
+              ),
+              backgroundColor: Colors.red,
+            ),
           );
           return;
         }
@@ -302,7 +373,12 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
         if (seenContents.contains(content)) {
           _tabController.animateTo(1);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Các câu trả lời trong cùng 1 câu hỏi phải khác nhau (Đáp án ${String.fromCharCode(65 + i)} bị trùng lặp)'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(
+                'Các câu trả lời trong cùng 1 câu hỏi phải khác nhau (Đáp án ${String.fromCharCode(65 + i)} bị trùng lặp)',
+              ),
+              backgroundColor: Colors.red,
+            ),
           );
           return;
         }
@@ -313,7 +389,10 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
       if (!hasCorrect) {
         _tabController.animateTo(1);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Vui lòng chọn ít nhất 1 đáp án đúng'), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text('Vui lòng chọn ít nhất 1 đáp án đúng'),
+            backgroundColor: Colors.red,
+          ),
         );
         return;
       }
@@ -326,14 +405,18 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
         (c) => c['_id'] == _selectedChapterId,
         orElse: () => null,
       );
-      final chapterNum = selectedChapter != null ? (selectedChapter['chapter_number'] ?? 1) : 1;
+      final chapterNum = selectedChapter != null
+          ? (selectedChapter['chapter_number'] ?? 1)
+          : 1;
       final effectiveScope = isHeadOfSubject ? 'PUBLIC' : _selectedScope;
 
       final body = {
         'subject_id': widget.subjectId,
         'chapter_id': _selectedChapterId,
         'chapter_num': chapterNum,
-        'question_code': _codeController.text.trim().isNotEmpty ? _codeController.text.trim() : null,
+        'question_code': _codeController.text.trim().isNotEmpty
+            ? _codeController.text.trim()
+            : null,
         'question_type': _selectedType,
         'difficulty': _selectedDifficulty,
         'difficulty_level': _selectedDifficulty,
@@ -341,20 +424,27 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
         'is_public': effectiveScope == 'PUBLIC',
         'content': _contentController.text.trim(),
         'description': _descriptionController.text.trim(),
-        'learning_outcome': _loController.text.trim().isNotEmpty ? _loController.text.trim() : null,
+        'learning_outcome': _loController.text.trim().isNotEmpty
+            ? _loController.text.trim()
+            : null,
         'default_score': double.tryParse(_scoreController.text.trim()) ?? 1.0,
         if (isMcq)
           'options': _options
-              .map((opt) => {
-                    'option_content': opt.controller.text.trim(),
-                    'is_correct': opt.isCorrect,
-                  })
+              .map(
+                (opt) => {
+                  'option_content': opt.controller.text.trim(),
+                  'is_correct': opt.isCorrect,
+                },
+              )
               .toList(),
       };
 
       Map<String, dynamic> response;
       if (isEditing) {
-        response = await _apiClient.put('${ApiEndpoints.questions}/${widget.questionId}', body: body);
+        response = await _apiClient.put(
+          '${ApiEndpoints.questions}/${widget.questionId}',
+          body: body,
+        );
       } else {
         response = await _apiClient.post(ApiEndpoints.questions, body: body);
       }
@@ -363,7 +453,11 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isEditing ? 'Cập nhật câu hỏi thành công' : 'Tạo câu hỏi thành công'),
+            content: Text(
+              isEditing
+                  ? 'Cập nhật câu hỏi thành công'
+                  : 'Tạo câu hỏi thành công',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -375,7 +469,12 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
       if (!mounted) return;
       setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: ${e.toString().replaceAll("Exception:", "").trim()}'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(
+            'Lỗi: ${e.toString().replaceAll("Exception:", "").trim()}',
+          ),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -386,7 +485,9 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Text(
-          isEditing ? 'Sửa câu hỏi - ${widget.subjectCode}' : 'Thêm câu hỏi - ${widget.subjectCode}',
+          isEditing
+              ? 'Sửa câu hỏi - ${widget.subjectCode}'
+              : 'Thêm câu hỏi - ${widget.subjectCode}',
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
@@ -400,7 +501,10 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
           indicatorWeight: 3,
           tabs: const [
             Tab(icon: Icon(Icons.help_outline, size: 20), text: '1. Câu hỏi'),
-            Tab(icon: Icon(Icons.format_list_bulleted, size: 20), text: '2. Câu trả lời'),
+            Tab(
+              icon: Icon(Icons.format_list_bulleted, size: 20),
+              text: '2. Câu trả lời',
+            ),
           ],
         ),
       ),
@@ -410,10 +514,7 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
               key: _formKey,
               child: TabBarView(
                 controller: _tabController,
-                children: [
-                  _buildTabQuestionInfo(),
-                  _buildTabAnswers(),
-                ],
+                children: [_buildTabQuestionInfo(), _buildTabAnswers()],
               ),
             ),
       bottomNavigationBar: Container(
@@ -430,13 +531,25 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E3A5F),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: _isSaving
-                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
                   : Text(
                       isEditing ? 'Lưu thay đổi' : 'Hoàn tất & Lưu câu hỏi',
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
             ),
           ),
@@ -470,9 +583,22 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Câu hỏi chung của bộ môn (Public)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E3A8A))),
+                        Text(
+                          'Câu hỏi chung của bộ môn (Public)',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: Color(0xFF1E3A8A),
+                          ),
+                        ),
                         SizedBox(height: 2),
-                        Text('Câu hỏi này thuộc ngân hàng đề chung của bộ môn.', style: TextStyle(fontSize: 11, color: Color(0xFF3B82F6))),
+                        Text(
+                          'Câu hỏi này thuộc ngân hàng đề chung của bộ môn.',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF3B82F6),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -492,15 +618,31 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Phạm vi lưu trữ câu hỏi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B))),
+                  const Text(
+                    'Phạm vi lưu trữ câu hỏi',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   RadioListTile<String>(
                     value: 'PRIVATE',
                     groupValue: _selectedScope,
                     dense: true,
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Kho riêng của tôi (Private)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                    subtitle: const Text('Chỉ bạn mới có thể sử dụng câu hỏi này trong đề thi.', style: TextStyle(fontSize: 11)),
+                    title: const Text(
+                      'Kho riêng của tôi (Private)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'Chỉ bạn mới có thể sử dụng câu hỏi này trong đề thi.',
+                      style: TextStyle(fontSize: 11),
+                    ),
                     activeColor: const Color(0xFF1E3A5F),
                     onChanged: (val) {
                       if (val != null) setState(() => _selectedScope = val);
@@ -511,8 +653,17 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
                     groupValue: _selectedScope,
                     dense: true,
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Đóng góp vào Ngân hàng chung (Public)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                    subtitle: const Text('Chia sẻ câu hỏi để các giảng viên khác trong bộ môn cùng sử dụng.', style: TextStyle(fontSize: 11)),
+                    title: const Text(
+                      'Đóng góp vào Ngân hàng chung (Public)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'Chia sẻ câu hỏi để các giảng viên khác trong bộ môn cùng sử dụng.',
+                      style: TextStyle(fontSize: 11),
+                    ),
                     activeColor: const Color(0xFF1E3A5F),
                     onChanged: (val) {
                       if (val != null) setState(() => _selectedScope = val);
@@ -528,16 +679,22 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
               Expanded(
                 flex: 3,
                 child: DropdownButtonFormField<String>(
-                  value: _selectedChapterId,
+                  initialValue: _selectedChapterId,
                   decoration: const InputDecoration(
                     labelText: 'Chương *',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                   ),
                   items: _chapters.map((ch) {
                     return DropdownMenuItem<String>(
                       value: ch['_id'],
-                      child: Text('Chương ${ch['chapter_number']}: ${ch['chapter_title']}', overflow: TextOverflow.ellipsis),
+                      child: Text(
+                        'Chương ${ch['chapter_number']}: ${ch['chapter_title']}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     );
                   }).toList(),
                   onChanged: (val) {
@@ -549,15 +706,21 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
               Expanded(
                 flex: 2,
                 child: DropdownButtonFormField<String>(
-                  value: _selectedDifficulty,
+                  initialValue: _selectedDifficulty,
                   decoration: const InputDecoration(
                     labelText: 'Độ khó *',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                   ),
                   items: const [
                     DropdownMenuItem(value: 'EASY', child: Text('Dễ')),
-                    DropdownMenuItem(value: 'MEDIUM', child: Text('Trung bình')),
+                    DropdownMenuItem(
+                      value: 'MEDIUM',
+                      child: Text('Trung bình'),
+                    ),
                     DropdownMenuItem(value: 'HARD', child: Text('Khó')),
                   ],
                   onChanged: (val) {
@@ -576,15 +739,24 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
               Expanded(
                 flex: 3,
                 child: DropdownButtonFormField<String>(
-                  value: _selectedType,
+                  initialValue: _selectedType,
                   decoration: const InputDecoration(
                     labelText: 'Loại câu hỏi *',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                   ),
                   items: const [
-                    DropdownMenuItem(value: 'SINGLE_CHOICE', child: Text('Trắc nghiệm (1 đáp án)')),
-                    DropdownMenuItem(value: 'MULTIPLE_CHOICE', child: Text('Trắc nghiệm (Nhiều đáp án)')),
+                    DropdownMenuItem(
+                      value: 'SINGLE_CHOICE',
+                      child: Text('Trắc nghiệm (1 đáp án)'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'MULTIPLE_CHOICE',
+                      child: Text('Trắc nghiệm (Nhiều đáp án)'),
+                    ),
                     DropdownMenuItem(value: 'ESSAY', child: Text('Tự luận')),
                   ],
                   onChanged: (val) {
@@ -597,11 +769,16 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
                 flex: 2,
                 child: TextFormField(
                   controller: _scoreController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: const InputDecoration(
                     labelText: 'Điểm số *',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                   ),
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return 'Bắt buộc';
@@ -622,13 +799,32 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
             children: [
               const Text(
                 'Nội dung câu hỏi đề bài *',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: Color(0xFF1E293B),
+                ),
               ),
               TextButton.icon(
                 onPressed: () => _insertEquationInto(_contentController),
-                icon: const Text(r'$f_x$', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF2563EB))),
-                label: const Text('Chèn công thức', style: TextStyle(fontSize: 12, color: Color(0xFF2563EB))),
-                style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4)),
+                icon: const Text(
+                  r'$f_x$',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: Color(0xFF2563EB),
+                  ),
+                ),
+                label: const Text(
+                  'Chèn công thức',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF2563EB)),
+                ),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                ),
               ),
             ],
           ),
@@ -637,12 +833,14 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
             controller: _contentController,
             maxLines: 5,
             decoration: const InputDecoration(
-              hintText: 'Nhập nội dung đề bài câu hỏi (hỗ trợ định dạng LaTeX)...',
+              hintText:
+                  'Nhập nội dung đề bài câu hỏi (hỗ trợ định dạng LaTeX)...',
               border: OutlineInputBorder(),
               alignLabelWithHint: true,
             ),
             validator: (v) {
-              if (v == null || v.trim().isEmpty) return 'Vui lòng nhập nội dung đề bài';
+              if (v == null || v.trim().isEmpty)
+                return 'Vui lòng nhập nội dung đề bài';
               return null;
             },
           ),
@@ -656,7 +854,10 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
               labelText: 'Chuẩn đầu ra (LO - Tùy chọn)',
               hintText: 'VD: LO1, LO2...',
               border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -667,7 +868,10 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
               labelText: 'Mô tả / Ghi chú (Tùy chọn)',
               hintText: 'Ghi chú thêm về câu hỏi...',
               border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
             ),
           ),
 
@@ -701,7 +905,10 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
             children: [
               Icon(Icons.edit_note, size: 64, color: Colors.blue.shade300),
               const SizedBox(height: 16),
-              const Text('Câu hỏi Tự luận', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text(
+                'Câu hỏi Tự luận',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               const Text(
                 'Đối với hình thức tự luận, sinh viên sẽ nhập bài làm trực tiếp. Không cần thiết lập danh sách phương án trắc nghiệm.',
@@ -724,7 +931,11 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
             children: [
               Text(
                 'Danh sách đáp án (${_options.length})',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  color: Color(0xFF1E293B),
+                ),
               ),
               TextButton.icon(
                 onPressed: _addOption,
@@ -750,7 +961,9 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
                 color: opt.isCorrect ? const Color(0xFFECFDF5) : Colors.white,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: opt.isCorrect ? const Color(0xFF10B981) : const Color(0xFFCBD5E1),
+                  color: opt.isCorrect
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFFCBD5E1),
                   width: opt.isCorrect ? 1.5 : 1,
                 ),
               ),
@@ -787,19 +1000,32 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
-                          color: opt.isCorrect ? const Color(0xFF047857) : const Color(0xFF334155),
+                          color: opt.isCorrect
+                              ? const Color(0xFF047857)
+                              : const Color(0xFF334155),
                         ),
                       ),
                       const Spacer(),
                       IconButton(
                         tooltip: 'Chèn công thức LaTeX',
-                        icon: const Text(r'$f_x$', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF2563EB))),
+                        icon: const Text(
+                          r'$f_x$',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: Color(0xFF2563EB),
+                          ),
+                        ),
                         onPressed: () => _insertEquationInto(opt.controller),
                       ),
                       if (_options.length > 2)
                         IconButton(
                           tooltip: 'Xóa câu trả lời này',
-                          icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            size: 20,
+                            color: Colors.redAccent,
+                          ),
                           onPressed: () => _removeOption(index),
                         ),
                     ],
@@ -810,7 +1036,10 @@ class _CreateQuestionPageState extends State<CreateQuestionPage> with SingleTick
                     decoration: InputDecoration(
                       hintText: 'Nhập nội dung phương án $letter...',
                       border: const OutlineInputBorder(),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
                       fillColor: Colors.white,
                       filled: true,
                     ),

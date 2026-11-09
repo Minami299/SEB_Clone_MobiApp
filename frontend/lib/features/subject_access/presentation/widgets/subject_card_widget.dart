@@ -55,7 +55,7 @@ class SubjectCardWidget extends StatelessWidget {
                     height: 28,
                     child: Switch(
                       value: isActive,
-                      activeColor: Colors.white,
+                      activeThumbColor: Colors.white,
                       activeTrackColor: const Color(0xFF1E3A5F),
                       inactiveThumbColor: Colors.white,
                       inactiveTrackColor: const Color(0xFFCBD5E1),

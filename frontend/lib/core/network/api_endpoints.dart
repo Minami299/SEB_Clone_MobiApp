@@ -20,6 +20,10 @@ class ApiEndpoints {
 
   // Auth
   static String get authLogin => '$baseUrl/auth/login';
+  static String get authForgotSendOtp => '$baseUrl/auth/forgot-password/send-otp';
+  static String get authForgotVerifyOtp => '$baseUrl/auth/forgot-password/verify-otp';
+  static String get authForgotPassword => '$baseUrl/auth/forgot-password';
+  static String get authProfileSendOtp => '$baseUrl/auth/profile/send-otp';
   static String get authMe => '$baseUrl/auth/me';
   static String get authUsers => '$baseUrl/auth/users';
   static String authUserDetail(String id) => '$baseUrl/auth/users/$id';

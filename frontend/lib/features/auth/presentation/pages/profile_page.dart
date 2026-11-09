@@ -18,13 +18,17 @@ class _ProfilePageState extends State<ProfilePage> {
 
   late TextEditingController _nameController;
   late TextEditingController _emailController;
-  final _currentPasswordController = TextEditingController();
+  final _otpController = TextEditingController();
   final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
 
   bool _isChangingPassword = false;
-  bool _obscureCurrentPassword = true;
   bool _obscureNewPassword = true;
+  bool _obscureConfirmPassword = true;
   bool _isLoading = false;
+  bool _isSendingOtp = false;
+  String? _otpSentMessage;
+  String? _devOtpHint;
   UserModel? _user;
 
   @override
@@ -39,13 +43,68 @@ class _ProfilePageState extends State<ProfilePage> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _currentPasswordController.dispose();
+    _otpController.dispose();
     _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleSendOtp() async {
+    setState(() {
+      _isSendingOtp = true;
+    });
+
+    try {
+      final res = await _authDataSource.sendProfileOtp();
+      if (!mounted) return;
+      setState(() {
+        _isSendingOtp = false;
+        _otpSentMessage = res['message'] as String? ?? 'Mã OTP đã được gửi đến email.';
+        _devOtpHint = res['data']?['dev_otp'] as String?;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_otpSentMessage!),
+          backgroundColor: Colors.blue.shade700,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSendingOtp = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi gửi OTP: ${e.toString().replaceAll("Exception:", "").trim()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (_isChangingPassword) {
+      if (_otpController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Vui lòng gửi và nhập mã OTP xác thực trước khi lưu mật khẩu mới'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      if (_newPasswordController.text != _confirmPasswordController.text) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Mật khẩu xác nhận không trùng khớp'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
 
     setState(() {
       _isLoading = true;
@@ -55,20 +114,23 @@ class _ProfilePageState extends State<ProfilePage> {
       final updatedUser = await _authDataSource.updateProfile(
         fullName: _nameController.text.trim(),
         email: _emailController.text.trim(),
-        currentPassword: _isChangingPassword && _currentPasswordController.text.isNotEmpty
-            ? _currentPasswordController.text
-            : null,
         newPassword: _isChangingPassword && _newPasswordController.text.isNotEmpty
-            ? _newPasswordController.text
+            ? _newPasswordController.text.trim()
+            : null,
+        otp: _isChangingPassword && _otpController.text.isNotEmpty
+            ? _otpController.text.trim()
             : null,
       );
 
       if (!mounted) return;
       setState(() {
         _user = updatedUser;
-        _currentPasswordController.clear();
+        _otpController.clear();
         _newPasswordController.clear();
+        _confirmPasswordController.clear();
         _isChangingPassword = false;
+        _otpSentMessage = null;
+        _devOtpHint = null;
         _isLoading = false;
       });
 
@@ -280,7 +342,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             });
                           },
                           icon: const Icon(Icons.lock_reset, size: 20),
-                          label: const Text('Cập nhật mật khẩu mới'),
+                          label: const Text('Cập nhật mật khẩu mới (qua OTP Email)'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFF1E3A5F),
                             side: const BorderSide(color: Color(0xFFCBD5E1)),
@@ -291,11 +353,11 @@ class _ProfilePageState extends State<ProfilePage> {
                       )
                     else ...[
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFCBD5E1)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,16 +365,25 @@ class _ProfilePageState extends State<ProfilePage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
-                                  'Đổi mật khẩu',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
+                                Row(
+                                  children: const [
+                                    Icon(Icons.shield_outlined, color: Color(0xFF0062FF), size: 18),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Đổi mật khẩu qua OTP Email',
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
+                                    ),
+                                  ],
                                 ),
                                 TextButton(
                                   onPressed: () {
                                     setState(() {
                                       _isChangingPassword = false;
-                                      _currentPasswordController.clear();
+                                      _otpController.clear();
                                       _newPasswordController.clear();
+                                      _confirmPasswordController.clear();
+                                      _otpSentMessage = null;
+                                      _devOtpHint = null;
                                     });
                                   },
                                   style: TextButton.styleFrom(
@@ -325,26 +396,71 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 12),
-                            TextFormField(
-                              controller: _currentPasswordController,
-                              obscureText: _obscureCurrentPassword,
-                              decoration: InputDecoration(
-                                labelText: 'Mật khẩu hiện tại',
-                                prefixIcon: const Icon(Icons.lock_outline),
-                                suffixIcon: IconButton(
-                                  icon: Icon(_obscureCurrentPassword ? Icons.visibility : Icons.visibility_off),
-                                  onPressed: () {
-                                    setState(() => _obscureCurrentPassword = !_obscureCurrentPassword);
-                                  },
+                            const SizedBox(height: 10),
+                            Text(
+                              'Nhấn nút bên dưới để nhận mã OTP gửi về email ${_user?.email ?? ""}:',
+                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                            ),
+                            const SizedBox(height: 10),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: _isSendingOtp ? null : _handleSendOtp,
+                                icon: _isSendingOtp
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : const Icon(Icons.send_outlined, size: 16),
+                                label: Text(_isSendingOtp ? 'Đang gửi...' : 'Gửi mã OTP về email'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF0062FF),
+                                  side: const BorderSide(color: Color(0xFF93C5FD)),
+                                  backgroundColor: const Color(0xFFEFF6FF),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
+                              ),
+                            ),
+                            if (_otpSentMessage != null) ...[
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade50,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.green.shade200),
+                                ),
+                                child: Text(
+                                  _otpSentMessage!,
+                                  style: TextStyle(fontSize: 12, color: Colors.green.shade800),
+                                ),
+                              ),
+                            ],
+                            if (_devOtpHint != null) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                'Mã OTP thử nghiệm: $_devOtpHint',
+                                style: const TextStyle(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                            const SizedBox(height: 14),
+                            TextFormField(
+                              controller: _otpController,
+                              keyboardType: TextInputType.number,
+                              maxLength: 6,
+                              decoration: const InputDecoration(
+                                labelText: 'Mã xác thực OTP (6 số)',
+                                hintText: 'Nhập mã OTP nhận từ email',
+                                counterText: '',
+                                prefixIcon: Icon(Icons.key_outlined),
                                 filled: true,
                                 fillColor: Colors.white,
-                                border: const OutlineInputBorder(),
+                                border: OutlineInputBorder(),
                               ),
-                              validator: (value) {
-                                if (_isChangingPassword && (value == null || value.trim().isEmpty)) {
-                                  return 'Vui lòng nhập mật khẩu hiện tại';
+                              validator: (val) {
+                                if (_isChangingPassword && (val == null || val.trim().length != 6)) {
+                                  return 'Vui lòng nhập đủ 6 số OTP';
                                 }
                                 return null;
                               },
@@ -355,7 +471,8 @@ class _ProfilePageState extends State<ProfilePage> {
                               obscureText: _obscureNewPassword,
                               decoration: InputDecoration(
                                 labelText: 'Mật khẩu mới',
-                                prefixIcon: const Icon(Icons.lock_reset),
+                                hintText: 'Tối thiểu 6 ký tự',
+                                prefixIcon: const Icon(Icons.lock_outline),
                                 suffixIcon: IconButton(
                                   icon: Icon(_obscureNewPassword ? Icons.visibility : Icons.visibility_off),
                                   onPressed: () {
@@ -366,13 +483,43 @@ class _ProfilePageState extends State<ProfilePage> {
                                 fillColor: Colors.white,
                                 border: const OutlineInputBorder(),
                               ),
-                              validator: (value) {
+                              validator: (val) {
                                 if (_isChangingPassword) {
-                                  if (value == null || value.trim().isEmpty) {
+                                  if (val == null || val.trim().isEmpty) {
                                     return 'Vui lòng nhập mật khẩu mới';
                                   }
-                                  if (value.trim().length < 6) {
+                                  if (val.trim().length < 6) {
                                     return 'Mật khẩu mới phải có ít nhất 6 ký tự';
+                                  }
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              controller: _confirmPasswordController,
+                              obscureText: _obscureConfirmPassword,
+                              decoration: InputDecoration(
+                                labelText: 'Xác nhận mật khẩu mới',
+                                hintText: 'Nhập lại mật khẩu mới',
+                                prefixIcon: const Icon(Icons.lock_reset),
+                                suffixIcon: IconButton(
+                                  icon: Icon(_obscureConfirmPassword ? Icons.visibility : Icons.visibility_off),
+                                  onPressed: () {
+                                    setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
+                                  },
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                                border: const OutlineInputBorder(),
+                              ),
+                              validator: (val) {
+                                if (_isChangingPassword) {
+                                  if (val == null || val.isEmpty) {
+                                    return 'Vui lòng xác nhận mật khẩu mới';
+                                  }
+                                  if (val != _newPasswordController.text) {
+                                    return 'Mật khẩu xác nhận không khớp';
                                   }
                                 }
                                 return null;
