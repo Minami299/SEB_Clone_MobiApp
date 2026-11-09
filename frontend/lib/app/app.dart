@@ -1,9 +1,32 @@
 import 'package:flutter/material.dart';
 
+import '../core/services/session_service.dart';
+import '../features/admin_system/presentation/pages/user_management_page.dart';
 import '../features/auth/presentation/pages/welcome_page.dart';
+import '../features/exam_execution/presentation/pages/exam_list_page.dart';
+import '../features/exam_execution/presentation/pages/student_home_page.dart';
+import '../features/subject_access/presentation/pages/head_of_subject_page.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
+
+  Widget _getInitialHome() {
+    final session = SessionService();
+    if (!session.isAuthenticated || session.currentUser == null) {
+      return const WelcomePage();
+    }
+
+    final role = session.currentUser!.role;
+    if (role == 'ADMIN') {
+      return const UserManagementPage();
+    } else if (role == 'HEAD_OF_SUBJECT') {
+      return const HeadOfSubjectPage();
+    } else if (role == 'STUDENT') {
+      return const StudentHomePage();
+    } else {
+      return const ExamListPage();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +47,7 @@ class App extends StatelessWidget {
           ),
         ),
       ),
-      home: const WelcomePage(),
+      home: _getInitialHome(),
     );
   }
 }

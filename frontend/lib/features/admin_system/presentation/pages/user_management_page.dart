@@ -1,12 +1,12 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
-
 import '../../../../core/services/session_service.dart';
 import '../../../auth/data/datasources/auth_remote_datasource.dart';
 import '../../../auth/data/models/user_model.dart';
-import '../../../auth/presentation/pages/login_page.dart';
-import '../../../auth/presentation/pages/profile_page.dart';
+import '../../../auth/presentation/pages/welcome_page.dart';
+import '../widgets/create_user_modal.dart';
+import '../widgets/user_action_sheet.dart';
+import '../widgets/user_card_widget.dart';
 
 class UserManagementPage extends StatefulWidget {
   const UserManagementPage({super.key});
@@ -24,12 +24,12 @@ class _UserManagementPageState extends State<UserManagementPage> {
   final _searchController = TextEditingController();
   Timer? _searchDebounce;
 
-  final List<String> _roles = [
-    'ADMIN',
-    'HEAD_OF_SUBJECT',
-    'LECTURER',
-    'STUDENT',
-  ];
+  final Map<String, String> _roleDisplayNames = {
+    'STUDENT': 'Thí sinh / Sinh viên',
+    'LECTURER': 'Giám thị / Giảng viên',
+    'HEAD_OF_SUBJECT': 'Trưởng bộ môn',
+    'ADMIN': 'Quản trị viên',
+  };
 
   @override
   void initState() {
@@ -82,46 +82,108 @@ class _UserManagementPageState extends State<UserManagementPage> {
     }
   }
 
-  Future<void> _handleUpdateRole(UserModel user) async {
+  // Chuyển đổi trạng thái Khóa / Kích hoạt
+  Future<void> _handleToggleStatus(UserModel user) async {
+    final newStatus = user.status == 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    try {
+      await _authDataSource.updateUser(
+        userId: user.id,
+        status: newStatus,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            newStatus == 'ACTIVE'
+                ? 'Đã kích hoạt lại tài khoản ${user.userCode}'
+                : 'Đã khóa tài khoản ${user.userCode}',
+          ),
+          backgroundColor: newStatus == 'ACTIVE' ? const Color(0xFF059669) : const Color(0xFFD97706),
+        ),
+      );
+      _fetchUsers(showLoading: false);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: $e'), backgroundColor: const Color(0xFFDC2626)),
+      );
+    }
+  }
+
+  // Cập nhật vai trò
+  Future<void> _handleUpdateRoleDialog(UserModel user) async {
     String selectedRole = user.role;
 
     final updatedRole = await showDialog<String>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text('Phân vai trò: ${user.fullName}'),
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
+          title: Text(
+            'Phân vai trò: ${user.fullName}',
+            style: const TextStyle(color: Color(0xFF0F172A), fontSize: 16, fontWeight: FontWeight.bold),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Mã: ${user.userCode} | Email: ${user.email}'),
+              Text(
+                'Mã: ${user.userCode} | Email: ${user.email}',
+                style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+              ),
               const SizedBox(height: 16),
               const Text(
                 'Chọn vai trò mới:',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.bold, fontSize: 13),
               ),
               const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                initialValue: selectedRole,
-                decoration: const InputDecoration(border: OutlineInputBorder()),
-                items: _roles
-                    .map((r) => DropdownMenuItem(value: r, child: Text(r)))
-                    .toList(),
-                onChanged: (val) {
-                  if (val != null) {
-                    setDialogState(() => selectedRole = val);
-                  }
-                },
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: selectedRole,
+                    dropdownColor: Colors.white,
+                    isExpanded: true,
+                    style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14),
+                    items: _roleDisplayNames.entries
+                        .map(
+                          (entry) => DropdownMenuItem(
+                            value: entry.key,
+                            child: Text(entry.value),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setDialogState(() => selectedRole = val);
+                      }
+                    },
+                  ),
+                ),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, null),
-              child: const Text('Hủy'),
+              child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B))),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, selectedRole),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4F46E5),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
               child: const Text('Cập nhật'),
             ),
           ],
@@ -137,38 +199,46 @@ class _UserManagementPageState extends State<UserManagementPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Đã cập nhật vai trò ${user.userCode} thành $updatedRole',
+            'Đã cập nhật vai trò ${user.userCode} thành ${_roleDisplayNames[updatedRole] ?? updatedRole}',
           ),
-          backgroundColor: Colors.green,
+          backgroundColor: const Color(0xFF059669),
         ),
       );
-      _fetchUsers();
+      _fetchUsers(showLoading: false);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Lỗi: $e'), backgroundColor: const Color(0xFFDC2626)),
       );
     }
   }
 
+  // Xóa tài khoản
   Future<void> _handleDeleteUser(UserModel user) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Xác nhận xóa tài khoản'),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        title: const Text('Xác nhận xóa tài khoản', style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold)),
         content: Text(
-          'Bạn có chắc chắn muốn xóa tài khoản ${user.fullName} (${user.userCode})?',
+          'Bạn có chắc chắn muốn xóa tài khoản ${user.fullName} (${user.userCode}) khỏi hệ thống?',
+          style: const TextStyle(color: Color(0xFF64748B)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Hủy'),
+            child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B))),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: const Color(0xFFDC2626),
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             child: const Text('Xóa'),
           ),
@@ -183,380 +253,379 @@ class _UserManagementPageState extends State<UserManagementPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Đã xóa tài khoản ${user.userCode}'),
-          backgroundColor: Colors.green,
+          content: Text('Đã xóa tài khoản ${user.userCode} thành công'),
+          backgroundColor: const Color(0xFF059669),
         ),
       );
-      _fetchUsers();
+      _fetchUsers(showLoading: false);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Lỗi: $e'), backgroundColor: const Color(0xFFDC2626)),
       );
     }
   }
 
-  Future<void> _handleCreateUser() async {
-    final codeCtrl = TextEditingController();
-    final nameCtrl = TextEditingController();
-    final emailCtrl = TextEditingController();
-    final passCtrl = TextEditingController();
-    String roleVal = 'STUDENT';
-    final formKey = GlobalKey<FormState>();
-
-    final created = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Thêm tài khoản mới'),
-          content: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: codeCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Mã người dùng (User Code)',
-                    ),
-                    validator: (v) =>
-                        v == null || v.trim().isEmpty ? 'Bắt buộc nhập' : null,
-                  ),
-                  TextFormField(
-                    controller: nameCtrl,
-                    decoration: const InputDecoration(labelText: 'Họ và tên'),
-                    validator: (v) =>
-                        v == null || v.trim().isEmpty ? 'Bắt buộc nhập' : null,
-                  ),
-                  TextFormField(
-                    controller: emailCtrl,
-                    decoration: const InputDecoration(labelText: 'Email'),
-                    validator: (v) =>
-                        v == null || v.trim().isEmpty ? 'Bắt buộc nhập' : null,
-                  ),
-                  TextFormField(
-                    controller: passCtrl,
-                    obscureText: true,
-                    decoration: const InputDecoration(labelText: 'Mật khẩu'),
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'Bắt buộc nhập' : null,
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: roleVal,
-                    decoration: const InputDecoration(
-                      labelText: 'Vai trò (Role)',
-                    ),
-                    items: _roles
-                        .map((r) => DropdownMenuItem(value: r, child: Text(r)))
-                        .toList(),
-                    onChanged: (v) {
-                      if (v != null) setDialogState(() => roleVal = v);
-                    },
-                  ),
-                ],
-              ),
-            ),
+  // Mở modal thêm người dùng mới
+  void _openCreateUserModal() {
+    CreateUserModal.show(
+      context,
+      onSubmit: ({
+        required String userCode,
+        required String email,
+        required String password,
+        required String fullName,
+        required String role,
+        required String status,
+      }) async {
+        await _authDataSource.createUser(
+          userCode: userCode,
+          email: email,
+          fullName: fullName,
+          password: password,
+          role: role,
+          status: status,
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tạo người dùng mới thành công!'),
+            backgroundColor: Color(0xFF059669),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Hủy'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  Navigator.pop(ctx, true);
-                }
-              },
-              child: const Text('Tạo mới'),
+        );
+        _fetchUsers(showLoading: false);
+      },
+    );
+  }
+
+  // Chip bộ lọc
+  Widget _buildFilterChip({
+    required String label,
+    required String roleKey,
+    required int count,
+  }) {
+    final isSelected = _selectedRoleFilter == roleKey;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedRoleFilter = roleKey;
+        });
+        _fetchUsers();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF4F46E5) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF4F46E5) : const Color(0xFFE2E8F0),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
+        child: Text(
+          '$label ($count)',
+          style: TextStyle(
+            color: isSelected ? Colors.white : const Color(0xFF64748B),
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+          ),
+        ),
       ),
     );
-
-    if (created == true) {
-      try {
-        await _authDataSource.createUser(
-          userCode: codeCtrl.text.trim(),
-          email: emailCtrl.text.trim(),
-          fullName: nameCtrl.text.trim(),
-          password: passCtrl.text,
-          role: roleVal,
-        );
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tạo người dùng thành công'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        _fetchUsers();
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
-  }
-
-  Color _getRoleColor(String role) {
-    switch (role) {
-      case 'ADMIN':
-        return Colors.red;
-      case 'HEAD_OF_SUBJECT':
-        return Colors.purple;
-      case 'LECTURER':
-        return Colors.blue;
-      case 'STUDENT':
-      default:
-        return Colors.teal;
-    }
-  }
-
-  String _getUserCodeLabel(String role) {
-    switch (role) {
-      case 'STUDENT':
-        return 'Mã học sinh';
-      case 'LECTURER':
-        return 'Mã giảng viên';
-      case 'HEAD_OF_SUBJECT':
-        return 'Mã trưởng bộ môn';
-      case 'ADMIN':
-        return 'Mã quản trị viên';
-      default:
-        return 'Mã định danh';
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = SessionService().currentUser;
+    final studentCount = _users.where((u) => u.role == 'STUDENT').length;
+    final lecturerCount = _users.where((u) => u.role == 'LECTURER').length;
+    final adminCount = _users.where((u) => u.role == 'ADMIN').length;
 
     return Scaffold(
-      appBar: AppBar(
-        title: InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ProfilePage()),
-            ).then((_) => setState(() {}));
-          },
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: Colors.white24,
-                  child: Text(
-                    (currentUser?.fullName.isNotEmpty == true)
-                        ? currentUser!.fullName[0].toUpperCase()
-                        : 'A',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // 1. Top Dynamic Island Indicator
+            const SizedBox(height: 8),
+            Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEF2FF),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFC7D2FE).withOpacity(0.5)),
                 ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        currentUser?.fullName ?? 'Admin',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        currentUser?.role ?? 'ADMIN',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        backgroundColor: Colors.blueAccent,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchUsers,
-            tooltip: 'Làm mới',
-          ),
-          IconButton(
-            icon: const Icon(Icons.account_circle_outlined),
-            tooltip: 'Thông tin cá nhân',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfilePage()),
-              ).then((_) => setState(() {}));
-            },
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _handleCreateUser,
-        backgroundColor: Colors.blueAccent,
-        foregroundColor: Colors.white,
-        tooltip: 'Thêm tài khoản',
-        child: const Icon(Icons.person_add),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Tìm theo tên, mã số, email...',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _fetchUsers();
-                        },
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF4F46E5),
+                        shape: BoxShape.circle,
                       ),
                     ),
-                    onChanged: _onSearchChanged,
-                    onSubmitted: (_) => _fetchUsers(),
-                  ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'SEB Admin',
+                      style: TextStyle(
+                        color: Color(0xFF475569),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF10B981),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                DropdownButton<String>(
-                  value: _selectedRoleFilter,
-                  items: ['ALL', ..._roles]
-                      .map((r) => DropdownMenuItem(value: r, child: Text(r)))
-                      .toList(),
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() => _selectedRoleFilter = val);
-                      _fetchUsers();
-                    }
-                  },
-                ),
-              ],
+              ),
             ),
-          ),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _errorMessage != null
-                ? Center(
+            const SizedBox(height: 16),
+
+            // 2. Header: Title, Total Count, Button "+ Tạo mới"
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEF2FF),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.groups_2_rounded, color: Color(0xFF4F46E5), size: 22),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          _errorMessage!,
-                          style: const TextStyle(color: Colors.red),
+                        const Text(
+                          'Quản lý Người Dùng',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: _fetchUsers,
-                          child: const Text('Thử lại'),
+                        Text(
+                          'Tổng cộng: ${_users.length} tài khoản trong hệ thống',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                         ),
                       ],
                     ),
-                  )
-                : _users.isEmpty
-                ? const Center(child: Text('Không tìm thấy tài khoản nào'))
-                : ListView.separated(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: _users.length,
-                    separatorBuilder: (context, _) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final user = _users[index];
-                      return Card(
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: ListTile(
-                          onTap: () => _handleUpdateRole(user),
-                          title: Text(
-                            user.fullName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
-                          ),
-                          subtitle: Text(
-                            '${_getUserCodeLabel(user.role)}: ${user.userCode}',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Colors.black54,
-                            ),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _getRoleColor(user.role).withAlpha(30),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: _getRoleColor(user.role),
-                                  ),
-                                ),
-                                child: Text(
-                                  user.role,
-                                  style: TextStyle(
-                                    color: _getRoleColor(user.role),
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: _openCreateUserModal,
+                    icon: const Icon(Icons.person_add_alt_1, size: 16),
+                    label: const Text('Tạo mới', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4F46E5),
+                      foregroundColor: Colors.white,
+                      elevation: 1,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    height: 36,
+                    width: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      icon: const Icon(Icons.logout_rounded, color: Color(0xFFDC2626), size: 18),
+                      tooltip: 'Đăng xuất',
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            title: const Text('Đăng xuất', style: TextStyle(fontWeight: FontWeight.bold)),
+                            content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B))),
                               ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.red,
-                                  size: 20,
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFDC2626),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
-                                tooltip: 'Xóa tài khoản',
-                                onPressed: () => _handleDeleteUser(user),
+                                onPressed: () {
+                                  Navigator.pop(ctx);
+                                  SessionService().clearSession();
+                                  Navigator.pushAndRemoveUntil(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const WelcomePage()),
+                                    (route) => false,
+                                  );
+                                },
+                                child: const Text('Đăng xuất'),
                               ),
                             ],
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-          ),
-        ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // 3. Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.02),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  style: const TextStyle(color: Color(0xFF0F172A), fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: 'Tìm tên, email, MSSV hoặc Mã cán bộ...',
+                    hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                    prefixIcon: const Icon(Icons.search, color: Color(0xFF94A3B8), size: 20),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, color: Color(0xFF94A3B8), size: 18),
+                            onPressed: () {
+                              _searchController.clear();
+                              _fetchUsers();
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  ),
+                  onChanged: _onSearchChanged,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // 4. Horizontal Filter Chips
+            SizedBox(
+              height: 36,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                children: [
+                  _buildFilterChip(label: 'Tất cả', roleKey: 'ALL', count: _users.length),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(label: 'Sinh viên', roleKey: 'STUDENT', count: studentCount),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(label: 'Giám thị', roleKey: 'LECTURER', count: lecturerCount),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(label: 'Quản trị', roleKey: 'ADMIN', count: adminCount),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // 5. User List
+            Expanded(
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
+                    )
+                  : _errorMessage != null
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                _errorMessage!,
+                                style: const TextStyle(color: Color(0xFFDC2626)),
+                              ),
+                              const SizedBox(height: 12),
+                              ElevatedButton(
+                                onPressed: _fetchUsers,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF4F46E5),
+                                  foregroundColor: Colors.white,
+                                ),
+                                child: const Text('Thử lại'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _users.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Icon(Icons.search_off_rounded, size: 48, color: Color(0xFFCBD5E1)),
+                                  SizedBox(height: 12),
+                                  Text(
+                                    'Không tìm thấy tài khoản nào',
+                                    style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.separated(
+                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
+                              itemCount: _users.length,
+                              separatorBuilder: (_, __) => const SizedBox(height: 10),
+                              itemBuilder: (context, index) {
+                                final user = _users[index];
+                                return UserCardWidget(
+                                  user: user,
+                                  onTap: () {
+                                    UserActionSheet.show(
+                                      context,
+                                      user: user,
+                                      onUpdateRole: () => _handleUpdateRoleDialog(user),
+                                      onToggleStatus: () => _handleToggleStatus(user),
+                                      onDelete: () => _handleDeleteUser(user),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _openCreateUserModal,
+        backgroundColor: const Color(0xFF4F46E5),
+        foregroundColor: Colors.white,
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: const Icon(Icons.add, size: 28),
       ),
     );
   }
