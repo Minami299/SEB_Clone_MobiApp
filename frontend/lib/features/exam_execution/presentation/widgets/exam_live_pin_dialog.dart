@@ -1,12 +1,14 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
-import '../../data/models/exam_model.dart';
+import '../../domain/entities/exam_entity.dart';
 
 class ExamLivePinDialog extends StatefulWidget {
-  final ExamModel exam;
+  final ExamEntity exam;
   final VoidCallback onRefresh;
 
   const ExamLivePinDialog({
@@ -70,19 +72,28 @@ class _ExamLivePinDialogState extends State<ExamLivePinDialog> {
     });
 
     try {
-      final res = await _apiClient.get(ApiEndpoints.examLivePin(widget.exam.id));
+      final res = await _apiClient.get(
+        ApiEndpoints.examLivePin(widget.exam.id),
+      );
       if (res['success'] == true && res['data'] != null) {
         final data = res['data'];
         if (mounted) {
           final newPin = data['access_pin']?.toString() ?? _currentPin;
-          final didChange = _currentPin.isNotEmpty && _currentPin != '------' && _currentPin != newPin;
+          final didChange =
+              _currentPin.isNotEmpty &&
+              _currentPin != '------' &&
+              _currentPin != newPin;
 
           setState(() {
             _currentPin = newPin;
-            _remainingSeconds = (data['remaining_seconds'] as num?)?.toInt() ?? 300;
-            _intervalSeconds = (data['interval_seconds'] as num?)?.toInt() ?? 300;
-            _totalCandidates = (data['total_candidates'] as num?)?.toInt() ?? _totalCandidates;
-            _activeAttempts = (data['active_attempts'] as num?)?.toInt() ?? _activeAttempts;
+            _remainingSeconds =
+                (data['remaining_seconds'] as num?)?.toInt() ?? 300;
+            _intervalSeconds =
+                (data['interval_seconds'] as num?)?.toInt() ?? 300;
+            _totalCandidates =
+                (data['total_candidates'] as num?)?.toInt() ?? _totalCandidates;
+            _activeAttempts =
+                (data['active_attempts'] as num?)?.toInt() ?? _activeAttempts;
             _isLoading = false;
             if (isAutoRotate || didChange) {
               _pinJustRotated = true;
@@ -124,16 +135,22 @@ class _ExamLivePinDialogState extends State<ExamLivePinDialog> {
     });
 
     try {
-      final res = await _apiClient.post(ApiEndpoints.examRefreshPin(widget.exam.id));
+      final res = await _apiClient.post(
+        ApiEndpoints.examRefreshPin(widget.exam.id),
+      );
       if (res['success'] == true && res['data'] != null) {
         final data = res['data'];
         if (mounted) {
           setState(() {
             _currentPin = data['access_pin'] ?? _currentPin;
-            _remainingSeconds = (data['remaining_seconds'] as num?)?.toInt() ?? 300;
-            _intervalSeconds = (data['interval_seconds'] as num?)?.toInt() ?? 300;
-            _totalCandidates = (data['total_candidates'] as num?)?.toInt() ?? _totalCandidates;
-            _activeAttempts = (data['active_attempts'] as num?)?.toInt() ?? _activeAttempts;
+            _remainingSeconds =
+                (data['remaining_seconds'] as num?)?.toInt() ?? 300;
+            _intervalSeconds =
+                (data['interval_seconds'] as num?)?.toInt() ?? 300;
+            _totalCandidates =
+                (data['total_candidates'] as num?)?.toInt() ?? _totalCandidates;
+            _activeAttempts =
+                (data['active_attempts'] as num?)?.toInt() ?? _activeAttempts;
             _isRefreshing = false;
             _pinJustRotated = true;
           });
@@ -180,8 +197,14 @@ class _ExamLivePinDialogState extends State<ExamLivePinDialog> {
   @override
   Widget build(BuildContext context) {
     final s = widget.exam.status.toUpperCase().trim();
-    final isOpen = (s == 'PUBLISHED' || s == 'ONGOING' || s == 'IN_PROGRESS' || s == 'ACTIVE');
-    final progress = _intervalSeconds > 0 ? (_remainingSeconds / _intervalSeconds).clamp(0.0, 1.0) : 0.0;
+    final isOpen =
+        (s == 'PUBLISHED' ||
+        s == 'ONGOING' ||
+        s == 'IN_PROGRESS' ||
+        s == 'ACTIVE');
+    final progress = _intervalSeconds > 0
+        ? (_remainingSeconds / _intervalSeconds).clamp(0.0, 1.0)
+        : 0.0;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -205,7 +228,11 @@ class _ExamLivePinDialogState extends State<ExamLivePinDialog> {
                         color: const Color(0xFFEFF6FF),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.qr_code_2, color: Color(0xFF1E3A5F), size: 22),
+                      child: const Icon(
+                        Icons.qr_code_2,
+                        color: Color(0xFF1E3A5F),
+                        size: 22,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Column(
@@ -221,8 +248,13 @@ class _ExamLivePinDialogState extends State<ExamLivePinDialog> {
                           ),
                         ),
                         Text(
-                          widget.exam.subjectCode.isNotEmpty ? widget.exam.subjectCode : 'SEB EXAM',
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                          widget.exam.subjectCode.isNotEmpty
+                              ? widget.exam.subjectCode
+                              : 'SEB EXAM',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF64748B),
+                          ),
                         ),
                       ],
                     ),
@@ -230,7 +262,11 @@ class _ExamLivePinDialogState extends State<ExamLivePinDialog> {
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, size: 20, color: Color(0xFF94A3B8)),
+                  icon: const Icon(
+                    Icons.close,
+                    size: 20,
+                    color: Color(0xFF94A3B8),
+                  ),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
@@ -253,15 +289,24 @@ class _ExamLivePinDialogState extends State<ExamLivePinDialog> {
                   Expanded(
                     child: Text(
                       widget.exam.title,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1E293B),
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
-                      color: isOpen ? const Color(0xFFECFDF5) : const Color(0xFFF1F5F9),
+                      color: isOpen
+                          ? const Color(0xFFECFDF5)
+                          : const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -269,14 +314,19 @@ class _ExamLivePinDialogState extends State<ExamLivePinDialog> {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        color: isOpen ? const Color(0xFF047857) : const Color(0xFF64748B),
+                        color: isOpen
+                            ? const Color(0xFF047857)
+                            : const Color(0xFF64748B),
                       ),
                     ),
                   ),
                   if (_totalCandidates > 0) ...[
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEFF6FF),
                         borderRadius: BorderRadius.circular(4),
@@ -300,7 +350,10 @@ class _ExamLivePinDialogState extends State<ExamLivePinDialog> {
               const SizedBox(height: 12),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFEF3C7),
                   borderRadius: BorderRadius.circular(8),
@@ -340,7 +393,7 @@ class _ExamLivePinDialogState extends State<ExamLivePinDialog> {
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF0F172A).withOpacity(0.2),
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.2),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -362,7 +415,10 @@ class _ExamLivePinDialogState extends State<ExamLivePinDialog> {
                   if (_isLoading)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 8),
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5,
+                      ),
                     )
                   else
                     SelectableText(
@@ -382,7 +438,11 @@ class _ExamLivePinDialogState extends State<ExamLivePinDialog> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.timer_outlined, size: 14, color: Color(0xFF38BDF8)),
+                      const Icon(
+                        Icons.timer_outlined,
+                        size: 14,
+                        color: Color(0xFF38BDF8),
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         'Tự động đổi mã sau: ${_formatTime(_remainingSeconds)}',
@@ -402,8 +462,10 @@ class _ExamLivePinDialogState extends State<ExamLivePinDialog> {
                       width: 180,
                       child: LinearProgressIndicator(
                         value: progress,
-                        backgroundColor: Colors.white.withOpacity(0.15),
-                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF38BDF8)),
+                        backgroundColor: Colors.white.withValues(alpha: 0.15),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFF38BDF8),
+                        ),
                       ),
                     ),
                   ),
@@ -423,19 +485,29 @@ class _ExamLivePinDialogState extends State<ExamLivePinDialog> {
                             Clipboard.setData(ClipboardData(text: _currentPin));
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Đã sao chép mã PIN: $_currentPin'),
+                                content: Text(
+                                  'Đã sao chép mã PIN: $_currentPin',
+                                ),
                                 duration: const Duration(seconds: 1),
                               ),
                             );
                           }
                         : null,
                     icon: const Icon(Icons.copy, size: 16),
-                    label: const Text('Sao chép PIN', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                    label: const Text(
+                      'Sao chép PIN',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: const Color(0xFF1E3A5F),
                       side: const BorderSide(color: Color(0xFFCBD5E1)),
                       padding: const EdgeInsets.symmetric(vertical: 11),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ),
@@ -444,14 +516,29 @@ class _ExamLivePinDialogState extends State<ExamLivePinDialog> {
                   child: ElevatedButton.icon(
                     onPressed: _isRefreshing ? null : _handleForceRefresh,
                     icon: _isRefreshing
-                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
                         : const Icon(Icons.refresh, size: 16),
-                    label: const Text('Đổi mã mới ngay', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    label: const Text(
+                      'Đổi mã mới ngay',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1E3A5F),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 11),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       elevation: 0,
                     ),
                   ),
@@ -464,4 +551,3 @@ class _ExamLivePinDialogState extends State<ExamLivePinDialog> {
     );
   }
 }
-

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
-import '../../data/models/exam_model.dart';
+import '../../domain/entities/exam_entity.dart';
 import '../../../exam_management/presentation/pages/create_edit_exam_page.dart';
 import '../../../monitoring_reports/presentation/pages/live_monitoring_page.dart';
 import '../../../monitoring_reports/presentation/pages/exam_report_detail_page.dart';
 import 'exam_live_pin_dialog.dart';
 
 class ExamCardWidget extends StatelessWidget {
-  final ExamModel exam;
+  final ExamEntity exam;
   final bool isProctor;
   final VoidCallback onEnterExam;
   final VoidCallback onRefresh;

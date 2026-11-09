@@ -5,8 +5,9 @@ import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/services/session_service.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 import '../../../auth/presentation/pages/profile_page.dart';
-import '../../data/datasources/exam_remote_datasource.dart';
-import '../../data/models/exam_model.dart';
+import '../../data/repositories/exam_repository_impl.dart';
+import '../../domain/entities/exam_entity.dart';
+import '../../domain/usecases/get_exams_usecase.dart';
 import 'exam_list_page.dart';
 import 'exam_lobby_page.dart';
 
@@ -19,13 +20,13 @@ class StudentHomePage extends StatefulWidget {
 
 class _StudentHomePageState extends State<StudentHomePage> {
   final _apiClient = ApiClient();
-  final _examDataSource = ExamRemoteDataSource();
+  final _getExamsUseCase = GetExamsUseCase(ExamRepositoryImpl());
 
   int _currentTabIndex = 0;
   bool _isLoading = true;
   bool _isLoadingSubmissions = false;
 
-  List<ExamModel> _exams = [];
+  List<ExamEntity> _exams = [];
   List<dynamic> _recentSubmissions = [];
 
   // Trạng thái mạng động theo thời gian thực
@@ -74,7 +75,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
 
   Future<void> _fetchExams() async {
     try {
-      final list = await _examDataSource.getExams();
+      final list = await _getExamsUseCase();
       if (mounted) {
         setState(() {
           _exams = list;
@@ -102,7 +103,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
     }
   }
 
-  void _handleEnterExam(ExamModel exam) async {
+  void _handleEnterExam(ExamEntity exam) async {
     String? pin = exam.accessPin;
     if (pin == null || pin.isEmpty) {
       pin = await showDialog<String>(
@@ -724,7 +725,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
     );
   }
 
-  Widget _buildExamCard(ExamModel exam) {
+  Widget _buildExamCard(ExamEntity exam) {
     final isPublished = exam.status == 'PUBLISHED';
 
     return Container(

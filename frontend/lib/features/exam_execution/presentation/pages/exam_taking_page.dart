@@ -2,8 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../data/datasources/exam_remote_datasource.dart';
-import '../../data/models/question_item_model.dart';
+import '../../data/repositories/exam_repository_impl.dart';
+import '../../domain/entities/question_entity.dart';
+import '../../domain/usecases/report_violation_usecase.dart';
+import '../../domain/usecases/save_answer_usecase.dart';
+import '../../domain/usecases/submit_exam_usecase.dart';
 import 'exam_result_page.dart';
 import 'exam_suspended_page.dart';
 
@@ -13,7 +16,7 @@ class ExamTakingPage extends StatefulWidget {
   final String examTitle;
   final int durationMinutes;
   final int maxViolations;
-  final List<QuestionItemModel> questions;
+  final List<QuestionEntity> questions;
 
   const ExamTakingPage({
     super.key,
@@ -31,7 +34,10 @@ class ExamTakingPage extends StatefulWidget {
 
 class _ExamTakingPageState extends State<ExamTakingPage>
     with WidgetsBindingObserver {
-  final _examDataSource = ExamRemoteDataSource();
+  late final _examRepo = ExamRepositoryImpl();
+  late final _reportViolationUseCase = ReportViolationUseCase(_examRepo);
+  late final _saveAnswerUseCase = SaveAnswerUseCase(_examRepo);
+  late final _submitExamUseCase = SubmitExamUseCase(_examRepo);
 
   int _currentIndex = 0;
   final Map<String, String> _selectedAnswers = {}; // questionId -> optionId
@@ -102,7 +108,7 @@ class _ExamTakingPageState extends State<ExamTakingPage>
     });
 
     try {
-      final res = await _examDataSource.reportViolation(
+      final res = await _reportViolationUseCase(
         attemptId: widget.attemptId,
         examId: widget.examId,
         violationType: 'APP_UNFOCUSED',
@@ -191,7 +197,7 @@ class _ExamTakingPageState extends State<ExamTakingPage>
 
     // Auto-save câu trả lời
     try {
-      await _examDataSource.saveAnswer(
+      await _saveAnswerUseCase(
         attemptId: widget.attemptId,
         questionId: questionId,
         selectedOptionId: optionId,
@@ -213,7 +219,7 @@ class _ExamTakingPageState extends State<ExamTakingPage>
     });
 
     try {
-      await _examDataSource.submitExam(attemptId: widget.attemptId);
+      await _submitExamUseCase(attemptId: widget.attemptId);
       _canExit = true;
       if (!mounted) return;
 

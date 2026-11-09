@@ -1,32 +1,20 @@
-class ExamModel {
-  final String id;
-  final String title;
-  final String? description;
-  final int durationMinutes;
-  final int maxViolations;
-  final String? accessPin;
-  final String status;
-  final DateTime? startTime;
-  final DateTime? endTime;
-  final double minPassPercentage;
-  final String subjectCode;
-  final String subjectName;
-  final bool? allowReview;
+import '../../domain/entities/exam_entity.dart';
 
+class ExamModel extends ExamEntity {
   ExamModel({
-    required this.id,
-    required this.title,
-    this.description,
-    required this.durationMinutes,
-    required this.maxViolations,
-    this.accessPin,
-    required this.status,
-    this.startTime,
-    this.endTime,
-    required this.minPassPercentage,
-    this.subjectCode = '',
-    this.subjectName = '',
-    this.allowReview,
+    required super.id,
+    required super.title,
+    super.description,
+    required super.durationMinutes,
+    required super.maxViolations,
+    super.accessPin,
+    required super.status,
+    super.startTime,
+    super.endTime,
+    required super.minPassPercentage,
+    super.subjectCode = '',
+    super.subjectName = '',
+    super.allowReview,
   });
 
   factory ExamModel.fromJson(Map<String, dynamic> json) {
@@ -58,6 +46,22 @@ class ExamModel {
       allowReview: json['allow_review'] as bool?,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'exam_title': title,
+      'description': description,
+      'duration_minutes': durationMinutes,
+      'max_violations': maxViolations,
+      'access_pin': accessPin,
+      'status': status,
+      'start_time': startTime?.toIso8601String(),
+      'end_time': endTime?.toIso8601String(),
+      'min_pass_percentage': minPassPercentage,
+      'subject_code': subjectCode,
+      'subject_name': subjectName,
+      'allow_review': allowReview,
+    };
+  }
 }
-
-
