@@ -327,8 +327,11 @@ class _CreateUserModalState extends State<CreateUserModal> {
                   },
                 ),
                 validator: (v) {
-                  if (v == null || v.isEmpty) return 'Vui lòng nhập mật khẩu';
-                  if (v.trim().length < 6) return 'Tối thiểu 6 ký tự';
+                  if (v == null || v.trim().isEmpty) return 'Vui lòng nhập mật khẩu';
+                  if (v.contains(' ')) return 'Mật khẩu không được chứa khoảng trắng';
+                  if (v.length < 6) return 'Mật khẩu phải có ít nhất 6 ký tự';
+                  if (!RegExp(r'[a-zA-Z]').hasMatch(v)) return 'Mật khẩu phải chứa ít nhất 1 chữ cái';
+                  if (!RegExp(r'[0-9]').hasMatch(v)) return 'Mật khẩu phải chứa ít nhất 1 chữ số';
                   return null;
                 },
               ),
