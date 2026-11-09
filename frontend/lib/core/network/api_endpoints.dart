@@ -49,8 +49,12 @@ class ApiEndpoints {
   static String examQuestions(String id) => '$baseUrl/exams/$id/questions';
   static String examStudents(String id) => '$baseUrl/exams/$id/students';
   static String examPublish(String id) => '$baseUrl/exams/$id/publish';
+  static String examClose(String id) => '$baseUrl/exams/$id/close';
+  static String examLivePin(String id) => '$baseUrl/exams/$id/live-pin';
+  static String examRefreshPin(String id) => '$baseUrl/exams/$id/refresh-pin';
   static String examClassesBySubject(String subjectId) => '$baseUrl/exams/classes/by-subject/$subjectId';
   static String examClassStudents(String classId) => '$baseUrl/exams/classes/$classId/students';
+  static String examSearchStudents({String? q}) => '$baseUrl/exams/students/search${q != null && q.isNotEmpty ? '?q=$q' : ''}';
 
   // Exam Execution
   static String get examMySubmissions => '$baseUrl/exam-execution/my-submissions';
@@ -60,5 +64,6 @@ class ApiEndpoints {
   static String examSubmit(String attemptId) => '$baseUrl/exam-execution/$attemptId/submit';
   static String examResult(String attemptId) => '$baseUrl/exam-execution/$attemptId/result';
   static String examForceSuspend(String attemptId) => '$baseUrl/exam-execution/$attemptId/force-suspend';
+  static String examUnlockAttempt(String attemptId) => '$baseUrl/exam-execution/$attemptId/unlock';
   static String examViolations(String examId) => '$baseUrl/exam-execution/violations/$examId';
 }

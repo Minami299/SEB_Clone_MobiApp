@@ -10,6 +10,7 @@ router.post('/violation', authenticate, authorize('STUDENT'), controller.reportV
 router.post('/:attempt_id/submit', authenticate, authorize('STUDENT'), controller.submitExam);
 router.get('/:attemptId/result', authenticate, controller.getAttemptResult);
 router.post('/:attemptId/force-suspend', authenticate, authorize('LECTURER', 'HEAD_OF_SUBJECT', 'ADMIN'), controller.forceSuspendAttempt);
+router.post('/:attemptId/unlock', authenticate, authorize('LECTURER', 'HEAD_OF_SUBJECT', 'ADMIN'), controller.unlockAttempt);
 router.get('/violations/:exam_id', authenticate, authorize('LECTURER', 'HEAD_OF_SUBJECT', 'ADMIN'), controller.getExamViolationLogs);
 
 module.exports = router;
