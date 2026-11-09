@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/services/session_service.dart';
+import '../../../../core/utils/smooth_page_route.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 import '../../../auth/presentation/pages/profile_page.dart';
 import '../../data/repositories/exam_repository_impl.dart';
@@ -339,12 +340,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
 
                 const SizedBox(height: 18),
 
-                // 2. CTA Quét mã QR / Check-in
-                _buildQuickActionCard(),
-
-                const SizedBox(height: 22),
-
-                // 3. Danh sách ca thi đang diễn ra & sắp tới
+                // 2. Danh sách ca thi đang diễn ra & sắp tới
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -400,7 +396,10 @@ class _StudentHomePageState extends State<StudentHomePage> {
                       ),
                     ),
                     InkWell(
-                      onTap: () => setState(() => _currentTabIndex = 1),
+                      onTap: () => Navigator.pushReplacement(
+                        context,
+                        smoothPageRoute(const ExamListPage()),
+                      ),
                       child: const Text(
                         'Xem tất cả',
                         style: TextStyle(
@@ -444,13 +443,12 @@ class _StudentHomePageState extends State<StudentHomePage> {
           } else if (idx == 1) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (_) => const ExamListPage()),
+              smoothPageRoute(const ExamListPage()),
             );
           } else if (idx == 2) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ProfilePage()),
-            ).then((_) {
+            Navigator.push(context, smoothPageRoute(const ProfilePage())).then((
+              _,
+            ) {
               if (mounted) setState(() => _currentTabIndex = 0);
             });
           }
@@ -645,83 +643,6 @@ class _StudentHomePageState extends State<StudentHomePage> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildQuickActionCard() {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _handleQuickCheckIn,
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0F172A), Color(0xFF1E3A5F)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF0F172A).withValues(alpha: 0.2),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.all(18),
-          child: Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white24),
-                ),
-                child: const Icon(
-                  Icons.qr_code_scanner,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 14),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Check-in Phòng Thi',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 3),
-                    Text(
-                      'Quét mã QR hoặc nhập PIN 6 số do giám thị cấp để bắt đầu kiểm tra an toàn.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFFCBD5E1),
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.white70,
-                size: 16,
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 

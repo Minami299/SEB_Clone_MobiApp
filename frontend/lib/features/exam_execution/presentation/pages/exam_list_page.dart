@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/services/session_service.dart';
+import '../../../../core/utils/smooth_page_route.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 import '../../../auth/presentation/pages/profile_page.dart';
 import '../../data/repositories/exam_repository_impl.dart';
@@ -670,79 +671,7 @@ class _ExamListPageState extends State<ExamListPage> {
 
               const SizedBox(height: 14),
 
-              // 2. Banner CTA Check-in nhanh dành cho Sinh viên
-              if (isStudent) ...[
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _handleQuickCheckIn,
-                    borderRadius: BorderRadius.circular(12),
-                    child: Ink(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF0F172A), Color(0xFF1E3A5F)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF0F172A)
-                                .withValues(alpha: 0.18),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(
-                            Icons.qr_code_scanner,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                          SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Quét mã QR / Nhập PIN phòng thi',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                SizedBox(height: 2),
-                                Text(
-                                  'Check-in nhanh chóng vào phòng thi của giám thị',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Color(0xFFCBD5E1),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(
-                            Icons.arrow_forward_ios,
-                            color: Colors.white70,
-                            size: 14,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 18),
-              ],
-
-              // 3. Search & Filter Bar
+              // 2. Search & Filter Bar
               Row(
                 children: [
                   Expanded(
@@ -962,14 +891,14 @@ class _ExamListPageState extends State<ExamListPage> {
                 if (idx == 0) {
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (_) => const StudentHomePage()),
+                    smoothPageRoute(const StudentHomePage()),
                   );
                 } else if (idx == 1) {
                   setState(() => _bottomNavIndex = 1);
                 } else if (idx == 2) {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const ProfilePage()),
+                    smoothPageRoute(const ProfilePage()),
                   ).then((_) {
                     if (mounted) setState(() => _bottomNavIndex = 1);
                   });
