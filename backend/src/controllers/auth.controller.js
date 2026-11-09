@@ -19,7 +19,8 @@ const sendOtpEmail = async (email, otp, purpose = 'xác thực tài khoản') =>
   const host = process.env.SMTP_HOST || 'smtp.gmail.com';
   const port = process.env.SMTP_PORT || 587;
   const user = process.env.SMTP_USER || process.env.EMAIL_USER;
-  const pass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+  const rawPass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+  const pass = rawPass ? rawPass.replace(/[<>]/g, '').trim() : '';
   const fromEmail = process.env.SMTP_FROM || process.env.EMAIL_FROM || (user && user.includes('@') ? user : 'no-reply@seb-security.com');
 
   console.log(`[AUTH-OTP] Mã OTP cho ${email} (${purpose}) là: ${otp}`);
@@ -33,7 +34,7 @@ const sendOtpEmail = async (email, otp, purpose = 'xác thực tài khoản') =>
         auth: { user, pass }
       });
 
-      await transporter.sendMail({
+      const info = await transporter.sendMail({
         from: `"SEB Exam Security" <${fromEmail}>`,
         to: email,
         subject: `[SEB Clone] Mã OTP ${purpose.toUpperCase()}`,
@@ -56,6 +57,7 @@ const sendOtpEmail = async (email, otp, purpose = 'xác thực tài khoản') =>
           </div>
         `
       });
+      console.log(`[AUTH-OTP-SUCCESS] Email OTP đã gửi thành công tới ${email}:`, info.response);
       return { sent: true };
     } catch (err) {
       console.error('[AUTH-OTP-ERROR] Gửi email qua SMTP thất bại:', err.message);
@@ -228,10 +230,23 @@ const updateProfile = async (req, res) => {
         });
       }
 
-      if (targetNewPassword.trim().length < 6) {
+      const cleanNewPassword = targetNewPassword.trim();
+      if (cleanNewPassword.length < 6) {
         return res.status(400).json({
           success: false,
           message: 'Mật khẩu mới phải có ít nhất 6 ký tự'
+        });
+      }
+      if (/\s/.test(targetNewPassword)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mật khẩu không được chứa khoảng trắng'
+        });
+      }
+      if (!/[a-zA-Z]/.test(cleanNewPassword) || !/[0-9]/.test(cleanNewPassword)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mật khẩu mới phải bao gồm cả chữ cái và chữ số'
         });
       }
 
@@ -618,10 +633,23 @@ const verifyForgotOtpAndReset = async (req, res) => {
       });
     }
 
-    if (new_password.trim().length < 6) {
+    const cleanNewPassword = new_password.trim();
+    if (cleanNewPassword.length < 6) {
       return res.status(400).json({
         success: false,
         message: 'Mật khẩu mới phải có ít nhất 6 ký tự'
+      });
+    }
+    if (/\s/.test(new_password)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mật khẩu không được chứa khoảng trắng'
+      });
+    }
+    if (!/[a-zA-Z]/.test(cleanNewPassword) || !/[0-9]/.test(cleanNewPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mật khẩu mới phải bao gồm cả chữ cái và chữ số'
       });
     }
 

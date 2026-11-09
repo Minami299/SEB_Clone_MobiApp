@@ -488,8 +488,17 @@ class _ProfilePageState extends State<ProfilePage> {
                                   if (val == null || val.trim().isEmpty) {
                                     return 'Vui lòng nhập mật khẩu mới';
                                   }
-                                  if (val.trim().length < 6) {
+                                  if (val.contains(' ')) {
+                                    return 'Mật khẩu không được chứa khoảng trắng';
+                                  }
+                                  if (val.length < 6) {
                                     return 'Mật khẩu mới phải có ít nhất 6 ký tự';
+                                  }
+                                  if (!RegExp(r'[a-zA-Z]').hasMatch(val)) {
+                                    return 'Mật khẩu phải chứa ít nhất 1 chữ cái';
+                                  }
+                                  if (!RegExp(r'[0-9]').hasMatch(val)) {
+                                    return 'Mật khẩu phải chứa ít nhất 1 chữ số';
                                   }
                                 }
                                 return null;
