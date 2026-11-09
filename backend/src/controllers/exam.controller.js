@@ -7,13 +7,34 @@ const {
   Class,
   ClassEnrollment,
   Subject,
-  User
+  User,
+  SubjectAccess
 } = require('../models');
 
 const hasSubjectScope = async (user, subjectId) => {
   if (user.role === 'ADMIN') return true;
   if (!user.department_id) return false;
-  return !!(await Subject.exists({ _id: subjectId, department_id: user.department_id }));
+
+  if (user.role === 'HEAD_OF_SUBJECT') {
+    return !!(await Subject.exists({ _id: subjectId, department_id: user.department_id }));
+  }
+
+  if (user.role === 'LECTURER') {
+    const hasApproved = await SubjectAccess.exists({
+      subject_id: subjectId,
+      lecturer_id: user._id,
+      status: 'APPROVED'
+    });
+    if (hasApproved) return true;
+
+    const teachesClass = await Class.exists({
+      subject_id: subjectId,
+      lecturer_id: user._id
+    });
+    return !!teachesClass;
+  }
+
+  return false;
 };
 
 const canAccessExam = async (user, examId) => {

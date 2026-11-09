@@ -34,9 +34,18 @@ class ApiEndpoints {
   static String subjectStatus(String id) => '$baseUrl/subject-access/subjects/$id/status';
   static String get subjectAccessPending => '$baseUrl/subject-access/pending';
   static String subjectAccessReview(String id) => '$baseUrl/subject-access/$id/review';
+  static String get subjectAccessRequest => '$baseUrl/subject-access/request';
+  static String get subjectAccessMyRequests => '$baseUrl/subject-access/my-requests';
+
+  // Notifications
+  static String get notifications => '$baseUrl/notifications';
+  static String get notificationsUnreadCount => '$baseUrl/notifications/unread-count';
+  static String get notificationsMarkAllRead => '$baseUrl/notifications/mark-all-read';
+  static String notificationMarkRead(String id) => '$baseUrl/notifications/$id/read';
 
   // Question Bank
   static String get questions => '$baseUrl/questions';
+  static String get questionsBatch => '$baseUrl/questions/batch';
   static String questionsBySubject(String subjectId) => '$baseUrl/questions/subject/$subjectId';
   static String questionDetail(String id) => '$baseUrl/questions/$id';
   static String chaptersBySubject(String subjectId) => '$baseUrl/questions/chapters/subject/$subjectId';

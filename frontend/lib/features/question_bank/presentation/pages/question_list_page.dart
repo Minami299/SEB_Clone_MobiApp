@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
+import 'batch_import_questions_page.dart';
 import 'create_question_page.dart';
 import 'question_detail_page.dart';
 import '../widgets/question_item_card.dart';
@@ -34,7 +35,7 @@ class _QuestionListPageState extends State<QuestionListPage> {
   String _selectedDifficulty = 'ALL';
   String _selectedChapter = 'ALL';
   int _selectedScopeTab = 0; // 0: PUBLIC, 1: PRIVATE
-  bool _showMatrixSummary = true;
+  bool _showMatrixSummary = false;
   final _searchController = TextEditingController();
 
   @override
@@ -131,6 +132,20 @@ class _QuestionListPageState extends State<QuestionListPage> {
       );
     }
   }
+
+  int get _publicQuestionsCount =>
+      _questions.where((q) => (q['scope'] == 'PUBLIC' || q['is_public'] == true)).length;
+
+  int get _privateQuestionsCount =>
+      _questions.where((q) => !(q['scope'] == 'PUBLIC' || q['is_public'] == true)).length;
+
+  int get _currentTabTotalQuestions =>
+      _selectedScopeTab == 0 ? _publicQuestionsCount : _privateQuestionsCount;
+
+  bool get _isFilterActive =>
+      _searchController.text.trim().isNotEmpty ||
+      _selectedDifficulty != 'ALL' ||
+      _selectedChapter != 'ALL';
 
   List<dynamic> get _filteredQuestions {
     final query = _searchController.text.trim().toLowerCase();
@@ -230,22 +245,111 @@ class _QuestionListPageState extends State<QuestionListPage> {
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1E293B),
         elevation: 0.5,
+        actions: [
+          IconButton(
+            tooltip: 'Nhập hàng loạt',
+            icon: const Icon(Icons.playlist_add),
+            onPressed: () async {
+              final imported = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BatchImportQuestionsPage(
+                    subjectId: widget.subjectId,
+                    subjectCode: widget.subjectCode,
+                    subjectName: widget.subjectName,
+                  ),
+                ),
+              );
+              if (imported == true) {
+                _loadData();
+              }
+            },
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final created = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(
-              builder: (_) => CreateQuestionPage(
-                subjectId: widget.subjectId,
-                subjectCode: widget.subjectCode,
-                subjectName: widget.subjectName,
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            builder: (ctx) => SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    ListTile(
+                      leading: const CircleAvatar(
+                        backgroundColor: Color(0xFFEFF6FF),
+                        child: Icon(Icons.edit_note, color: Color(0xFF2563EB)),
+                      ),
+                      title: const Text(
+                        'Soạn câu hỏi thủ công',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: const Text('Tạo từng câu với đầy đủ tùy chọn'),
+                      onTap: () async {
+                        Navigator.pop(ctx);
+                        final created = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CreateQuestionPage(
+                              subjectId: widget.subjectId,
+                              subjectCode: widget.subjectCode,
+                              subjectName: widget.subjectName,
+                            ),
+                          ),
+                        );
+                        if (created == true) {
+                          _loadData();
+                        }
+                      },
+                    ),
+                    ListTile(
+                      leading: const CircleAvatar(
+                        backgroundColor: Color(0xFFECFDF5),
+                        child: Icon(Icons.playlist_add, color: Color(0xFF10B981)),
+                      ),
+                      title: const Text(
+                        'Nhập nhanh từ văn bản',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: const Text(
+                        'Dán danh sách nhiều câu hỏi (Aiken / Trắc nghiệm)',
+                      ),
+                      onTap: () async {
+                        Navigator.pop(ctx);
+                        final imported = await Navigator.push<bool>(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => BatchImportQuestionsPage(
+                              subjectId: widget.subjectId,
+                              subjectCode: widget.subjectCode,
+                              subjectName: widget.subjectName,
+                            ),
+                          ),
+                        );
+                        if (imported == true) {
+                          _loadData();
+                        }
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           );
-          if (created == true) {
-            _loadData();
-          }
         },
         backgroundColor: const Color(0xFF1E3A5F),
         foregroundColor: Colors.white,
@@ -286,7 +390,7 @@ class _QuestionListPageState extends State<QuestionListPage> {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            'Ngân hàng chung (Public)',
+                            'Kho chung bộ môn ($_publicQuestionsCount)',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: _selectedScopeTab == 0
@@ -321,7 +425,7 @@ class _QuestionListPageState extends State<QuestionListPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.lock_outline,
+                            Icons.person_outline,
                             size: 16,
                             color: _selectedScopeTab == 1
                                 ? const Color(0xFF1E3A5F)
@@ -329,7 +433,7 @@ class _QuestionListPageState extends State<QuestionListPage> {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            'Kho cá nhân (Private)',
+                            'Kho riêng của tôi ($_privateQuestionsCount)',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: _selectedScopeTab == 1
@@ -369,7 +473,9 @@ class _QuestionListPageState extends State<QuestionListPage> {
                       ),
                     ),
                     Text(
-                      '${filtered.length} / ${_questions.length} câu',
+                      _isFilterActive
+                          ? '${filtered.length} / $_currentTabTotalQuestions câu'
+                          : '$_currentTabTotalQuestions câu',
                       style: const TextStyle(
                         fontSize: 13,
                         color: Color(0xFF64748B),
@@ -497,24 +603,71 @@ class _QuestionListPageState extends State<QuestionListPage> {
                 ? const Center(child: CircularProgressIndicator())
                 : _errorMessage != null
                 ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _errorMessage!,
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                        const SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: _loadData,
-                          child: const Text('Thử lại'),
-                        ),
-                      ],
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.shield_outlined, size: 48, color: Color(0xFFEF4444)),
+                          const SizedBox(height: 12),
+                          Text(
+                            _errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Color(0xFF1E293B),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF0F172A),
+                              foregroundColor: Colors.white,
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Quay lại danh sách môn học'),
+                          ),
+                        ],
+                      ),
                     ),
                   )
                 : filtered.isEmpty
-                ? const Center(
-                    child: Text('Không tìm thấy câu hỏi nào phù hợp'),
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _selectedScopeTab == 1 && _privateQuestionsCount == 0
+                                ? Icons.lock_person_outlined
+                                : Icons.search_off_outlined,
+                            size: 48,
+                            color: const Color(0xFF94A3B8),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            _selectedScopeTab == 1 && _privateQuestionsCount == 0
+                                ? 'Kho riêng của bạn chưa có câu hỏi nào'
+                                : 'Không tìm thấy câu hỏi nào phù hợp',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF475569),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            _selectedScopeTab == 1 && _privateQuestionsCount == 0
+                                ? 'Bạn có thể tự do tạo các câu hỏi trắc nghiệm riêng tại đây bằng nút "+ Thêm câu hỏi".'
+                                : 'Hãy thử thay đổi từ khóa tìm kiếm hoặc bỏ bớt các bộ lọc.',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                          ),
+                        ],
+                      ),
+                    ),
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),

@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/services/session_service.dart';
 import '../widgets/chapter_matrix_rule_card.dart';
 
 class CreateEditExamPage extends StatefulWidget {
@@ -49,6 +50,7 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
 
   List<dynamic> _availableQuestions = [];
   final Set<String> _selectedQuestionIds = {};
+  int _questionSourceFilter = 0; // 0: Tất cả, 1: Kho chung bộ môn, 2: Kho riêng cá nhân
 
   bool _isLoading = true;
   bool _isLoadingQuestions = false;
@@ -91,7 +93,12 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
     });
 
     try {
-      final subRes = await _apiClient.get(ApiEndpoints.subjectAccessSubjects);
+      final isLecturer = SessionService().currentUser?.role == 'LECTURER';
+      final endpoint = isLecturer
+          ? '${ApiEndpoints.subjectAccessSubjects}?only_authorized=true'
+          : ApiEndpoints.subjectAccessSubjects;
+
+      final subRes = await _apiClient.get(endpoint);
       if (subRes['success'] == true && subRes['data'] is List) {
         _subjects = subRes['data'] as List;
         if (!isEditing && _subjects.isNotEmpty) {
@@ -751,223 +758,7 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
     });
   }
 
-  Future<void> _showQuickAddQuestionDialog() async {
-    if (_selectedSubjectId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn môn học trước khi thêm câu hỏi')),
-      );
-      return;
-    }
 
-    final contentCtrl = TextEditingController();
-    final optACtrl = TextEditingController();
-    final optBCtrl = TextEditingController();
-    final optCCtrl = TextEditingController();
-    final optDCtrl = TextEditingController();
-    int correctOpt = 0;
-    String difficulty = 'MEDIUM';
-    String? selectedChapterId = _subjectChapters.isNotEmpty ? _subjectChapters.first['_id'] : null;
-
-    final added = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          title: const Row(
-            children: [
-              Icon(Icons.add_circle, color: Color(0xFF1E3A5F)),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text('Thêm câu hỏi nhanh (Kho riêng)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: SizedBox(
-              width: double.maxFinite,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Nội dung câu hỏi *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                  const SizedBox(height: 4),
-                  TextField(
-                    controller: contentCtrl,
-                    maxLines: 2,
-                    decoration: const InputDecoration(
-                      hintText: 'Nhập đề bài câu hỏi...',
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.all(10),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Độ khó', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                            const SizedBox(height: 4),
-                            DropdownButtonFormField<String>(
-                              value: difficulty,
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                              ),
-                              items: const [
-                                DropdownMenuItem(value: 'EASY', child: Text('Dễ')),
-                                DropdownMenuItem(value: 'MEDIUM', child: Text('Trung bình')),
-                                DropdownMenuItem(value: 'HARD', child: Text('Khó')),
-                              ],
-                              onChanged: (val) {
-                                if (val != null) setDialogState(() => difficulty = val);
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      if (_subjectChapters.isNotEmpty)
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Chương', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                              const SizedBox(height: 4),
-                              DropdownButtonFormField<String>(
-                                value: selectedChapterId,
-                                isExpanded: true,
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                ),
-                                items: _subjectChapters.map((ch) {
-                                  return DropdownMenuItem<String>(
-                                    value: ch['_id']?.toString(),
-                                    child: Text(
-                                      'Chương ${ch['chapter_number'] ?? ''}',
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: (val) {
-                                  if (val != null) setDialogState(() => selectedChapterId = val);
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  const Text('Các phương án (Tích chọn đáp án đúng):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                  const SizedBox(height: 6),
-                  _buildOptionInput(optACtrl, 'A', 0, correctOpt, (idx) => setDialogState(() => correctOpt = idx)),
-                  const SizedBox(height: 6),
-                  _buildOptionInput(optBCtrl, 'B', 1, correctOpt, (idx) => setDialogState(() => correctOpt = idx)),
-                  const SizedBox(height: 6),
-                  _buildOptionInput(optCCtrl, 'C', 2, correctOpt, (idx) => setDialogState(() => correctOpt = idx)),
-                  const SizedBox(height: 6),
-                  _buildOptionInput(optDCtrl, 'D', 3, correctOpt, (idx) => setDialogState(() => correctOpt = idx)),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Hủy'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A5F), foregroundColor: Colors.white),
-              onPressed: () async {
-                final content = contentCtrl.text.trim();
-                if (content.isEmpty || optACtrl.text.trim().isEmpty || optBCtrl.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Vui lòng nhập nội dung câu hỏi và ít nhất 2 đáp án A, B')),
-                  );
-                  return;
-                }
-                final opts = [
-                  {'content': optACtrl.text.trim(), 'is_correct': correctOpt == 0},
-                  {'content': optBCtrl.text.trim(), 'is_correct': correctOpt == 1},
-                  if (optCCtrl.text.trim().isNotEmpty) {'content': optCCtrl.text.trim(), 'is_correct': correctOpt == 2},
-                  if (optDCtrl.text.trim().isNotEmpty) {'content': optDCtrl.text.trim(), 'is_correct': correctOpt == 3},
-                ];
-
-                try {
-                  final res = await _apiClient.post(
-                    ApiEndpoints.questions,
-                    body: {
-                      'subject_id': _selectedSubjectId,
-                      'chapter_id': selectedChapterId ?? (_subjectChapters.isNotEmpty ? _subjectChapters.first['_id'] : null),
-                      'content': content,
-                      'question_type': 'SINGLE_CHOICE',
-                      'difficulty': difficulty,
-                      'difficulty_level': difficulty,
-                      'scope': 'PRIVATE',
-                      'options': opts,
-                    },
-                  );
-                  if (res['success'] == true) {
-                    Navigator.pop(ctx, true);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(res['message'] ?? 'Thêm câu hỏi thất bại')),
-                    );
-                  }
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Lỗi thêm câu hỏi: $e')),
-                  );
-                }
-              },
-              child: const Text('Lưu vào Kho riêng'),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (added == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đã thêm câu hỏi vào Kho riêng của bạn!'), backgroundColor: Colors.green),
-      );
-      _fetchQuestionsAndChapters(_selectedSubjectId!);
-    }
-  }
-
-  Widget _buildOptionInput(TextEditingController ctrl, String label, int idx, int currentCorrect, Function(int) onSelect) {
-    final isSelected = idx == currentCorrect;
-    return Row(
-      children: [
-        InkWell(
-          onTap: () => onSelect(idx),
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isSelected ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
-            ),
-            child: Text(label, style: TextStyle(color: isSelected ? Colors.white : const Color(0xFF475569), fontWeight: FontWeight.bold, fontSize: 11)),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: TextField(
-            controller: ctrl,
-            decoration: InputDecoration(
-              hintText: 'Nội dung đáp án $label',
-              border: const OutlineInputBorder(),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              isDense: true,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   Future<void> _handleSave({bool publishImmediately = true}) async {
     if (!_formKey.currentState!.validate()) return;
@@ -1216,34 +1007,56 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                           const SizedBox(height: 14),
 
                           // Môn học (isExpanded: true)
-                          DropdownButtonFormField<String>(
-                            value: _selectedSubjectId,
-                            isExpanded: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Môn học *',
-                              border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          if (_subjects.isEmpty)
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFEF2F2),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFFFECACA)),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 20),
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Bạn chưa được cấp quyền giảng dạy môn học nào để tạo ca thi. Vui lòng vào mục Môn học để đăng ký và chờ phê duyệt.',
+                                      style: TextStyle(color: Color(0xFF991B1B), fontSize: 12.5),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
+                            DropdownButtonFormField<String>(
+                              value: _selectedSubjectId,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Môn học *',
+                                border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              ),
+                              items: _subjects.map((s) {
+                                return DropdownMenuItem<String>(
+                                  value: s['_id'],
+                                  child: Text('${s['subject_code']} - ${s['subject_name']}', overflow: TextOverflow.ellipsis),
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() {
+                                    _selectedSubjectId = val;
+                                    _selectedQuestionIds.clear();
+                                    _selectedClassId = null;
+                                    _classStudents.clear();
+                                    _selectedStudentIds.clear();
+                                  });
+                                  _fetchQuestionsAndChapters(val);
+                                  _fetchClassesBySubject(val);
+                                }
+                              },
                             ),
-                            items: _subjects.map((s) {
-                              return DropdownMenuItem<String>(
-                                value: s['_id'],
-                                child: Text('${s['subject_code']} - ${s['subject_name']}', overflow: TextOverflow.ellipsis),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              if (val != null) {
-                                setState(() {
-                                  _selectedSubjectId = val;
-                                  _selectedQuestionIds.clear();
-                                  _selectedClassId = null;
-                                  _classStudents.clear();
-                                  _selectedStudentIds.clear();
-                                });
-                                _fetchQuestionsAndChapters(val);
-                                _fetchClassesBySubject(val);
-                              }
-                            },
-                          ),
                           const SizedBox(height: 12),
 
                           // Lớp học (isExpanded: true)
@@ -1787,13 +1600,48 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                           ),
                           if (_isDynamicMatrix) ...[
                             const SizedBox(height: 10),
-                            SwitchListTile(
-                              contentPadding: EdgeInsets.zero,
-                              dense: true,
-                              title: const Text('Bao gồm câu hỏi kho riêng (Private) của tôi', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                              value: _includePrivateInMatrix,
-                              activeColor: const Color(0xFF1E3A5F),
-                              onChanged: (val) => setState(() => _includePrivateInMatrix = val),
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFFCBD5E1)),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Row(
+                                    children: [
+                                      Icon(Icons.source_outlined, size: 16, color: Color(0xFF1E3A5F)),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'Nguồn câu hỏi bốc ma trận đề:',
+                                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                      ),
+                                    ],
+                                  ),
+                                  SwitchListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    dense: true,
+                                    title: const Text(
+                                      'Bao gồm câu hỏi từ Kho riêng của tôi',
+                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                    ),
+                                    subtitle: Text(
+                                      _includePrivateInMatrix
+                                          ? 'Đề thi sẽ bốc ngẫu nhiên kết hợp từ cả Kho chung của Bộ môn và Kho riêng do bạn tự soạn.'
+                                          : 'Đề thi chỉ bốc ngẫu nhiên từ Kho chung chuẩn do Trưởng bộ môn phê duyệt.',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: _includePrivateInMatrix ? const Color(0xFF7E22CE) : const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                    value: _includePrivateInMatrix,
+                                    activeColor: const Color(0xFF7E22CE),
+                                    onChanged: (val) => setState(() => _includePrivateInMatrix = val),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ],
@@ -1805,147 +1653,263 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                     // Giao diện theo Phương thức ra đề
                     if (!_isDynamicMatrix) ...[
                       // CÁCH 1: TỰ CHỌN CÂU HỎI THỦ CÔNG
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Chọn câu hỏi (${_selectedQuestionIds.length}/${_availableQuestions.length}):',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              setState(() {
-                                if (_selectedQuestionIds.length == _availableQuestions.length) {
-                                  _selectedQuestionIds.clear();
-                                } else {
-                                  for (var q in _availableQuestions) {
-                                    _selectedQuestionIds.add(q['_id']);
-                                  }
-                                }
-                              });
-                            },
-                            child: Text(_selectedQuestionIds.length == _availableQuestions.length ? 'Bỏ chọn' : 'Chọn tất cả', style: const TextStyle(fontSize: 12)),
-                          ),
-                          const SizedBox(width: 4),
-                          OutlinedButton.icon(
-                            onPressed: _selectedSubjectId == null ? null : _showQuickAddQuestionDialog,
-                            icon: const Icon(Icons.add_circle_outline, size: 14),
-                            label: const Text('+ Thêm câu hỏi nhanh', style: TextStyle(fontSize: 12)),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF1D4ED8),
-                              side: const BorderSide(color: Color(0xFF93C5FD)),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              visualDensity: VisualDensity.compact,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      if (_isLoadingQuestions)
-                        const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()))
-                      else if (_availableQuestions.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.all(12.0),
-                          child: Text('Môn học này chưa có câu hỏi nào trong Ngân hàng đề.', style: TextStyle(color: Colors.red)),
-                        )
-                      else
-                        Container(
-                          constraints: const BoxConstraints(maxHeight: 250),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
-                          ),
-                          child: ListView.separated(
-                            shrinkWrap: true,
-                            itemCount: _availableQuestions.length,
-                            separatorBuilder: (context, _) => const Divider(height: 1),
-                            itemBuilder: (context, index) {
-                              final q = _availableQuestions[index];
-                              final id = q['_id'];
-                              final isChecked = _selectedQuestionIds.contains(id);
-                              final isPublicQ = (q['scope'] == 'PUBLIC' || q['is_public'] == true);
+                      Builder(
+                        builder: (context) {
+                          final publicQuestions = _availableQuestions.where((q) => q['scope'] == 'PUBLIC' || q['is_public'] == true).toList();
+                          final privateQuestions = _availableQuestions.where((q) => q['scope'] == 'PRIVATE' || q['is_public'] == false).toList();
+                          final displayedQuestions = _questionSourceFilter == 1
+                              ? publicQuestions
+                              : _questionSourceFilter == 2
+                                  ? privateQuestions
+                                  : _availableQuestions;
 
-                              final diff = (q['difficulty_level'] ?? q['difficulty'] ?? 'MEDIUM').toString().toUpperCase();
-                              Color diffColor;
-                              String diffText;
-                              if (diff == 'EASY') {
-                                diffColor = const Color(0xFF10B981);
-                                diffText = 'Dễ';
-                              } else if (diff == 'HARD') {
-                                diffColor = const Color(0xFFEF4444);
-                                diffText = 'Khó';
-                              } else {
-                                diffColor = const Color(0xFFF59E0B);
-                                diffText = 'Trung bình';
-                              }
+                          final selectedPublicCount = _selectedQuestionIds.where((id) {
+                            final q = _availableQuestions.firstWhere((x) => x['_id'] == id, orElse: () => null);
+                            return q != null && (q['scope'] == 'PUBLIC' || q['is_public'] == true);
+                          }).length;
+                          final selectedPrivateCount = _selectedQuestionIds.length - selectedPublicCount;
 
-                              return CheckboxListTile(
-                                controlAffinity: ListTileControlAffinity.leading,
-                                dense: true,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-                                value: isChecked,
-                                activeColor: const Color(0xFF1E3A5F),
-                                title: Text(
-                                  q['content'] ?? '',
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      'Chọn câu hỏi (${_selectedQuestionIds.length}/${_availableQuestions.length}):',
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        final allDisplayedIds = displayedQuestions.map((q) => q['_id'].toString()).toSet();
+                                        final allSelected = allDisplayedIds.every((id) => _selectedQuestionIds.contains(id));
+                                        if (allSelected) {
+                                          _selectedQuestionIds.removeAll(allDisplayedIds);
+                                        } else {
+                                          _selectedQuestionIds.addAll(allDisplayedIds);
+                                        }
+                                      });
+                                    },
+                                    child: const Text('Chọn / Bỏ chọn nhóm này', style: TextStyle(fontSize: 12)),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+
+                              // Thanh Tabs lọc nguồn câu hỏi rõ ràng (Kho chung vs Kho riêng)
+                              Container(
+                                padding: const EdgeInsets.all(3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                                subtitle: Padding(
-                                  padding: const EdgeInsets.only(top: 4.0),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: isPublicQ ? const Color(0xFFEFF6FF) : const Color(0xFFF1F5F9),
-                                          borderRadius: BorderRadius.circular(4),
-                                          border: Border.all(color: isPublicQ ? const Color(0xFFBFDBFE) : const Color(0xFFE2E8F0)),
-                                        ),
-                                        child: Text(
-                                          isPublicQ ? 'Kho Chung (Public)' : 'Kho Riêng (Private)',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: isPublicQ ? const Color(0xFF1D4ED8) : const Color(0xFF475569),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () => setState(() => _questionSourceFilter = 0),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: _questionSourceFilter == 0 ? Colors.white : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(6),
+                                            boxShadow: _questionSourceFilter == 0
+                                                ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 3)]
+                                                : null,
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              'Tất cả (${_availableQuestions.length})',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: _questionSourceFilter == 0 ? FontWeight.bold : FontWeight.w500,
+                                                color: _questionSourceFilter == 0 ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: diffColor.withOpacity(0.12),
-                                          borderRadius: BorderRadius.circular(4),
-                                          border: Border.all(color: diffColor.withOpacity(0.3)),
-                                        ),
-                                        child: Text(
-                                          diffText,
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: diffColor,
+                                    ),
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () => setState(() => _questionSourceFilter = 1),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: _questionSourceFilter == 1 ? Colors.white : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(6),
+                                            boxShadow: _questionSourceFilter == 1
+                                                ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 3)]
+                                                : null,
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              '🏛️ Kho chung (${publicQuestions.length})',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: _questionSourceFilter == 1 ? FontWeight.bold : FontWeight.w500,
+                                                color: _questionSourceFilter == 1 ? const Color(0xFF1D4ED8) : const Color(0xFF64748B),
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ],
+                                    ),
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () => setState(() => _questionSourceFilter = 2),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(vertical: 6),
+                                          decoration: BoxDecoration(
+                                            color: _questionSourceFilter == 2 ? Colors.white : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(6),
+                                            boxShadow: _questionSourceFilter == 2
+                                                ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 3)]
+                                                : null,
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              '👤 Kho riêng (${privateQuestions.length})',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: _questionSourceFilter == 2 ? FontWeight.bold : FontWeight.w500,
+                                                color: _questionSourceFilter == 2 ? const Color(0xFF7E22CE) : const Color(0xFF64748B),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+
+                              // Tóm tắt phân loại nguồn đã chọn
+                              if (_selectedQuestionIds.isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 6),
+                                  child: Text(
+                                    'Đã chọn: ${_selectedQuestionIds.length} câu (🏛️ $selectedPublicCount Kho chung Bộ môn, 👤 $selectedPrivateCount Kho riêng của bạn)',
+                                    style: const TextStyle(fontSize: 11, color: Color(0xFF475569), fontWeight: FontWeight.w600),
                                   ),
                                 ),
-                                onChanged: (val) {
-                                  setState(() {
-                                    if (val == true) {
-                                      _selectedQuestionIds.add(id);
-                                    } else {
-                                      _selectedQuestionIds.remove(id);
-                                    }
-                                  });
-                                },
-                              );
-                            },
-                          ),
-                        ),
+
+                              if (_isLoadingQuestions)
+                                const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()))
+                              else if (displayedQuestions.isEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Text(
+                                    _questionSourceFilter == 2
+                                        ? 'Kho riêng của bạn chưa có câu hỏi nào. Hãy quản lý Kho Quiz ở màn hình chính để thêm câu hỏi.'
+                                        : 'Chưa có câu hỏi nào trong danh mục này.',
+                                    style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                                  ),
+                                )
+                              else
+                                Container(
+                                  constraints: const BoxConstraints(maxHeight: 250),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                                  ),
+                                  child: ListView.separated(
+                                    shrinkWrap: true,
+                                    itemCount: displayedQuestions.length,
+                                    separatorBuilder: (context, _) => const Divider(height: 1),
+                                    itemBuilder: (context, index) {
+                                      final q = displayedQuestions[index];
+                                      final id = q['_id'];
+                                      final isChecked = _selectedQuestionIds.contains(id);
+                                      final isPublicQ = (q['scope'] == 'PUBLIC' || q['is_public'] == true);
+
+                                      final diff = (q['difficulty_level'] ?? q['difficulty'] ?? 'MEDIUM').toString().toUpperCase();
+                                      Color diffColor;
+                                      String diffText;
+                                      if (diff == 'EASY') {
+                                        diffColor = const Color(0xFF10B981);
+                                        diffText = 'Dễ';
+                                      } else if (diff == 'HARD') {
+                                        diffColor = const Color(0xFFEF4444);
+                                        diffText = 'Khó';
+                                      } else {
+                                        diffColor = const Color(0xFFF59E0B);
+                                        diffText = 'Trung bình';
+                                      }
+
+                                      return CheckboxListTile(
+                                        controlAffinity: ListTileControlAffinity.leading,
+                                        dense: true,
+                                        contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                                        value: isChecked,
+                                        activeColor: const Color(0xFF1E3A5F),
+                                        title: Text(
+                                          q['content'] ?? '',
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                                        ),
+                                        subtitle: Padding(
+                                          padding: const EdgeInsets.only(top: 4.0),
+                                          child: Row(
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: isPublicQ ? const Color(0xFFEFF6FF) : const Color(0xFFFAF5FF),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                  border: Border.all(color: isPublicQ ? const Color(0xFFBFDBFE) : const Color(0xFFE9D5FF)),
+                                                ),
+                                                child: Text(
+                                                  isPublicQ ? '🏛️ Kho Chung (Bộ môn)' : '👤 Kho Riêng (Cá nhân)',
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: isPublicQ ? const Color(0xFF1D4ED8) : const Color(0xFF7E22CE),
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: diffColor.withOpacity(0.12),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                  border: Border.all(color: diffColor.withOpacity(0.3)),
+                                                ),
+                                                child: Text(
+                                                  diffText,
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: diffColor,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        onChanged: (val) {
+                                          setState(() {
+                                            if (val == true) {
+                                              _selectedQuestionIds.add(id);
+                                            } else {
+                                              _selectedQuestionIds.remove(id);
+                                            }
+                                          });
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
+                      ),
                     ] else ...[
                       // CÁCH 2: THIẾT LẬP MA TRẬN ĐỀ TỰ ĐỘNG
                       Row(

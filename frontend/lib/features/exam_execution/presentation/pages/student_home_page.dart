@@ -432,7 +432,9 @@ class _StudentHomePageState extends State<StudentHomePage> {
         ),
       ),
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentTabIndex,
+        selectedIndex: (_currentTabIndex >= 0 && _currentTabIndex < 3)
+            ? _currentTabIndex
+            : 0,
         height: 64,
         backgroundColor: Colors.white,
         indicatorColor: const Color(0xFFE2E8F0),

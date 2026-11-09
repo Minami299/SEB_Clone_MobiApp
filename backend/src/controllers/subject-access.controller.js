@@ -1,4 +1,4 @@
-const { SubjectAccess, Subject } = require('../models');
+const { SubjectAccess, Subject, Notification, User, Class } = require('../models');
 
 const getSubjectScope = (user) => user.role === 'ADMIN'
   ? {}
@@ -52,6 +52,45 @@ const requestAccess = async (req, res) => {
       grant_type: grant_type || 'QUESTION_CONTRIBUTION',
       status: 'PENDING'
     });
+
+    // Tạo thông báo gửi tới Trưởng bộ môn phụ trách và Admin
+    try {
+      const targetQuery = {
+        $or: [
+          { role: 'ADMIN' }
+        ]
+      };
+      if (subject.department_id) {
+        targetQuery.$or.push({
+          role: 'HEAD_OF_SUBJECT',
+          department_id: subject.department_id
+        });
+      } else {
+        targetQuery.$or.push({ role: 'HEAD_OF_SUBJECT' });
+      }
+
+      const heads = await User.find(targetQuery).select('_id');
+      const notifs = heads.map((h) => ({
+        recipient_id: h._id,
+        sender_id: lecturer_id,
+        title: 'Yêu cầu đăng ký giảng dạy mới',
+        message: `Giảng viên ${req.user.full_name || req.user.email} đã gửi yêu cầu đăng ký giảng dạy môn ${subject.subject_code} - ${subject.subject_name}.`,
+        type: 'SUBJECT_ACCESS_REQUEST',
+        reference_id: newRequest._id,
+        data: {
+          subject_id: subject._id,
+          subject_code: subject.subject_code,
+          subject_name: subject.subject_name,
+          grant_type: newRequest.grant_type
+        }
+      }));
+
+      if (notifs.length > 0) {
+        await Notification.insertMany(notifs);
+      }
+    } catch (notifErr) {
+      console.error('Lỗi tạo thông báo cho Trưởng bộ môn:', notifErr.message);
+    }
 
     res.status(201).json({
       success: true,
@@ -123,7 +162,7 @@ const reviewRequest = async (req, res) => {
       });
     }
 
-    const request = await SubjectAccess.findById(id).populate('subject_id', 'department_id');
+    const request = await SubjectAccess.findById(id);
 
     if (!request) {
       return res.status(404).json({
@@ -135,14 +174,43 @@ const reviewRequest = async (req, res) => {
     if (request.status !== 'PENDING') {
       return res.status(409).json({ success: false, message: 'Yêu cầu này đã được xử lý' });
     }
+
+    const subject = await Subject.findById(request.subject_id);
+
     if (req.user.role !== 'ADMIN' && (!req.user.department_id ||
-        request.subject_id?.department_id?.toString() !== req.user.department_id.toString())) {
+        subject?.department_id?.toString() !== req.user.department_id.toString())) {
       return res.status(403).json({ success: false, message: 'Bạn không phụ trách môn học của yêu cầu này' });
     }
 
     request.status = status;
     request.approved_by = req.user._id;
     const updated = await request.save();
+
+    // Tạo thông báo phản hồi gửi về cho Giảng viên
+    try {
+      const isApproved = status === 'APPROVED';
+      const subCode = subject?.subject_code || 'môn học';
+      const subName = subject?.subject_name || '';
+
+      await Notification.create({
+        recipient_id: request.lecturer_id,
+        sender_id: req.user._id,
+        title: isApproved ? 'Đã phê duyệt đăng ký giảng dạy' : 'Yêu cầu giảng dạy bị từ chối',
+        message: isApproved
+          ? `Trưởng bộ môn đã phê duyệt yêu cầu giảng dạy môn ${subCode} (${subName}) của bạn. Bạn đã có thể truy cập Ngân hàng câu hỏi.`
+          : `Yêu cầu đăng ký giảng dạy môn ${subCode} (${subName}) của bạn đã bị từ chối.`,
+        type: 'SUBJECT_ACCESS_REVIEW',
+        reference_id: request._id,
+        data: {
+          subject_id: request.subject_id,
+          subject_code: subCode,
+          subject_name: subName,
+          status
+        }
+      });
+    } catch (notifErr) {
+      console.error('Lỗi tạo thông báo cho Giảng viên:', notifErr.message);
+    }
 
     res.status(200).json({
       success: true,
@@ -159,12 +227,29 @@ const reviewRequest = async (req, res) => {
 
 const getAllSubjects = async (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, only_authorized, only_approved } = req.query;
     const filter = getSubjectScope(req.user);
     if (status) {
       filter.status = status;
     } else if (req.user && (req.user.role === 'LECTURER' || req.user.role === 'STUDENT')) {
       filter.status = 'ACTIVE';
+    }
+
+    // Nếu lọc theo quyền giảng dạy (dành cho màn tạo ca thi / chọn môn)
+    if (req.user && req.user.role === 'LECTURER' && (only_authorized === 'true' || only_approved === 'true')) {
+      const approvedAccess = await SubjectAccess.find({
+        lecturer_id: req.user._id,
+        status: 'APPROVED'
+      }).select('subject_id');
+      const approvedSubjectIds = approvedAccess.map((a) => a.subject_id.toString());
+
+      const taughtClasses = await Class.find({
+        lecturer_id: req.user._id
+      }).select('subject_id');
+      const taughtSubjectIds = taughtClasses.map((c) => c.subject_id.toString());
+
+      const allowedIds = [...new Set([...approvedSubjectIds, ...taughtSubjectIds])];
+      filter._id = { $in: allowedIds };
     }
 
     const subjects = await Subject.find(filter)
