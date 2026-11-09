@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/services/session_service.dart';
@@ -96,15 +97,26 @@ class _ExamListPageState extends State<ExamListPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Xác nhận đăng xuất'),
-        content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?'),
+        content: const Text(
+          'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Hủy')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Hủy'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () {
               Navigator.pop(ctx);
               SessionService().clearSession();
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginPage()));
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+              );
             },
             child: const Text('Đăng xuất'),
           ),
@@ -134,7 +146,10 @@ class _ExamListPageState extends State<ExamListPage> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, null), child: const Text('Hủy')),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, null),
+                child: const Text('Hủy'),
+              ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(ctx, pinController.text.trim()),
                 child: const Text('Xác nhận'),
@@ -172,7 +187,9 @@ class _ExamListPageState extends State<ExamListPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) {
         final pinController = TextEditingController();
         return Padding(
@@ -189,8 +206,18 @@ class _ExamListPageState extends State<ExamListPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Check-in Phòng Thi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                  IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close)),
+                  const Text(
+                    'Check-in Phòng Thi',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: const Icon(Icons.close),
+                  ),
                 ],
               ),
               const SizedBox(height: 6),
@@ -202,29 +229,45 @@ class _ExamListPageState extends State<ExamListPage> {
               ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(ctx);
-                  final availableExams = _exams.where((e) => e.status == 'PUBLISHED').toList();
+                  final availableExams = _exams
+                      .where((e) => e.status == 'PUBLISHED')
+                      .toList();
                   if (availableExams.isNotEmpty) {
                     _handleEnterExam(availableExams.first);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Hiện không có ca thi nào đang mở.'), backgroundColor: Colors.orange),
+                      const SnackBar(
+                        content: Text('Hiện không có ca thi nào đang mở.'),
+                        backgroundColor: Colors.orange,
+                      ),
                     );
                   }
                 },
                 icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
-                label: const Text('Bật Camera Quét Mã QR', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: const Text(
+                  'Bật Camera Quét Mã QR',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0F172A),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
               const Row(
                 children: [
                   Expanded(child: Divider()),
-                  Padding(padding: EdgeInsets.symmetric(horizontal: 10), child: Text('HOẶC', style: TextStyle(fontSize: 11, color: Colors.grey))),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10),
+                    child: Text(
+                      'HOẶC',
+                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                  ),
                   Expanded(child: Divider()),
                 ],
               ),
@@ -234,12 +277,21 @@ class _ExamListPageState extends State<ExamListPage> {
                 maxLength: 6,
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 22, letterSpacing: 8, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 22,
+                  letterSpacing: 8,
+                  fontWeight: FontWeight.bold,
+                ),
                 decoration: InputDecoration(
                   hintText: '• • • • • •',
-                  hintStyle: const TextStyle(letterSpacing: 8, color: Colors.grey),
+                  hintStyle: const TextStyle(
+                    letterSpacing: 8,
+                    color: Colors.grey,
+                  ),
                   counterText: '',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
               ),
@@ -249,12 +301,19 @@ class _ExamListPageState extends State<ExamListPage> {
                   final inputPin = pinController.text.trim();
                   if (inputPin.length == 6) {
                     Navigator.pop(ctx);
-                    final matchedList = _exams.where((e) => e.accessPin == inputPin).toList();
+                    final matchedList = _exams
+                        .where((e) => e.accessPin == inputPin)
+                        .toList();
                     if (matchedList.isNotEmpty) {
                       _handleEnterExam(matchedList.first);
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Không tìm thấy ca thi nào với mã PIN "$inputPin".'), backgroundColor: Colors.red),
+                        SnackBar(
+                          content: Text(
+                            'Không tìm thấy ca thi nào với mã PIN "$inputPin".',
+                          ),
+                          backgroundColor: Colors.red,
+                        ),
                       );
                     }
                   }
@@ -263,9 +322,14 @@ class _ExamListPageState extends State<ExamListPage> {
                   backgroundColor: const Color(0xFF2563EB),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
-                child: const Text('Xác thực & Vào phòng thi', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Xác thực & Vào phòng thi',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -277,13 +341,16 @@ class _ExamListPageState extends State<ExamListPage> {
   List<ExamModel> get _filteredExams {
     final query = _searchController.text.trim().toLowerCase();
     return _exams.where((e) {
-      if (_selectedFilter == 'PUBLISHED' && e.status != 'PUBLISHED') return false;
+      if (_selectedFilter == 'PUBLISHED' && e.status != 'PUBLISHED')
+        return false;
       if (_selectedFilter == 'DRAFT' && e.status != 'DRAFT') return false;
       if (query.isNotEmpty) {
         final title = e.title.toLowerCase();
         final code = e.subjectCode.toLowerCase();
         final desc = (e.description ?? '').toLowerCase();
-        if (!title.contains(query) && !code.contains(query) && !desc.contains(query)) {
+        if (!title.contains(query) &&
+            !code.contains(query) &&
+            !desc.contains(query)) {
           return false;
         }
       }
@@ -294,7 +361,9 @@ class _ExamListPageState extends State<ExamListPage> {
   @override
   Widget build(BuildContext context) {
     final user = SessionService().currentUser;
-    final isProctor = user != null && ['LECTURER', 'HEAD_OF_SUBJECT', 'ADMIN'].contains(user.role);
+    final isProctor =
+        user != null &&
+        ['LECTURER', 'HEAD_OF_SUBJECT', 'ADMIN'].contains(user.role);
     final isStudent = user != null && user.role == 'STUDENT';
     final filtered = _filteredExams;
 
@@ -305,7 +374,11 @@ class _ExamListPageState extends State<ExamListPage> {
       appBar: AppBar(
         title: const Text(
           'Hệ thống Khảo thí SEB',
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF0F172A),
+          ),
         ),
         backgroundColor: Colors.white,
         elevation: 0.5,
@@ -319,7 +392,10 @@ class _ExamListPageState extends State<ExamListPage> {
             tooltip: 'Làm mới',
           ),
           IconButton(
-            icon: const Icon(Icons.account_circle_outlined, color: Color(0xFF1E293B)),
+            icon: const Icon(
+              Icons.account_circle_outlined,
+              color: Color(0xFF1E293B),
+            ),
             tooltip: 'Hồ sơ cá nhân',
             onPressed: () {
               Navigator.push(
@@ -355,7 +431,11 @@ class _ExamListPageState extends State<ExamListPage> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 2)),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.02),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
                   ],
                 ),
                 child: Column(
@@ -366,8 +446,14 @@ class _ExamListPageState extends State<ExamListPage> {
                           radius: 24,
                           backgroundColor: const Color(0xFF0F172A),
                           child: Text(
-                            (user?.fullName.isNotEmpty == true) ? user!.fullName[0].toUpperCase() : 'U',
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                            (user?.fullName.isNotEmpty == true)
+                                ? user!.fullName[0].toUpperCase()
+                                : 'U',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -377,7 +463,11 @@ class _ExamListPageState extends State<ExamListPage> {
                             children: [
                               Text(
                                 user?.fullName ?? 'Người dùng',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A)),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Color(0xFF0F172A),
+                                ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 4),
@@ -385,27 +475,43 @@ class _ExamListPageState extends State<ExamListPage> {
                                 children: [
                                   if (user?.userCode.isNotEmpty == true) ...[
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFEFF6FF),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
                                         user!.userCode,
-                                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8)),
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF1D4ED8),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 6),
                                   ],
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFF1F5F9),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
-                                      user?.role == 'STUDENT' ? 'Sinh viên' : (user?.role ?? ''),
-                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
+                                      user?.role == 'STUDENT'
+                                          ? 'Sinh viên'
+                                          : (user?.role ?? ''),
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF475569),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -421,20 +527,32 @@ class _ExamListPageState extends State<ExamListPage> {
                       children: [
                         _buildStatusIndicator(
                           icon: Icons.wifi,
-                          label: _isServerConnected ? '$_pingMs ms' : 'Mất kết nối',
-                          color: _isServerConnected ? const Color(0xFF10B981) : Colors.red,
+                          label: _isServerConnected
+                              ? '$_pingMs ms'
+                              : 'Mất kết nối',
+                          color: _isServerConnected
+                              ? const Color(0xFF10B981)
+                              : Colors.red,
                         ),
-                        const Text('|', style: TextStyle(color: Color(0xFFE2E8F0))),
+                        const Text(
+                          '|',
+                          style: TextStyle(color: Color(0xFFE2E8F0)),
+                        ),
                         _buildStatusIndicator(
                           icon: Icons.security,
                           label: 'SEB Lockdown',
                           color: const Color(0xFF2563EB),
                         ),
-                        const Text('|', style: TextStyle(color: Color(0xFFE2E8F0))),
+                        const Text(
+                          '|',
+                          style: TextStyle(color: Color(0xFFE2E8F0)),
+                        ),
                         _buildStatusIndicator(
                           icon: Icons.task_alt,
                           label: '$publishedCount ca mở',
-                          color: publishedCount > 0 ? const Color(0xFF10B981) : const Color(0xFF64748B),
+                          color: publishedCount > 0
+                              ? const Color(0xFF10B981)
+                              : const Color(0xFF64748B),
                         ),
                       ],
                     ),
@@ -460,25 +578,54 @@ class _ExamListPageState extends State<ExamListPage> {
                         ),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
-                          BoxShadow(color: const Color(0xFF0F172A).withOpacity(0.18), blurRadius: 8, offset: const Offset(0, 3)),
+                          BoxShadow(
+                            color: const Color(0xFF0F172A)
+                                .withValues(alpha: 0.18),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
                         ],
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       child: const Row(
                         children: [
-                          Icon(Icons.qr_code_scanner, color: Colors.white, size: 28),
+                          Icon(
+                            Icons.qr_code_scanner,
+                            color: Colors.white,
+                            size: 28,
+                          ),
                           SizedBox(width: 14),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Quét mã QR / Nhập PIN phòng thi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
+                                Text(
+                                  'Quét mã QR / Nhập PIN phòng thi',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: Colors.white,
+                                  ),
+                                ),
                                 SizedBox(height: 2),
-                                Text('Check-in nhanh chóng vào phòng thi của giám thị', style: TextStyle(fontSize: 11, color: Color(0xFFCBD5E1))),
+                                Text(
+                                  'Check-in nhanh chóng vào phòng thi của giám thị',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFFCBD5E1),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
-                          Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 14),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            color: Colors.white70,
+                            size: 14,
+                          ),
                         ],
                       ),
                     ),
@@ -496,8 +643,15 @@ class _ExamListPageState extends State<ExamListPage> {
                       onChanged: (_) => setState(() {}),
                       decoration: InputDecoration(
                         hintText: 'Tìm kiếm ca thi, môn học...',
-                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF64748B)),
+                        hintStyle: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF94A3B8),
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          size: 20,
+                          color: Color(0xFF64748B),
+                        ),
                         suffixIcon: _searchController.text.isNotEmpty
                             ? IconButton(
                                 icon: const Icon(Icons.clear, size: 18),
@@ -510,14 +664,21 @@ class _ExamListPageState extends State<ExamListPage> {
                         filled: true,
                         fillColor: Colors.white,
                         isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                          ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                          ),
                         ),
                       ),
                     ),
@@ -551,11 +712,19 @@ class _ExamListPageState extends State<ExamListPage> {
                 children: [
                   Text(
                     isStudent ? 'Ca thi của bạn' : 'Danh sách ca thi',
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
                   ),
                   Text(
                     '${filtered.length} kết quả',
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF64748B),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
@@ -575,9 +744,16 @@ class _ExamListPageState extends State<ExamListPage> {
                     padding: const EdgeInsets.symmetric(vertical: 40),
                     child: Column(
                       children: [
-                        Text(_errorMessage!, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+                        Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: Colors.red),
+                          textAlign: TextAlign.center,
+                        ),
                         const SizedBox(height: 12),
-                        ElevatedButton(onPressed: _fetchExams, child: const Text('Thử lại')),
+                        ElevatedButton(
+                          onPressed: _fetchExams,
+                          child: const Text('Thử lại'),
+                        ),
                       ],
                     ),
                   ),
@@ -593,16 +769,27 @@ class _ExamListPageState extends State<ExamListPage> {
                   ),
                   child: Column(
                     children: [
-                      const Icon(Icons.event_busy_outlined, size: 48, color: Color(0xFF94A3B8)),
+                      const Icon(
+                        Icons.event_busy_outlined,
+                        size: 48,
+                        color: Color(0xFF94A3B8),
+                      ),
                       const SizedBox(height: 12),
                       const Text(
                         'Không tìm thấy ca thi nào',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: Color(0xFF1E293B),
+                        ),
                       ),
                       const SizedBox(height: 4),
                       const Text(
                         'Các ca thi khả dụng sẽ tự động xuất hiện tại đây.',
-                        style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                        ),
                       ),
                       const SizedBox(height: 16),
                       OutlinedButton.icon(
@@ -645,7 +832,10 @@ class _ExamListPageState extends State<ExamListPage> {
               backgroundColor: const Color(0xFF0F172A),
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add),
-              label: const Text('Tạo ca thi mới', style: TextStyle(fontWeight: FontWeight.bold)),
+              label: const Text(
+                'Tạo ca thi mới',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             )
           : null,
       bottomNavigationBar: isStudent
@@ -680,7 +870,10 @@ class _ExamListPageState extends State<ExamListPage> {
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.calendar_today_outlined),
-                  selectedIcon: Icon(Icons.calendar_month, color: Color(0xFF0F172A)),
+                  selectedIcon: Icon(
+                    Icons.calendar_month,
+                    color: Color(0xFF0F172A),
+                  ),
                   label: 'Lịch thi',
                 ),
                 NavigationDestination(
@@ -694,7 +887,11 @@ class _ExamListPageState extends State<ExamListPage> {
     );
   }
 
-  Widget _buildStatusIndicator({required IconData icon, required String label, required Color color}) {
+  Widget _buildStatusIndicator({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -702,7 +899,11 @@ class _ExamListPageState extends State<ExamListPage> {
         const SizedBox(width: 5),
         Text(
           label,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF334155),
+          ),
         ),
       ],
     );
@@ -715,7 +916,9 @@ class _ExamListPageState extends State<ExamListPage> {
       selected: isSelected,
       selectedColor: const Color(0xFF0F172A),
       backgroundColor: Colors.white,
-      side: BorderSide(color: isSelected ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0)),
+      side: BorderSide(
+        color: isSelected ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0),
+      ),
       labelStyle: TextStyle(
         fontSize: 12,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,

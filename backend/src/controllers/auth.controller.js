@@ -1,7 +1,70 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 const config = require('../config');
 const { User } = require('../models');
+
+const generateOtp = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+const maskEmail = (email) => {
+  if (!email || !email.includes('@')) return email;
+  const [name, domain] = email.split('@');
+  if (name.length <= 2) return `${name[0]}***@${domain}`;
+  return `${name.slice(0, 2)}***${name.slice(-1)}@${domain}`;
+};
+
+const sendOtpEmail = async (email, otp, purpose = 'xác thực tài khoản') => {
+  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+  const port = process.env.SMTP_PORT || 587;
+  const user = process.env.SMTP_USER || process.env.EMAIL_USER;
+  const pass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+  const fromEmail = process.env.SMTP_FROM || process.env.EMAIL_FROM || (user && user.includes('@') ? user : 'no-reply@seb-security.com');
+
+  console.log(`[AUTH-OTP] Mã OTP cho ${email} (${purpose}) là: ${otp}`);
+
+  if (user && pass) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host,
+        port: Number(port),
+        secure: Number(port) === 465,
+        auth: { user, pass }
+      });
+
+      await transporter.sendMail({
+        from: `"SEB Exam Security" <${fromEmail}>`,
+        to: email,
+        subject: `[SEB Clone] Mã OTP ${purpose.toUpperCase()}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 24px; color: #1e293b; max-width: 500px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+            <h2 style="color: #0062FF; text-align: center; margin-bottom: 8px;">Safe Exam Browser</h2>
+            <p style="font-size: 14px; text-align: center; color: #64748b; margin-top: 0;">Hệ thống kiểm tra & khảo thí an toàn</p>
+            <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 16px 0;" />
+            <p style="font-size: 14px;">Xin chào,</p>
+            <p style="font-size: 14px; line-height: 1.5;">Bạn đã yêu cầu <strong>${purpose}</strong> trên ứng dụng SEB Clone Mobile. Dưới đây là mã xác thực OTP của bạn:</p>
+            <div style="text-align: center; margin: 28px 0;">
+              <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #0062FF; background: #eff6ff; padding: 14px 28px; border-radius: 10px; border: 1px dashed #bfdbfe; display: inline-block;">
+                ${otp}
+              </span>
+            </div>
+            <p style="font-size: 13px; color: #ef4444; text-align: center; margin-bottom: 4px;">Mã OTP có hiệu lực trong vòng <strong>5 phút</strong>.</p>
+            <p style="font-size: 12px; color: #94a3b8; text-align: center;">Vì lý do an toàn, tuyệt đối không chia sẻ mã này cho bất kỳ ai khác.</p>
+            <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 20px 0;" />
+            <p style="font-size: 11px; color: #94a3b8; text-align: center;">Đây là email tự động từ máy chủ SEB. Vui lòng không trả lời thư này.</p>
+          </div>
+        `
+      });
+      return { sent: true };
+    } catch (err) {
+      console.error('[AUTH-OTP-ERROR] Gửi email qua SMTP thất bại:', err.message);
+      return { sent: false, error: err.message };
+    }
+  }
+
+  return { sent: false, note: 'Chưa cấu hình SMTP_USER / EMAIL_USER trong .env. OTP đã được log ra console server.' };
+};
 
 const login = async (req, res) => {
   try {
@@ -97,7 +160,7 @@ const getMe = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const { full_name, email, current_password, new_password, password } = req.body;
+    const { full_name, email, current_password, new_password, password, otp } = req.body;
     const user = await User.findById(req.user._id);
 
     if (!user) {
@@ -127,18 +190,41 @@ const updateProfile = async (req, res) => {
 
     const targetNewPassword = new_password || password;
     if (targetNewPassword && targetNewPassword.trim().length > 0) {
-      if (!current_password) {
+      if (otp) {
+        // Xác thực qua OTP gửi về mail
+        if (!user.otp_code || !user.otp_expires_at) {
+          return res.status(400).json({
+            success: false,
+            message: 'Vui lòng nhấn "Gửi mã OTP" về email trước khi xác nhận đổi mật khẩu'
+          });
+        }
+        if (Date.now() > new Date(user.otp_expires_at).getTime()) {
+          return res.status(400).json({
+            success: false,
+            message: 'Mã OTP đã hết hạn (5 phút). Vui lòng gửi lại mã mới.'
+          });
+        }
+        if (user.otp_code !== otp.trim()) {
+          return res.status(400).json({
+            success: false,
+            message: 'Mã OTP không chính xác'
+          });
+        }
+        // Xóa mã OTP sau khi dùng thành công
+        user.otp_code = null;
+        user.otp_expires_at = null;
+      } else if (current_password) {
+        const isMatch = await bcrypt.compare(current_password, user.password_hash);
+        if (!isMatch) {
+          return res.status(400).json({
+            success: false,
+            message: 'Mật khẩu hiện tại không chính xác'
+          });
+        }
+      } else {
         return res.status(400).json({
           success: false,
-          message: 'Vui lòng nhập mật khẩu hiện tại để xác nhận đổi mật khẩu mới'
-        });
-      }
-
-      const isMatch = await bcrypt.compare(current_password, user.password_hash);
-      if (!isMatch) {
-        return res.status(400).json({
-          success: false,
-          message: 'Mật khẩu hiện tại không chính xác'
+          message: 'Vui lòng cung cấp mã OTP gửi qua email hoặc mật khẩu hiện tại'
         });
       }
 
@@ -436,8 +522,166 @@ const deleteUser = async (req, res) => {
   }
 };
 
+const sendForgotOtp = async (req, res) => {
+  try {
+    const { identifier } = req.body;
+    if (!identifier || !identifier.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp mã người dùng hoặc email'
+      });
+    }
+
+    const trimmed = identifier.trim();
+    const user = await User.findOne({
+      $or: [
+        { email: trimmed.toLowerCase() },
+        { user_code: trimmed }
+      ]
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy tài khoản với thông tin đã cung cấp'
+      });
+    }
+
+    const otp = generateOtp();
+    user.otp_code = otp;
+    user.otp_expires_at = new Date(Date.now() + 5 * 60 * 1000); // 5 phút
+    await user.save();
+
+    await sendOtpEmail(user.email, otp, 'đặt lại mật khẩu');
+
+    res.status(200).json({
+      success: true,
+      message: `Mã OTP xác thực đã được gửi đến email ${maskEmail(user.email)}. Vui lòng kiểm tra hòm thư.`,
+      data: {
+        email: maskEmail(user.email),
+        full_email: user.email,
+        user_code: user.user_code,
+        dev_otp: !process.env.SMTP_USER && !process.env.EMAIL_USER ? otp : undefined
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+const verifyForgotOtpAndReset = async (req, res) => {
+  try {
+    const { identifier, otp, new_password } = req.body;
+    if (!identifier || !otp || !new_password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng điền đầy đủ mã người dùng/email, mã OTP và mật khẩu mới'
+      });
+    }
+
+    const trimmed = identifier.trim();
+    const user = await User.findOne({
+      $or: [
+        { email: trimmed.toLowerCase() },
+        { user_code: trimmed }
+      ]
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy tài khoản với thông tin đã cung cấp'
+      });
+    }
+
+    if (!user.otp_code || !user.otp_expires_at) {
+      return res.status(400).json({
+        success: false,
+        message: 'Chưa có yêu cầu OTP nào được gửi. Vui lòng bấm "Gửi mã OTP" trước.'
+      });
+    }
+
+    if (Date.now() > new Date(user.otp_expires_at).getTime()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mã OTP đã hết hạn (5 phút). Vui lòng yêu cầu mã mới.'
+      });
+    }
+
+    if (user.otp_code !== otp.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mã OTP không chính xác'
+      });
+    }
+
+    if (new_password.trim().length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mật khẩu mới phải có ít nhất 6 ký tự'
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password_hash = await bcrypt.hash(new_password.trim(), salt);
+    user.otp_code = null;
+    user.otp_expires_at = null;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Đặt lại mật khẩu thành công! Bạn có thể đăng nhập bằng mật khẩu mới.'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+const sendProfileOtp = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Người dùng không tồn tại'
+      });
+    }
+
+    const otp = generateOtp();
+    user.otp_code = otp;
+    user.otp_expires_at = new Date(Date.now() + 5 * 60 * 1000); // 5 phút
+    await user.save();
+
+    await sendOtpEmail(user.email, otp, 'đổi mật khẩu hồ sơ');
+
+    res.status(200).json({
+      success: true,
+      message: `Mã OTP xác thực đã được gửi đến email ${maskEmail(user.email)}. Vui lòng kiểm tra hòm thư.`,
+      data: {
+        email: maskEmail(user.email),
+        full_email: user.email,
+        dev_otp: !process.env.SMTP_USER && !process.env.EMAIL_USER ? otp : undefined
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 module.exports = {
   login,
+  sendForgotOtp,
+  verifyForgotOtpAndReset,
+  sendProfileOtp,
   getMe,
   updateProfile,
   getAllUsers,

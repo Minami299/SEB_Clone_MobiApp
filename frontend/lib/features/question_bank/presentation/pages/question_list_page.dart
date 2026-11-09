@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import 'create_question_page.dart';
@@ -91,9 +92,15 @@ class _QuestionListPageState extends State<QuestionListPage> {
         title: const Text('Xác nhận xóa câu hỏi'),
         content: Text('Bạn có chắc chắn muốn xóa câu hỏi này?\n"$content"'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Xóa'),
           ),
@@ -104,11 +111,16 @@ class _QuestionListPageState extends State<QuestionListPage> {
     if (confirmed != true) return;
 
     try {
-      final res = await _apiClient.delete(ApiEndpoints.questionDetail(questionId));
+      final res = await _apiClient.delete(
+        ApiEndpoints.questionDetail(questionId),
+      );
       if (res['success'] == true) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã xóa câu hỏi thành công'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Đã xóa câu hỏi thành công'),
+            backgroundColor: Colors.green,
+          ),
         );
         _loadData();
       }
@@ -130,19 +142,25 @@ class _QuestionListPageState extends State<QuestionListPage> {
 
       final content = (q['content'] ?? '').toString().toLowerCase();
       final code = (q['question_code'] ?? '').toString().toLowerCase();
-      if (query.isNotEmpty && !content.contains(query) && !code.contains(query)) {
+      if (query.isNotEmpty &&
+          !content.contains(query) &&
+          !code.contains(query)) {
         return false;
       }
 
       if (_selectedDifficulty != 'ALL') {
-        final diff = (q['difficulty'] ?? q['difficulty_level'] ?? '').toString().toUpperCase();
+        final diff = (q['difficulty'] ?? q['difficulty_level'] ?? '')
+            .toString()
+            .toUpperCase();
         if (diff != _selectedDifficulty) {
           return false;
         }
       }
 
       if (_selectedChapter != 'ALL') {
-        final chId = q['chapter_id'] is Map ? q['chapter_id']['_id'] : q['chapter_id'];
+        final chId = q['chapter_id'] is Map
+            ? q['chapter_id']['_id']
+            : q['chapter_id'];
         if (chId != _selectedChapter) {
           return false;
         }
@@ -158,7 +176,9 @@ class _QuestionListPageState extends State<QuestionListPage> {
 
     // Khởi tạo các chương đã biết
     for (var ch in _chapters) {
-      final num = ch['chapter_number'] is int ? ch['chapter_number'] as int : int.tryParse(ch['chapter_number'].toString()) ?? 1;
+      final num = ch['chapter_number'] is int
+          ? ch['chapter_number'] as int
+          : int.tryParse(ch['chapter_number'].toString()) ?? 1;
       stats[num] = {'EASY': 0, 'MEDIUM': 0, 'HARD': 0, 'TOTAL': 0};
     }
 
@@ -171,13 +191,20 @@ class _QuestionListPageState extends State<QuestionListPage> {
       int chapterNum = 1;
       if (q['chapter_num'] != null) {
         chapterNum = int.tryParse(q['chapter_num'].toString()) ?? 1;
-      } else if (q['chapter_id'] is Map && q['chapter_id']['chapter_number'] != null) {
-        chapterNum = int.tryParse(q['chapter_id']['chapter_number'].toString()) ?? 1;
+      } else if (q['chapter_id'] is Map &&
+          q['chapter_id']['chapter_number'] != null) {
+        chapterNum =
+            int.tryParse(q['chapter_id']['chapter_number'].toString()) ?? 1;
       }
 
-      stats.putIfAbsent(chapterNum, () => {'EASY': 0, 'MEDIUM': 0, 'HARD': 0, 'TOTAL': 0});
+      stats.putIfAbsent(
+        chapterNum,
+        () => {'EASY': 0, 'MEDIUM': 0, 'HARD': 0, 'TOTAL': 0},
+      );
 
-      final diff = (q['difficulty'] ?? q['difficulty_level'] ?? 'MEDIUM').toString().toUpperCase();
+      final diff = (q['difficulty'] ?? q['difficulty_level'] ?? 'MEDIUM')
+          .toString()
+          .toUpperCase();
       if (stats[chapterNum]!.containsKey(diff)) {
         stats[chapterNum]![diff] = (stats[chapterNum]![diff] ?? 0) + 1;
       } else {
@@ -196,7 +223,10 @@ class _QuestionListPageState extends State<QuestionListPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: Text('${widget.subjectCode} - Ngân hàng câu hỏi', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+        title: Text(
+          '${widget.subjectCode} - Ngân hàng câu hỏi',
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1E293B),
         elevation: 0.5,
@@ -244,7 +274,9 @@ class _QuestionListPageState extends State<QuestionListPage> {
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
-                            color: _selectedScopeTab == 0 ? const Color(0xFF1E3A5F) : Colors.transparent,
+                            color: _selectedScopeTab == 0
+                                ? const Color(0xFF1E3A5F)
+                                : Colors.transparent,
                             width: 2.5,
                           ),
                         ),
@@ -252,14 +284,24 @@ class _QuestionListPageState extends State<QuestionListPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.public, size: 16, color: _selectedScopeTab == 0 ? const Color(0xFF1E3A5F) : const Color(0xFF64748B)),
+                          Icon(
+                            Icons.public,
+                            size: 16,
+                            color: _selectedScopeTab == 0
+                                ? const Color(0xFF1E3A5F)
+                                : const Color(0xFF64748B),
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             'Ngân hàng chung (Public)',
                             style: TextStyle(
                               fontSize: 13,
-                              fontWeight: _selectedScopeTab == 0 ? FontWeight.bold : FontWeight.w500,
-                              color: _selectedScopeTab == 0 ? const Color(0xFF1E3A5F) : const Color(0xFF64748B),
+                              fontWeight: _selectedScopeTab == 0
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
+                              color: _selectedScopeTab == 0
+                                  ? const Color(0xFF1E3A5F)
+                                  : const Color(0xFF64748B),
                             ),
                           ),
                         ],
@@ -275,7 +317,9 @@ class _QuestionListPageState extends State<QuestionListPage> {
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
-                            color: _selectedScopeTab == 1 ? const Color(0xFF1E3A5F) : Colors.transparent,
+                            color: _selectedScopeTab == 1
+                                ? const Color(0xFF1E3A5F)
+                                : Colors.transparent,
                             width: 2.5,
                           ),
                         ),
@@ -283,14 +327,24 @@ class _QuestionListPageState extends State<QuestionListPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.lock_outline, size: 16, color: _selectedScopeTab == 1 ? const Color(0xFF1E3A5F) : const Color(0xFF64748B)),
+                          Icon(
+                            Icons.lock_outline,
+                            size: 16,
+                            color: _selectedScopeTab == 1
+                                ? const Color(0xFF1E3A5F)
+                                : const Color(0xFF64748B),
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             'Kho cá nhân (Private)',
                             style: TextStyle(
                               fontSize: 13,
-                              fontWeight: _selectedScopeTab == 1 ? FontWeight.bold : FontWeight.w500,
-                              color: _selectedScopeTab == 1 ? const Color(0xFF1E3A5F) : const Color(0xFF64748B),
+                              fontWeight: _selectedScopeTab == 1
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
+                              color: _selectedScopeTab == 1
+                                  ? const Color(0xFF1E3A5F)
+                                  : const Color(0xFF64748B),
                             ),
                           ),
                         ],
@@ -315,11 +369,19 @@ class _QuestionListPageState extends State<QuestionListPage> {
                   children: [
                     Text(
                       widget.subjectName,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
                     ),
                     Text(
                       '${filtered.length} / ${_questions.length} câu',
-                      style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -339,8 +401,13 @@ class _QuestionListPageState extends State<QuestionListPage> {
                             },
                           )
                         : null,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     isDense: true,
                   ),
                   onChanged: (_) => setState(() {}),
@@ -352,23 +419,35 @@ class _QuestionListPageState extends State<QuestionListPage> {
                     Expanded(
                       flex: 3,
                       child: DropdownButtonFormField<String>(
-                        value: _selectedChapter,
+                        initialValue: _selectedChapter,
                         isExpanded: true,
                         decoration: const InputDecoration(
                           labelText: 'Chương',
                           border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
                           isDense: true,
                         ),
                         items: [
-                          const DropdownMenuItem(value: 'ALL', child: Text('Tất cả chương')),
-                          ..._chapters.map((ch) => DropdownMenuItem<String>(
-                                value: ch['_id'],
-                                child: Text('Chương ${ch['chapter_number']}: ${ch['chapter_title']}', overflow: TextOverflow.ellipsis),
-                              )),
+                          const DropdownMenuItem(
+                            value: 'ALL',
+                            child: Text('Tất cả chương'),
+                          ),
+                          ..._chapters.map(
+                            (ch) => DropdownMenuItem<String>(
+                              value: ch['_id'],
+                              child: Text(
+                                'Chương ${ch['chapter_number']}: ${ch['chapter_title']}',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
                         ],
                         onChanged: (val) {
-                          if (val != null) setState(() => _selectedChapter = val);
+                          if (val != null)
+                            setState(() => _selectedChapter = val);
                         },
                       ),
                     ),
@@ -376,21 +455,28 @@ class _QuestionListPageState extends State<QuestionListPage> {
                     Expanded(
                       flex: 2,
                       child: DropdownButtonFormField<String>(
-                        value: _selectedDifficulty,
+                        initialValue: _selectedDifficulty,
                         decoration: const InputDecoration(
                           labelText: 'Độ khó',
                           border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
                           isDense: true,
                         ),
                         items: const [
                           DropdownMenuItem(value: 'ALL', child: Text('Tất cả')),
                           DropdownMenuItem(value: 'EASY', child: Text('Dễ')),
-                          DropdownMenuItem(value: 'MEDIUM', child: Text('Trung bình')),
+                          DropdownMenuItem(
+                            value: 'MEDIUM',
+                            child: Text('Trung bình'),
+                          ),
                           DropdownMenuItem(value: 'HARD', child: Text('Khó')),
                         ],
                         onChanged: (val) {
-                          if (val != null) setState(() => _selectedDifficulty = val);
+                          if (val != null)
+                            setState(() => _selectedDifficulty = val);
                         },
                       ),
                     ),
@@ -406,7 +492,8 @@ class _QuestionListPageState extends State<QuestionListPage> {
               selectedScopeTab: _selectedScopeTab,
               showMatrixSummary: _showMatrixSummary,
               matrixStats: _computeMatrixStats(),
-              onToggle: () => setState(() => _showMatrixSummary = !_showMatrixSummary),
+              onToggle: () =>
+                  setState(() => _showMatrixSummary = !_showMatrixSummary),
             ),
 
           const Divider(height: 1),
@@ -416,30 +503,39 @@ class _QuestionListPageState extends State<QuestionListPage> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _errorMessage != null
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
-                            const SizedBox(height: 12),
-                            ElevatedButton(onPressed: _loadData, child: const Text('Thử lại')),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: Colors.red),
                         ),
-                      )
-                    : filtered.isEmpty
-                        ? const Center(child: Text('Không tìm thấy câu hỏi nào phù hợp'))
-                        : ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
-                            itemCount: filtered.length,
-                            separatorBuilder: (context, _) => const SizedBox(height: 10),
-                            itemBuilder: (context, index) {
-                              return QuestionItemCard(
-                                question: filtered[index] as Map<String, dynamic>,
-                                onDelete: _handleDelete,
-                                onRefresh: _loadData,
-                              );
-                            },
-                          ),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: _loadData,
+                          child: const Text('Thử lại'),
+                        ),
+                      ],
+                    ),
+                  )
+                : filtered.isEmpty
+                ? const Center(
+                    child: Text('Không tìm thấy câu hỏi nào phù hợp'),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
+                    itemCount: filtered.length,
+                    separatorBuilder: (context, _) =>
+                        const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      return QuestionItemCard(
+                        question: filtered[index] as Map<String, dynamic>,
+                        onDelete: _handleDelete,
+                        onRefresh: _loadData,
+                      );
+                    },
+                  ),
           ),
         ],
       ),

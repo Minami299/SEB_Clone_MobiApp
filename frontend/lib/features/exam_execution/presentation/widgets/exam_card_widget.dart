@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../data/models/exam_model.dart';
 import '../../../exam_management/presentation/pages/create_edit_exam_page.dart';
 import '../../../monitoring_reports/presentation/pages/live_monitoring_page.dart';
@@ -21,21 +22,25 @@ class ExamCardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPublished = exam.status == 'PUBLISHED';
-    final subjectLabel = exam.subjectCode.isNotEmpty ? exam.subjectCode : 'SEB EXAM';
+    final subjectLabel = exam.subjectCode.isNotEmpty
+        ? exam.subjectCode
+        : 'SEB EXAM';
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isPublished ? const Color(0xFF10B981).withOpacity(0.5) : const Color(0xFFE2E8F0),
+          color: isPublished
+              ? const Color(0xFF10B981).withValues(alpha: 0.5)
+              : const Color(0xFFE2E8F0),
           width: isPublished ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
             color: isPublished
-                ? const Color(0xFF10B981).withOpacity(0.06)
-                : Colors.black.withOpacity(0.02),
+                ? const Color(0xFF10B981).withValues(alpha: 0.06)
+                : Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -50,7 +55,10 @@ class ExamCardWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(6),
@@ -85,7 +93,11 @@ class ExamCardWidget extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               exam.description!,
-              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF64748B),
+                height: 1.4,
+              ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -112,7 +124,9 @@ class ExamCardWidget extends StatelessWidget {
                   icon: Icons.shield_outlined,
                   label: 'Tối đa ${exam.maxViolations} vi phạm',
                 ),
-                if (exam.accessPin != null && exam.accessPin!.isNotEmpty && isProctor) ...[
+                if (exam.accessPin != null &&
+                    exam.accessPin!.isNotEmpty &&
+                    isProctor) ...[
                   const Spacer(),
                   _buildInfoItem(
                     icon: Icons.pin_outlined,
@@ -131,16 +145,24 @@ class ExamCardWidget extends StatelessWidget {
             Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 20, color: Color(0xFF1E3A5F)),
+                  icon: const Icon(
+                    Icons.edit_outlined,
+                    size: 20,
+                    color: Color(0xFF1E3A5F),
+                  ),
                   tooltip: 'Sửa ca thi',
                   style: IconButton.styleFrom(
                     backgroundColor: const Color(0xFFF1F5F9),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   onPressed: () async {
                     final updated = await Navigator.push<bool>(
                       context,
-                      MaterialPageRoute(builder: (_) => CreateEditExamPage(examId: exam.id)),
+                      MaterialPageRoute(
+                        builder: (_) => CreateEditExamPage(examId: exam.id),
+                      ),
                     );
                     if (updated == true) onRefresh();
                   },
@@ -161,9 +183,14 @@ class ExamCardWidget extends StatelessWidget {
                   icon: const Icon(Icons.analytics_outlined, size: 16),
                   label: const Text('Báo cáo', style: TextStyle(fontSize: 12)),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
                     foregroundColor: const Color(0xFF1E3A5F),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -182,9 +209,14 @@ class ExamCardWidget extends StatelessWidget {
                   icon: const Icon(Icons.monitor_heart_outlined, size: 16),
                   label: const Text('Giám sát', style: TextStyle(fontSize: 12)),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
                     foregroundColor: const Color(0xFF1E3A5F),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                 ),
                 const Spacer(),
@@ -193,11 +225,19 @@ class ExamCardWidget extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1E3A5F),
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                   ),
                   icon: const Icon(Icons.login, size: 16),
-                  label: const Text('Vào ca', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  label: const Text(
+                    'Vào ca',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
@@ -207,15 +247,28 @@ class ExamCardWidget extends StatelessWidget {
               height: 44,
               child: ElevatedButton.icon(
                 onPressed: isPublished ? onEnterExam : null,
-                icon: Icon(isPublished ? Icons.play_arrow : Icons.lock_outline, size: 18),
+                icon: Icon(
+                  isPublished ? Icons.play_arrow : Icons.lock_outline,
+                  size: 18,
+                ),
                 label: Text(
                   isPublished ? 'VÀO LÀM BÀI THI' : 'CHƯA TỚI GIỜ MỞ CA',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isPublished ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
-                  foregroundColor: isPublished ? Colors.white : const Color(0xFF94A3B8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  backgroundColor: isPublished
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFFE2E8F0),
+                  foregroundColor: isPublished
+                      ? Colors.white
+                      : const Color(0xFF94A3B8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   elevation: isPublished ? 2 : 0,
                 ),
               ),
@@ -297,14 +350,22 @@ class ExamCardWidget extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 15, color: isHighlight ? const Color(0xFF2563EB) : const Color(0xFF64748B)),
+        Icon(
+          icon,
+          size: 15,
+          color: isHighlight
+              ? const Color(0xFF2563EB)
+              : const Color(0xFF64748B),
+        ),
         const SizedBox(width: 4),
         Text(
           label,
           style: TextStyle(
             fontSize: 12,
             fontWeight: isHighlight ? FontWeight.bold : FontWeight.w500,
-            color: isHighlight ? const Color(0xFF1E3A8A) : const Color(0xFF475569),
+            color: isHighlight
+                ? const Color(0xFF1E3A8A)
+                : const Color(0xFF475569),
           ),
         ),
       ],

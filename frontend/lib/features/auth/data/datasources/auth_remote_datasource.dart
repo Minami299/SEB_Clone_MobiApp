@@ -7,7 +7,7 @@ class AuthRemoteDataSource {
   final ApiClient apiClient;
 
   AuthRemoteDataSource({ApiClient? apiClient})
-      : apiClient = apiClient ?? ApiClient();
+    : apiClient = apiClient ?? ApiClient();
 
   Future<UserModel> login({
     required String identifier,
@@ -15,10 +15,7 @@ class AuthRemoteDataSource {
   }) async {
     final response = await apiClient.post(
       ApiEndpoints.authLogin,
-      body: {
-        'identifier': identifier,
-        'password': password,
-      },
+      body: {'identifier': identifier, 'password': password},
     );
 
     final data = response['data'];
@@ -27,6 +24,49 @@ class AuthRemoteDataSource {
 
     SessionService().saveSession(newToken: token, user: user);
     return user;
+  }
+
+  Future<Map<String, dynamic>> sendForgotOtp(String identifier) async {
+    final response = await apiClient.post(
+      ApiEndpoints.authForgotSendOtp,
+      body: {'identifier': identifier},
+    );
+    return response as Map<String, dynamic>;
+  }
+
+  Future<String> verifyForgotOtpAndReset({
+    required String identifier,
+    required String otp,
+    required String newPassword,
+  }) async {
+    final response = await apiClient.post(
+      ApiEndpoints.authForgotVerifyOtp,
+      body: {
+        'identifier': identifier,
+        'otp': otp,
+        'new_password': newPassword,
+      },
+    );
+    return response['message'] as String? ?? 'Đặt lại mật khẩu thành công';
+  }
+
+  Future<Map<String, dynamic>> sendProfileOtp() async {
+    final response = await apiClient.post(ApiEndpoints.authProfileSendOtp);
+    return response as Map<String, dynamic>;
+  }
+
+  Future<String> forgotPassword({
+    required String identifier,
+    required String newPassword,
+  }) async {
+    final response = await apiClient.post(
+      ApiEndpoints.authForgotPassword,
+      body: {
+        'identifier': identifier,
+        'new_password': newPassword,
+      },
+    );
+    return response['message'] as String? ?? 'Đặt lại mật khẩu thành công';
   }
 
   Future<UserModel> getProfile() async {
@@ -44,19 +84,22 @@ class AuthRemoteDataSource {
     String? email,
     String? currentPassword,
     String? newPassword,
+    String? otp,
   }) async {
     final body = <String, dynamic>{};
     if (fullName != null && fullName.isNotEmpty) body['full_name'] = fullName;
     if (email != null && email.isNotEmpty) body['email'] = email;
-    if (currentPassword != null && currentPassword.isNotEmpty) body['current_password'] = currentPassword;
-    if (newPassword != null && newPassword.isNotEmpty) body['new_password'] = newPassword;
+    if (currentPassword != null && currentPassword.isNotEmpty)
+      body['current_password'] = currentPassword;
+    if (newPassword != null && newPassword.isNotEmpty)
+      body['new_password'] = newPassword;
+    if (otp != null && otp.isNotEmpty) body['otp'] = otp;
 
-    final response = await apiClient.put(
-      ApiEndpoints.authMe,
-      body: body,
+    final response = await apiClient.put(ApiEndpoints.authMe, body: body);
+
+    final updated = UserModel.fromJson(
+      response['data'] as Map<String, dynamic>,
     );
-
-    final updated = UserModel.fromJson(response['data'] as Map<String, dynamic>);
     final currentToken = SessionService().token;
     if (currentToken != null) {
       SessionService().saveSession(newToken: currentToken, user: updated);
@@ -69,10 +112,13 @@ class AuthRemoteDataSource {
     if (role != null && role.isNotEmpty) queryParams['role'] = role;
     if (search != null && search.isNotEmpty) queryParams['search'] = search;
 
-    final uri = Uri.parse(ApiEndpoints.authUsers).replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+    final uri = Uri.parse(ApiEndpoints.authUsers)
+        .replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
     final response = await apiClient.get(uri.toString());
     final list = response['data'] as List? ?? [];
-    return list.map((item) => UserModel.fromJson(item as Map<String, dynamic>)).toList();
+    return list
+        .map((item) => UserModel.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
   Future<UserModel> createUser({
@@ -91,7 +137,7 @@ class AuthRemoteDataSource {
         'password': password,
         'full_name': fullName,
         'role': role,
-        if (departmentId != null) 'department_id': departmentId,
+        'department_id': ?departmentId,
       },
     );
     return UserModel.fromJson(response['data'] as Map<String, dynamic>);
@@ -112,4 +158,3 @@ class AuthRemoteDataSource {
     await apiClient.delete(ApiEndpoints.authUserDetail(userId));
   }
 }
-
