@@ -35,7 +35,7 @@ class QuestionMatrixSummaryCard extends StatelessWidget {
                   const Icon(Icons.grid_view, size: 15, color: Color(0xFF1E3A5F)),
                   const SizedBox(width: 6),
                   Text(
-                    'Độ phong phú kho đề ${selectedScopeTab == 0 ? "(Kho chung)" : "(Kho riêng)"}',
+                    'Thống kê câu hỏi (${selectedScopeTab == 0 ? "Kho chung" : "Kho riêng"})',
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF1E293B)),
                   ),
                 ],
@@ -43,7 +43,7 @@ class QuestionMatrixSummaryCard extends StatelessWidget {
               InkWell(
                 onTap: onToggle,
                 child: Text(
-                  showMatrixSummary ? 'Thu gọn' : 'Xem ma trận',
+                  showMatrixSummary ? 'Thu gọn' : 'Chi tiết',
                   style: const TextStyle(fontSize: 11, color: Color(0xFF2563EB), fontWeight: FontWeight.w600),
                 ),
               ),
@@ -71,7 +71,7 @@ class QuestionMatrixSummaryCard extends StatelessWidget {
                         Text('Chương $chNum (${counts['TOTAL']} câu)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFF1E293B))),
                         const SizedBox(height: 2),
                         Text(
-                          'Dễ: ${counts['EASY']} | TB: ${counts['MEDIUM']} | Khó: ${counts['HARD']}',
+                          'Dễ: ${counts['EASY']}  •  Trung bình: ${counts['MEDIUM']}  •  Khó: ${counts['HARD']}',
                           style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                         ),
                       ],

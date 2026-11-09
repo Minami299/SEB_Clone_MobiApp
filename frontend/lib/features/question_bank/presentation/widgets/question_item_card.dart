@@ -33,17 +33,17 @@ class QuestionItemCard extends StatelessWidget {
         return 'Khó';
       case 'MEDIUM':
       default:
-        return 'TB';
+        return 'Trung bình';
     }
   }
 
   String _getTypeText(String type) {
     switch (type) {
       case 'MULTIPLE_CHOICE':
-        return 'Nhiều ĐA';
+        return 'Nhiều đáp án';
       case 'SINGLE_CHOICE':
       default:
-        return 'Một ĐA';
+        return '1 đáp án';
     }
   }
 
@@ -124,7 +124,7 @@ class QuestionItemCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 3),
                         Text(
-                          isPublicQ ? 'Chung' : 'Riêng',
+                          isPublicQ ? 'Kho chung' : 'Kho riêng',
                           style: TextStyle(
                             color: isPublicQ ? const Color(0xFF1D4ED8) : const Color(0xFF7E22CE),
                             fontSize: 10,
@@ -161,16 +161,19 @@ class QuestionItemCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    '$score đ',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF1E293B)),
+                    '$score điểm',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF1E3A5F)),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    tooltip: 'Xóa câu hỏi',
-                    onPressed: () => onDelete(id, content),
-                  ),
+                  if (!isPublicQ) ...[
+                    const SizedBox(width: 4),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      tooltip: 'Xóa câu hỏi',
+                      onPressed: () => onDelete(id, content),
+                    ),
+                  ],
                 ],
               ),
 

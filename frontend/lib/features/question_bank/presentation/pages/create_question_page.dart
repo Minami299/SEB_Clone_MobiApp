@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/services/session_service.dart';
+import 'batch_import_questions_page.dart';
 
 class CreateQuestionPage extends StatefulWidget {
   final String subjectId;
@@ -408,7 +409,7 @@ class _CreateQuestionPageState extends State<CreateQuestionPage>
       final chapterNum = selectedChapter != null
           ? (selectedChapter['chapter_number'] ?? 1)
           : 1;
-      final effectiveScope = isHeadOfSubject ? 'PUBLIC' : _selectedScope;
+      final effectiveScope = isHeadOfSubject ? 'PUBLIC' : 'PRIVATE';
 
       final body = {
         'subject_id': widget.subjectId,
@@ -486,13 +487,45 @@ class _CreateQuestionPageState extends State<CreateQuestionPage>
       appBar: AppBar(
         title: Text(
           isEditing
-              ? 'Sửa câu hỏi - ${widget.subjectCode}'
-              : 'Thêm câu hỏi - ${widget.subjectCode}',
+              ? (isHeadOfSubject
+                  ? 'Sửa câu hỏi - Bộ môn ${widget.subjectCode}'
+                  : 'Sửa câu hỏi - Kho riêng ${widget.subjectCode}')
+              : (isHeadOfSubject
+                  ? 'Soạn câu hỏi - Bộ môn ${widget.subjectCode}'
+                  : 'Thêm câu hỏi - Kho riêng ${widget.subjectCode}'),
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1E293B),
         elevation: 0.5,
+        actions: [
+          if (!isEditing)
+            TextButton.icon(
+              onPressed: () async {
+                final imported = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BatchImportQuestionsPage(
+                      subjectId: widget.subjectId,
+                      subjectCode: widget.subjectCode,
+                      subjectName: widget.subjectName,
+                    ),
+                  ),
+                );
+                if (imported == true && mounted) {
+                  Navigator.pop(context, true);
+                }
+              },
+              icon: const Icon(Icons.playlist_add, size: 20),
+              label: const Text(
+                'Nhập hàng loạt',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF2563EB),
+              ),
+            ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           labelColor: const Color(0xFF1E3A5F),
@@ -564,115 +597,6 @@ class _CreateQuestionPageState extends State<CreateQuestionPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Phạm vi lưu trữ
-          if (isHeadOfSubject)
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFBFDBFE)),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.public, color: Color(0xFF1D4ED8), size: 20),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Câu hỏi chung của bộ môn (Public)',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: Color(0xFF1E3A8A),
-                          ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Câu hỏi này thuộc ngân hàng đề chung của bộ môn.',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFF3B82F6),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Phạm vi lưu trữ câu hỏi',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                      color: Color(0xFF1E293B),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  RadioListTile<String>(
-                    value: 'PRIVATE',
-                    groupValue: _selectedScope,
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text(
-                      'Kho riêng của tôi (Private)',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    subtitle: const Text(
-                      'Chỉ bạn mới có thể sử dụng câu hỏi này trong đề thi.',
-                      style: TextStyle(fontSize: 11),
-                    ),
-                    activeColor: const Color(0xFF1E3A5F),
-                    onChanged: (val) {
-                      if (val != null) setState(() => _selectedScope = val);
-                    },
-                  ),
-                  RadioListTile<String>(
-                    value: 'PUBLIC',
-                    groupValue: _selectedScope,
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text(
-                      'Đóng góp vào Ngân hàng chung (Public)',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    subtitle: const Text(
-                      'Chia sẻ câu hỏi để các giảng viên khác trong bộ môn cùng sử dụng.',
-                      style: TextStyle(fontSize: 11),
-                    ),
-                    activeColor: const Color(0xFF1E3A5F),
-                    onChanged: (val) {
-                      if (val != null) setState(() => _selectedScope = val);
-                    },
-                  ),
-                ],
-              ),
-            ),
-
           // Chương & Mức độ khó
           Row(
             children: [
@@ -846,36 +770,6 @@ class _CreateQuestionPageState extends State<CreateQuestionPage>
             },
           ),
 
-          const SizedBox(height: 16),
-
-          // Mô tả câu hỏi & Chuẩn đầu ra (LO)
-          TextFormField(
-            controller: _loController,
-            decoration: const InputDecoration(
-              labelText: 'Chuẩn đầu ra (LO - Tùy chọn)',
-              hintText: 'VD: LO1, LO2...',
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _descriptionController,
-            maxLines: 2,
-            decoration: const InputDecoration(
-              labelText: 'Mô tả / Ghi chú (Tùy chọn)',
-              hintText: 'Ghi chú thêm về câu hỏi...',
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
-              ),
-            ),
-          ),
-
           const SizedBox(height: 20),
 
           // Nút chuyển tab
@@ -945,12 +839,7 @@ class _CreateQuestionPageState extends State<CreateQuestionPage>
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          const Text(
-            'Quy tắc: Tối thiểu 2 đáp án, ít nhất 1 đáp án đúng, các đáp án không được trùng lặp.',
-            style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           ...List.generate(_options.length, (index) {
             final opt = _options[index];
             final letter = String.fromCharCode(65 + index);

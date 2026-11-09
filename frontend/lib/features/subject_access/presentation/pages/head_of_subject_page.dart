@@ -113,6 +113,7 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
   void initState() {
     super.initState();
     _fetchSubjects();
+    _fetchPendingRequests();
   }
 
   Future<void> _fetchSubjects() async {
@@ -471,6 +472,48 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
                     ),
                   ],
                 ),
+                if (_pendingRequests.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  InkWell(
+                    onTap: () => setState(() => _currentTabIndex = 2),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFFDE68A)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.notifications_active, color: Color(0xFFD97706), size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Có ${_pendingRequests.length} yêu cầu đăng ký môn học đang chờ bạn phê duyệt.',
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF92400E),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFD97706),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'Xem ngay',
+                              style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -804,28 +847,38 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
             fontSize: 12,
           ),
           unselectedLabelStyle: const TextStyle(fontSize: 12),
-          items: const [
-            BottomNavigationBarItem(
+          items: [
+            const BottomNavigationBarItem(
               icon: Icon(Icons.menu_book_outlined),
               activeIcon: Icon(Icons.menu_book),
               label: 'Môn học',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.description_outlined),
               activeIcon: Icon(Icons.description),
               label: 'Câu hỏi',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.group_outlined),
-              activeIcon: Icon(Icons.group),
+              icon: _pendingRequests.isNotEmpty
+                  ? Badge(
+                      label: Text('${_pendingRequests.length}'),
+                      child: const Icon(Icons.group_outlined),
+                    )
+                  : const Icon(Icons.group_outlined),
+              activeIcon: _pendingRequests.isNotEmpty
+                  ? Badge(
+                      label: Text('${_pendingRequests.length}'),
+                      child: const Icon(Icons.group),
+                    )
+                  : const Icon(Icons.group),
               label: 'Yêu cầu',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.pie_chart_outline),
               activeIcon: Icon(Icons.pie_chart),
               label: 'Báo cáo',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
               activeIcon: Icon(Icons.person),
               label: 'Tài khoản',

@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { Question, QuestionOption, Chapter } = require('../models');
+const { Question, QuestionOption, Chapter, SubjectAccess, Class } = require('../models');
 
 const createQuestion = async (req, res) => {
   try {
@@ -27,12 +27,31 @@ const createQuestion = async (req, res) => {
       });
     }
 
-    // Xác định scope theo vai trò người tạo
+    if (req.user.role === 'LECTURER') {
+      const hasApprovedAccess = await SubjectAccess.exists({
+        subject_id,
+        lecturer_id: req.user._id,
+        status: 'APPROVED'
+      });
+      const teachesClass = await Class.exists({
+        subject_id,
+        lecturer_id: req.user._id
+      });
+      if (!hasApprovedAccess && !teachesClass) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn chưa được cấp quyền tạo câu hỏi cho môn học này. Vui lòng gửi yêu cầu đăng ký môn học và chờ Trưởng bộ môn phê duyệt.'
+        });
+      }
+    }
+
+    // Phân định rõ ràng: Giảng viên chỉ tạo câu hỏi vào Kho riêng (PRIVATE),
+    // Trưởng bộ môn tạo câu hỏi chuẩn cho Ngân hàng bộ môn (PUBLIC).
     let resolvedScope = 'PUBLIC';
-    if (req.user.role === 'HEAD_OF_SUBJECT') {
-      resolvedScope = 'PUBLIC';
-    } else if (req.user.role === 'LECTURER') {
-      resolvedScope = (scope === 'PUBLIC' || is_public === true) ? 'PUBLIC' : 'PRIVATE';
+    if (req.user.role === 'LECTURER') {
+      resolvedScope = 'PRIVATE';
+    } else if (req.user.role === 'HEAD_OF_SUBJECT') {
+      resolvedScope = (scope === 'PRIVATE') ? 'PRIVATE' : 'PUBLIC';
     } else if (scope) {
       resolvedScope = scope.toUpperCase() === 'PUBLIC' ? 'PUBLIC' : 'PRIVATE';
     }
@@ -91,6 +110,83 @@ const createQuestion = async (req, res) => {
   }
 };
 
+const createBatchQuestions = async (req, res) => {
+  try {
+    const { subject_id, questions } = req.body;
+
+    if (!subject_id || !Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Dữ liệu không hợp lệ: subject_id và danh sách câu hỏi là bắt buộc'
+      });
+    }
+
+    if (req.user.role === 'LECTURER') {
+      const hasApprovedAccess = await SubjectAccess.exists({
+        subject_id,
+        lecturer_id: req.user._id,
+        status: 'APPROVED'
+      });
+      const teachesClass = await Class.exists({
+        subject_id,
+        lecturer_id: req.user._id
+      });
+      if (!hasApprovedAccess && !teachesClass) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn chưa được cấp quyền tạo câu hỏi cho môn học này.'
+        });
+      }
+    }
+
+    const resolvedScope = req.user.role === 'LECTURER' ? 'PRIVATE' : 'PUBLIC';
+    const isPublic = resolvedScope === 'PUBLIC';
+
+    const createdQuestions = [];
+
+    for (const q of questions) {
+      if (!q.content || !Array.isArray(q.options) || q.options.length < 2) {
+        continue;
+      }
+
+      const questionDoc = await Question.create({
+        subject_id,
+        chapter_id: q.chapter_id || null,
+        chapter_num: Number(q.chapter_num) || 1,
+        created_by: req.user._id,
+        question_code: q.question_code || null,
+        question_type: q.question_type || 'SINGLE_CHOICE',
+        difficulty_level: (q.difficulty || q.difficulty_level || 'MEDIUM').toUpperCase(),
+        scope: resolvedScope,
+        is_public: isPublic,
+        content: q.content.trim(),
+        default_score: Number(q.default_score) || 1.0,
+        status: 'ACTIVE'
+      });
+
+      const optionDocs = q.options.map((opt) => ({
+        question_id: questionDoc._id,
+        option_content: (opt.option_content || opt.text || '').trim(),
+        is_correct: !!opt.is_correct
+      }));
+
+      await QuestionOption.insertMany(optionDocs);
+      createdQuestions.push(questionDoc);
+    }
+
+    res.status(201).json({
+      success: true,
+      message: `Đã nhập thành công ${createdQuestions.length} câu hỏi`,
+      count: createdQuestions.length
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 const getQuestionsBySubject = async (req, res) => {
   try {
     const { subject_id } = req.params;
@@ -99,6 +195,24 @@ const getQuestionsBySubject = async (req, res) => {
     const filter = { subject_id };
     const userRole = req.user.role;
     const userId = req.user._id;
+
+    if (userRole === 'LECTURER') {
+      const hasApprovedAccess = await SubjectAccess.exists({
+        subject_id,
+        lecturer_id: userId,
+        status: 'APPROVED'
+      });
+      const teachesClass = await Class.exists({
+        subject_id,
+        lecturer_id: userId
+      });
+      if (!hasApprovedAccess && !teachesClass) {
+        return res.status(403).json({
+          success: false,
+          message: 'Bạn chưa được cấp quyền truy cập ngân hàng câu hỏi của môn học này. Vui lòng gửi yêu cầu đăng ký môn học và chờ Trưởng bộ môn phê duyệt.'
+        });
+      }
+    }
 
     // Phân quyền kho câu hỏi (PUBLIC vs PRIVATE)
     if (scope && scope.toUpperCase() === 'PUBLIC') {
@@ -210,14 +324,23 @@ const getChaptersBySubject = async (req, res) => {
 const deleteQuestion = async (req, res) => {
   try {
     const { id } = req.params;
-    await QuestionOption.deleteMany({ question_id: id });
-    const deleted = await Question.findByIdAndDelete(id);
-    if (!deleted) {
+    const question = await Question.findById(id);
+    if (!question) {
       return res.status(404).json({
         success: false,
         message: 'Không tìm thấy câu hỏi'
       });
     }
+
+    if (req.user.role === 'LECTURER' && question.created_by.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn chỉ có quyền xóa câu hỏi thuộc Kho riêng của mình'
+      });
+    }
+
+    await QuestionOption.deleteMany({ question_id: id });
+    await Question.findByIdAndDelete(id);
     res.status(200).json({
       success: true,
       message: 'Đã xóa câu hỏi thành công'
@@ -253,6 +376,13 @@ const updateQuestion = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Không tìm thấy câu hỏi'
+      });
+    }
+
+    if (req.user.role === 'LECTURER' && question.created_by.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn chỉ có quyền cập nhật câu hỏi thuộc Kho riêng của mình'
       });
     }
 
@@ -315,6 +445,7 @@ const updateQuestion = async (req, res) => {
 
 module.exports = {
   createQuestion,
+  createBatchQuestions,
   getQuestionsBySubject,
   getQuestionDetail,
   getChaptersBySubject,

@@ -19,8 +19,10 @@ const ViolationLog = require('./violation-log.model');
 const ImportBatch = require('./import-batch.model');
 const ProctorAuthorization = require('./proctor-authorization.model');
 const ProctorMessage = require('./proctor-message.model');
+const Notification = require('./notification.model');
 
 module.exports = {
+  Notification,
   ImportBatch,
   ProctorAuthorization,
   ProctorMessage,

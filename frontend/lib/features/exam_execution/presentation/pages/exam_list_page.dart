@@ -13,6 +13,7 @@ import 'exam_lobby_page.dart';
 import 'student_home_page.dart';
 import '../widgets/exam_card_widget.dart';
 import '../../../exam_management/presentation/pages/create_edit_exam_page.dart';
+import '../../../question_bank/presentation/pages/lecturer_question_bank_view.dart';
 
 class ExamListPage extends StatefulWidget {
   const ExamListPage({super.key});
@@ -34,6 +35,7 @@ class _ExamListPageState extends State<ExamListPage> {
   int _pingMs = 0;
   bool _isServerConnected = false;
   int _bottomNavIndex = 1;
+  int _lecturerNavIndex = 0;
 
   @override
   void initState() {
@@ -396,9 +398,11 @@ class _ExamListPageState extends State<ExamListPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text(
-          'Hệ thống Khảo thí SEB',
-          style: TextStyle(
+        title: Text(
+          (!isStudent && _lecturerNavIndex == 1)
+              ? 'Môn học & Question Bank'
+              : 'Hệ thống Khảo thí SEB',
+          style: const TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.bold,
             color: Color(0xFF0F172A),
@@ -432,7 +436,9 @@ class _ExamListPageState extends State<ExamListPage> {
           ),
         ],
       ),
-      body: RefreshIndicator(
+      body: (!isStudent && _lecturerNavIndex == 1)
+          ? const LecturerQuestionBankView()
+          : RefreshIndicator(
         onRefresh: () async {
           await Future.wait([_fetchExams(), _checkServerPing()]);
         },
@@ -862,7 +868,7 @@ class _ExamListPageState extends State<ExamListPage> {
           ),
         ),
       ),
-      floatingActionButton: isProctor
+      floatingActionButton: (isProctor && _lecturerNavIndex == 0)
           ? FloatingActionButton.extended(
               onPressed: () async {
                 final created = await Navigator.push<bool>(
@@ -882,7 +888,9 @@ class _ExamListPageState extends State<ExamListPage> {
           : null,
       bottomNavigationBar: isStudent
           ? NavigationBar(
-              selectedIndex: _bottomNavIndex,
+              selectedIndex: (_bottomNavIndex >= 0 && _bottomNavIndex < 3)
+                  ? _bottomNavIndex
+                  : 0,
               height: 64,
               backgroundColor: Colors.white,
               indicatorColor: const Color(0xFFE2E8F0),
@@ -925,7 +933,52 @@ class _ExamListPageState extends State<ExamListPage> {
                 ),
               ],
             )
-          : null,
+          : (user?.role == 'LECTURER'
+              ? NavigationBar(
+                  selectedIndex:
+                      (_lecturerNavIndex >= 0 && _lecturerNavIndex < 3)
+                          ? _lecturerNavIndex
+                          : 0,
+                  height: 64,
+                  backgroundColor: Colors.white,
+                  indicatorColor: const Color(0xFFE2E8F0),
+                  elevation: 4,
+                  onDestinationSelected: (idx) {
+                    if (idx == 0) {
+                      setState(() => _lecturerNavIndex = 0);
+                    } else if (idx == 1) {
+                      setState(() => _lecturerNavIndex = 1);
+                    } else if (idx == 2) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ProfilePage()),
+                      ).then((_) {
+                        if (mounted) setState(() => _lecturerNavIndex = 0);
+                      });
+                    }
+                  },
+                  destinations: const [
+                    NavigationDestination(
+                      icon: Icon(Icons.home_outlined),
+                      selectedIcon: Icon(Icons.home, color: Color(0xFF0F172A)),
+                      label: 'Trang chủ',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.menu_book_outlined),
+                      selectedIcon: Icon(
+                        Icons.menu_book,
+                        color: Color(0xFF0F172A),
+                      ),
+                      label: 'Môn học',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.person_outline),
+                      selectedIcon: Icon(Icons.person, color: Color(0xFF0F172A)),
+                      label: 'Hồ sơ',
+                    ),
+                  ],
+                )
+              : null),
     );
   }
 
