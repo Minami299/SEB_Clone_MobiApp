@@ -5,8 +5,22 @@ const {
   ExamAttempt,
   Question,
   Class,
-  ClassEnrollment
+  ClassEnrollment,
+  Subject
 } = require('../models');
+
+const hasSubjectScope = async (user, subjectId) => {
+  if (user.role === 'ADMIN') return true;
+  if (!user.department_id) return false;
+  return !!(await Subject.exists({ _id: subjectId, department_id: user.department_id }));
+};
+
+const canAccessExam = async (user, examId) => {
+  if (user.role !== 'HEAD_OF_SUBJECT') return true;
+  if (!user.department_id) return false;
+  const exam = await Exam.findById(examId).populate('subject_id', 'department_id');
+  return !!exam && exam.subject_id?.department_id?.toString() === user.department_id.toString();
+};
 
 const createExam = async (req, res) => {
   try {
@@ -35,6 +49,16 @@ const createExam = async (req, res) => {
         success: false,
         message: 'Vui lòng cung cấp đầy đủ thông tin ca thi: môn học, tiêu đề, thời gian bắt đầu, kết thúc và thời lượng'
       });
+    }
+
+    if (!await hasSubjectScope(req.user, subject_id)) {
+      return res.status(403).json({ success: false, message: 'Bạn không phụ trách môn học này' });
+    }
+    if (class_id) {
+      const classDoc = await Class.findById(class_id).select('subject_id');
+      if (!classDoc || classDoc.subject_id.toString() !== subject_id.toString()) {
+        return res.status(400).json({ success: false, message: 'Lớp học phần không thuộc môn thi đã chọn' });
+      }
     }
 
     const exam = await Exam.create({
@@ -111,6 +135,7 @@ const assignQuestions = async (req, res) => {
         message: 'Ca thi không tồn tại'
       });
     }
+    if (!await canAccessExam(req.user, id)) return res.status(403).json({ success: false, message: 'Bạn không có quyền với kỳ thi này' });
 
     await ExamQuestion.deleteMany({ exam_id: id });
 
@@ -155,6 +180,7 @@ const assignStudents = async (req, res) => {
         message: 'Ca thi không tồn tại'
       });
     }
+    if (!await canAccessExam(req.user, id)) return res.status(403).json({ success: false, message: 'Bạn không có quyền với kỳ thi này' });
 
     const docs = student_ids.map((sId) => ({
       exam_id: id,
@@ -186,6 +212,9 @@ const assignStudents = async (req, res) => {
 const publishExam = async (req, res) => {
   try {
     const { id } = req.params;
+    const exists = await Exam.exists({ _id: id });
+    if (!exists) return res.status(404).json({ success: false, message: 'Ca thi không tồn tại' });
+    if (!await canAccessExam(req.user, id)) return res.status(403).json({ success: false, message: 'Bạn không có quyền với kỳ thi này' });
     const exam = await Exam.findByIdAndUpdate(
       id,
       { status: 'PUBLISHED' },
@@ -198,7 +227,6 @@ const publishExam = async (req, res) => {
         message: 'Ca thi không tồn tại'
       });
     }
-
     res.status(200).json({
       success: true,
       message: 'Ca thi đã được xuất bản (PUBLISHED)',
@@ -219,6 +247,11 @@ const getExams = async (req, res) => {
       filter.created_by = req.user._id;
     } else if (req.user.role === 'STUDENT') {
       filter.status = 'PUBLISHED';
+    } else if (req.user.role === 'HEAD_OF_SUBJECT') {
+      const subjects = req.user.department_id
+        ? await Subject.find({ department_id: req.user.department_id }).distinct('_id')
+        : [];
+      filter.subject_id = { $in: subjects };
     }
 
     const exams = await Exam.find(filter)
@@ -252,6 +285,7 @@ const getExamDetail = async (req, res) => {
         message: 'Ca thi không tồn tại'
       });
     }
+    if (!await canAccessExam(req.user, id)) return res.status(403).json({ success: false, message: 'Bạn không có quyền với kỳ thi này' });
 
     const examQuestions = await ExamQuestion.find({ exam_id: id })
       .populate({
@@ -293,6 +327,7 @@ const updateExam = async (req, res) => {
         message: 'Ca thi không tồn tại'
       });
     }
+    if (!await canAccessExam(req.user, id)) return res.status(403).json({ success: false, message: 'Bạn không có quyền với kỳ thi này' });
 
     if (exam.status === 'ONGOING' || exam.status === 'COMPLETED') {
       return res.status(400).json({
@@ -322,6 +357,12 @@ const updateExam = async (req, res) => {
     } = req.body;
 
     if (class_id !== undefined) exam.class_id = class_id || null;
+    if (class_id) {
+      const classDoc = await Class.findById(class_id).select('subject_id');
+      if (!classDoc || classDoc.subject_id.toString() !== exam.subject_id.toString()) {
+        return res.status(400).json({ success: false, message: 'Lớp học phần không thuộc môn thi đã chọn' });
+      }
+    }
     if (exam_title) exam.exam_title = exam_title;
     if (description !== undefined) exam.description = description;
     if (start_time) exam.start_time = new Date(start_time);
@@ -381,6 +422,7 @@ const deleteExam = async (req, res) => {
         message: 'Ca thi không tồn tại'
       });
     }
+    if (!await canAccessExam(req.user, id)) return res.status(403).json({ success: false, message: 'Bạn không có quyền với kỳ thi này' });
 
     if (exam.status === 'ONGOING') {
       return res.status(400).json({
@@ -418,6 +460,7 @@ const getExamStatistics = async (req, res) => {
         message: 'Ca thi không tồn tại'
       });
     }
+    if (!await canAccessExam(req.user, id)) return res.status(403).json({ success: false, message: 'Bạn không có quyền với kỳ thi này' });
 
     const eligibilities = await ExamEligibility.find({ exam_id: id })
       .populate('student_id', 'full_name user_code email');
@@ -558,6 +601,7 @@ const exportExamGrades = async (req, res) => {
         message: 'Ca thi không tồn tại'
       });
     }
+    if (!await canAccessExam(req.user, id)) return res.status(403).json({ success: false, message: 'Bạn không có quyền với kỳ thi này' });
 
     const eligibilities = await ExamEligibility.find({ exam_id: id })
       .populate('student_id', 'full_name user_code email');
@@ -617,6 +661,7 @@ const getClassesBySubject = async (req, res) => {
   try {
     const { subject_id } = req.params;
     const filter = { subject_id };
+    if (!await hasSubjectScope(req.user, subject_id)) return res.status(403).json({ success: false, message: 'Bạn không phụ trách môn học này' });
     if (req.user.role === 'LECTURER') {
       filter.lecturer_id = req.user._id;
     }
@@ -636,6 +681,9 @@ const getClassesBySubject = async (req, res) => {
 const getClassStudents = async (req, res) => {
   try {
     const { class_id } = req.params;
+    const classDoc = await Class.findById(class_id).select('subject_id');
+    if (!classDoc) return res.status(404).json({ success: false, message: 'Lớp học phần không tồn tại' });
+    if (!await hasSubjectScope(req.user, classDoc.subject_id)) return res.status(403).json({ success: false, message: 'Bạn không phụ trách môn học của lớp này' });
     const enrollments = await ClassEnrollment.find({ class_id }).populate('student_id', 'full_name user_code email');
     const students = enrollments.map((e) => e.student_id).filter(Boolean);
     res.status(200).json({

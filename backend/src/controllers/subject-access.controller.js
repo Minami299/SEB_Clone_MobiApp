@@ -1,5 +1,18 @@
 const { SubjectAccess, Subject } = require('../models');
 
+const getSubjectScope = (user) => user.role === 'ADMIN'
+  ? {}
+  : { department_id: user.department_id };
+
+const canManageSubject = async (user, subjectId) => {
+  if (user.role === 'ADMIN') return true;
+  if (!user.department_id) return false;
+  return !!(await Subject.exists({
+    _id: subjectId,
+    department_id: user.department_id
+  }));
+};
+
 const requestAccess = async (req, res) => {
   try {
     const { subject_id, grant_type } = req.body;
@@ -74,7 +87,14 @@ const getMyRequests = async (req, res) => {
 
 const getPendingRequests = async (req, res) => {
   try {
-    const requests = await SubjectAccess.find({ status: 'PENDING' })
+    const subjectIds = req.user.role === 'ADMIN'
+      ? null
+      : (req.user.department_id
+        ? (await Subject.find({ department_id: req.user.department_id }).select('_id')).map((s) => s._id)
+        : []);
+    const filter = { status: 'PENDING' };
+    if (subjectIds) filter.subject_id = { $in: subjectIds };
+    const requests = await SubjectAccess.find(filter)
       .populate('subject_id', 'subject_code subject_name')
       .populate('lecturer_id', 'full_name email user_code')
       .sort({ created_at: -1 });
@@ -103,21 +123,26 @@ const reviewRequest = async (req, res) => {
       });
     }
 
-    const updated = await SubjectAccess.findByIdAndUpdate(
-      id,
-      {
-        status,
-        approved_by: req.user._id
-      },
-      { new: true }
-    );
+    const request = await SubjectAccess.findById(id).populate('subject_id', 'department_id');
 
-    if (!updated) {
+    if (!request) {
       return res.status(404).json({
         success: false,
         message: 'Không tìm thấy yêu cầu'
       });
     }
+
+    if (request.status !== 'PENDING') {
+      return res.status(409).json({ success: false, message: 'Yêu cầu này đã được xử lý' });
+    }
+    if (req.user.role !== 'ADMIN' && (!req.user.department_id ||
+        request.subject_id?.department_id?.toString() !== req.user.department_id.toString())) {
+      return res.status(403).json({ success: false, message: 'Bạn không phụ trách môn học của yêu cầu này' });
+    }
+
+    request.status = status;
+    request.approved_by = req.user._id;
+    const updated = await request.save();
 
     res.status(200).json({
       success: true,
@@ -135,7 +160,7 @@ const reviewRequest = async (req, res) => {
 const getAllSubjects = async (req, res) => {
   try {
     const { status } = req.query;
-    const filter = {};
+    const filter = getSubjectScope(req.user);
     if (status) {
       filter.status = status;
     } else if (req.user && (req.user.role === 'LECTURER' || req.user.role === 'STUDENT')) {
@@ -169,6 +194,10 @@ const updateSubjectStatus = async (req, res) => {
         success: false,
         message: 'Trạng thái môn học không hợp lệ (phải là ACTIVE hoặc INACTIVE)'
       });
+    }
+
+    if (!await canManageSubject(req.user, id)) {
+      return res.status(403).json({ success: false, message: 'Bạn không phụ trách môn học này' });
     }
 
     const updated = await Subject.findByIdAndUpdate(

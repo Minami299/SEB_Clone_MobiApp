@@ -18,23 +18,19 @@ class SubjectCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(5),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: Color(0xFFE2E8F0)),
       ),
-      padding: const EdgeInsets.all(14.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // Row 1: Code and Switch toggle
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -64,7 +60,7 @@ class SubjectCardWidget extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    isActive ? 'Active' : 'Inactive',
+                    isActive ? 'Đang hoạt động' : 'Ngừng hoạt động',
                     style: const TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
@@ -85,12 +81,12 @@ class SubjectCardWidget extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          // Row 3: Status label & View Details button
+          // Trạng thái môn học và nút xem chi tiết.
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Subject availability',
+                'Trạng thái môn học',
                 style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
               ),
               OutlinedButton(
@@ -107,13 +103,14 @@ class SubjectCardWidget extends StatelessWidget {
                   ),
                 ),
                 child: const Text(
-                  'View Details',
+                  'Xem chi tiết',
                   style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                 ),
               ),
             ],
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
