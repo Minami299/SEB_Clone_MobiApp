@@ -1,13 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-
-import '../../../../core/network/api_client.dart';
-import '../../../../core/network/api_endpoints.dart';
 import '../../data/datasources/exam_remote_datasource.dart';
 import '../../data/models/question_item_model.dart';
 import '../widgets/exam_lobby_header_card.dart';
-import '../widgets/preflight_checklist_card.dart';
 import 'exam_taking_page.dart';
 
 class ExamLobbyPage extends StatefulWidget {
@@ -33,67 +29,13 @@ class ExamLobbyPage extends StatefulWidget {
 }
 
 class _ExamLobbyPageState extends State<ExamLobbyPage> {
-  final _apiClient = ApiClient();
   final _examDataSource = ExamRemoteDataSource();
 
-  bool _isChecking = true;
-  bool _serverConnected = false;
-  bool _batterySufficient = true; // Thiết bị kiểm tra đạt chuẩn
   bool _rulesAgreed = false;
   bool _isStarting = false;
   String? _errorMessage;
 
-  @override
-  void initState() {
-    super.initState();
-    _performPreflightChecks();
-  }
-
-  Future<void> _performPreflightChecks() async {
-    setState(() {
-      _isChecking = true;
-      _errorMessage = null;
-    });
-
-    try {
-      // 1. Kiểm tra kết nối tới server (Ping health)
-      final healthRes = await _apiClient.get(ApiEndpoints.health);
-      final isHealthy =
-          healthRes['status'] == 'OK' || healthRes['success'] == true;
-
-      // Giả lập kiểm tra thiết bị an toàn
-      await Future.delayed(const Duration(milliseconds: 600));
-
-      if (mounted) {
-        setState(() {
-          _serverConnected = isHealthy;
-          _batterySufficient = true;
-          _isChecking = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _serverConnected = false;
-          _isChecking = false;
-          _errorMessage =
-              'Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại mạng.';
-        });
-      }
-    }
-  }
-
   Future<void> _handleStartExam() async {
-    if (!_serverConnected) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Chưa kết nối được với máy chủ'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
     if (!_rulesAgreed) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -157,8 +99,7 @@ class _ExamLobbyPageState extends State<ExamLobbyPage> {
 
   @override
   Widget build(BuildContext context) {
-    final canStart =
-        _serverConnected && _batterySufficient && _rulesAgreed && !_isStarting;
+    final canStart = _rulesAgreed && !_isStarting;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
@@ -183,24 +124,6 @@ class _ExamLobbyPageState extends State<ExamLobbyPage> {
               durationMinutes: widget.durationMinutes,
               maxViolations: widget.maxViolations,
               accessPin: widget.accessPin,
-            ),
-
-            const SizedBox(height: 20),
-
-            // Pre-flight Checklist Card
-            const Text(
-              'Điều kiện trước khi vào thi',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF173A5E),
-              ),
-            ),
-            const SizedBox(height: 10),
-
-            PreflightChecklistCard(
-              serverConnected: _serverConnected,
-              batterySufficient: _batterySufficient,
             ),
 
             const SizedBox(height: 20),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-
+import '../../../../core/network/api_client.dart';
+import '../../../../core/network/api_endpoints.dart';
 import '../../data/models/exam_model.dart';
 import '../../../exam_management/presentation/pages/create_edit_exam_page.dart';
 import '../../../monitoring_reports/presentation/pages/live_monitoring_page.dart';
 import '../../../monitoring_reports/presentation/pages/exam_report_detail_page.dart';
+import 'exam_live_pin_dialog.dart';
 
 class ExamCardWidget extends StatelessWidget {
   final ExamModel exam;
@@ -19,12 +21,78 @@ class ExamCardWidget extends StatelessWidget {
     required this.onRefresh,
   });
 
+  Future<void> _handleToggleStatus(BuildContext context) async {
+    final s = exam.status.toUpperCase().trim();
+    final isCurrentlyOpen = (s == 'PUBLISHED' || s == 'ONGOING' || s == 'IN_PROGRESS' || s == 'ACTIVE');
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              isCurrentlyOpen ? Icons.stop_circle_outlined : Icons.play_circle_outline,
+              color: isCurrentlyOpen ? Colors.red : const Color(0xFF10B981),
+            ),
+            const SizedBox(width: 8),
+            Text(isCurrentlyOpen ? 'Kết thúc ca thi' : 'Mở lại ca thi'),
+          ],
+        ),
+        content: Text(
+          isCurrentlyOpen
+              ? 'Bạn có chắc chắn muốn kết thúc ca thi "${exam.title}" không?\n\nSau khi kết thúc, sinh viên sẽ không thể vào làm bài được nữa. Trạng thái ca thi sẽ chuyển thành "Đã kết thúc".'
+              : 'Bạn có muốn mở lại ca thi "${exam.title}" để sinh viên có thể tiếp tục vào thi không?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isCurrentlyOpen ? Colors.red : const Color(0xFF10B981),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(isCurrentlyOpen ? 'Kết thúc ca thi' : 'Mở ca thi'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final apiClient = ApiClient();
+        if (isCurrentlyOpen) {
+          await apiClient.patch(ApiEndpoints.examClose(exam.id));
+        } else {
+          await apiClient.patch(ApiEndpoints.examPublish(exam.id));
+        }
+        onRefresh();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(isCurrentlyOpen ? 'Đã kết thúc ca thi thành công.' : 'Đã mở lại ca thi thành công.'),
+              backgroundColor: isCurrentlyOpen ? Colors.orange : Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isPublished = exam.status == 'PUBLISHED';
-    final subjectLabel = exam.subjectCode.isNotEmpty
-        ? exam.subjectCode
-        : 'SEB EXAM';
+    final s = exam.status.toUpperCase().trim();
+    final isPublished = (s == 'PUBLISHED' || s == 'ONGOING' || s == 'IN_PROGRESS' || s == 'ACTIVE');
+    final isEnded = (s == 'ENDED' || s == 'COMPLETED' || s == 'CLOSED');
+    final subjectLabel = exam.subjectCode.isNotEmpty ? exam.subjectCode : 'SEB EXAM';
 
     return Container(
       decoration: BoxDecoration(
@@ -50,7 +118,7 @@ class ExamCardWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: Subject badge & Status badge
+          // Row 1: Subject badge, Edit button (nếu là Giám thị) & Status badge
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -72,7 +140,62 @@ class ExamCardWidget extends StatelessWidget {
                   ),
                 ),
               ),
-              _buildStatusBadge(exam.status),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildStatusBadge(exam.status),
+                  if (isProctor && !isEnded) ...[
+                    const SizedBox(width: 6),
+                    // Nút Sửa ca thi (Chỉ cho sửa khi chưa kết thúc ca thi)
+                    Tooltip(
+                      message: 'Chỉnh sửa ca thi',
+                      child: InkWell(
+                        onTap: () async {
+                          final updated = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(builder: (_) => CreateEditExamPage(examId: exam.id)),
+                          );
+                          if (updated == true) onRefresh();
+                        },
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF1E3A5F)),
+                        ),
+                      ),
+                    ),
+                    if (isPublished) ...[
+                      const SizedBox(width: 6),
+                      // Nút Kết thúc ca thi (Chỉ hiện khi ca đang mở)
+                      Tooltip(
+                        message: 'Kết thúc ca thi',
+                        child: InkWell(
+                          onTap: () => _handleToggleStatus(context),
+                          borderRadius: BorderRadius.circular(6),
+                          child: Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF2F2),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFFFECACA)),
+                            ),
+                            child: const Icon(
+                              Icons.power_settings_new,
+                              size: 16,
+                              color: Color(0xFFDC2626),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ],
+              ),
             ],
           ),
 
@@ -105,142 +228,174 @@ class ExamCardWidget extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // Row 3: Metadata chips (Thời lượng, Số lỗi, PIN)
+          // Row 3: Metadata chips (Thời lượng, Số lỗi, Giờ bắt đầu)
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: const Color(0xFFF1F5F9)),
             ),
-            child: Row(
+            child: Wrap(
+              spacing: 14,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 _buildInfoItem(
                   icon: Icons.schedule,
                   label: '${exam.durationMinutes} phút',
                 ),
-                const SizedBox(width: 14),
                 _buildInfoItem(
                   icon: Icons.shield_outlined,
-                  label: 'Tối đa ${exam.maxViolations} vi phạm',
+                  label: 'Tối đa ${exam.maxViolations} lỗi',
                 ),
-                if (exam.accessPin != null &&
-                    exam.accessPin!.isNotEmpty &&
-                    isProctor) ...[
-                  const Spacer(),
+                if (exam.startTime != null)
                   _buildInfoItem(
-                    icon: Icons.pin_outlined,
-                    label: 'PIN: ${exam.accessPin}',
-                    isHighlight: true,
+                    icon: Icons.event_note_outlined,
+                    label: _formatDateTime(exam.startTime!),
                   ),
-                ],
               ],
             ),
           ),
 
           const SizedBox(height: 14),
 
-          // Row 4: Actions (Proctor buttons / Student Enter button)
+          // Row 4: Actions (Thao tác cho Giám thị / Nút Vào thi cho Sinh viên)
           if (isProctor) ...[
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.edit_outlined,
-                    size: 20,
-                    color: Color(0xFF1E3A5F),
-                  ),
-                  tooltip: 'Sửa ca thi',
-                  style: IconButton.styleFrom(
-                    backgroundColor: const Color(0xFFF1F5F9),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  onPressed: () async {
-                    final updated = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => CreateEditExamPage(examId: exam.id),
+            if (isEnded) ...[
+              // Khi ca thi Đã kết thúc: Ẩn nút Cấp mã PIN, hiện nút Xem báo cáo & Nhật ký giám sát
+              Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ExamReportDetailPage(
+                              examId: exam.id,
+                              examTitle: exam.title,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.analytics_outlined, size: 16),
+                      label: const Text('Xem Báo cáo & Điểm thi', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E3A5F),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        elevation: 1,
                       ),
-                    );
-                    if (updated == true) onRefresh();
-                  },
-                ),
-                const SizedBox(width: 6),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ExamReportDetailPage(
-                          examId: exam.id,
-                          examTitle: exam.title,
-                        ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 2,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => LiveMonitoringPage(
+                              examId: exam.id,
+                              examTitle: exam.title,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.history_edu, size: 16),
+                      label: const Text('Nhật ký', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 11),
+                        foregroundColor: const Color(0xFF1E3A5F),
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.analytics_outlined, size: 16),
-                  label: const Text('Báo cáo', style: TextStyle(fontSize: 12)),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
-                    foregroundColor: const Color(0xFF1E3A5F),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => LiveMonitoringPage(
-                          examId: exam.id,
-                          examTitle: exam.title,
-                        ),
+                ],
+              ),
+            ] else ...[
+              // Khi ca thi đang mở hoặc bản nháp: Hiện đủ 3 nút Báo cáo, Giám sát, Cấp mã PIN
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ExamReportDetailPage(
+                              examId: exam.id,
+                              examTitle: exam.title,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.analytics_outlined, size: 16),
+                      label: const Text('Báo cáo', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        foregroundColor: const Color(0xFF1E3A5F),
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                    );
-                  },
-                  icon: const Icon(Icons.monitor_heart_outlined, size: 16),
-                  label: const Text('Giám sát', style: TextStyle(fontSize: 12)),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
-                    foregroundColor: const Color(0xFF1E3A5F),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                ),
-                const Spacer(),
-                ElevatedButton.icon(
-                  onPressed: onEnterExam,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E3A5F),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => LiveMonitoringPage(
+                              examId: exam.id,
+                              examTitle: exam.title,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.monitor_heart_outlined, size: 16),
+                      label: const Text('Giám sát', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        foregroundColor: const Color(0xFF1E3A5F),
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
                     ),
                   ),
-                  icon: const Icon(Icons.login, size: 16),
-                  label: const Text(
-                    'Vào ca',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => ExamLivePinDialog(
+                            exam: exam,
+                            onRefresh: onRefresh,
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E3A5F),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        elevation: 1,
+                      ),
+                      icon: const Icon(Icons.qr_code_2, size: 16),
+                      label: const Text('Cấp mã PIN', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ] else ...[
             SizedBox(
               width: double.infinity,
@@ -252,12 +407,10 @@ class ExamCardWidget extends StatelessWidget {
                   size: 18,
                 ),
                 label: Text(
-                  isPublished ? 'VÀO LÀM BÀI THI' : 'CHƯA TỚI GIỜ MỞ CA',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
+                  isPublished
+                      ? 'VÀO LÀM BÀI THI'
+                      : (s == 'COMPLETED' || s == 'ENDED' ? 'CA THI ĐÃ KẾT THÚC' : 'CHƯA TỚI GIỜ MỞ CA'),
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: isPublished
@@ -280,7 +433,10 @@ class ExamCardWidget extends StatelessWidget {
   }
 
   Widget _buildStatusBadge(String status) {
-    if (status == 'PUBLISHED') {
+    final s = status.toUpperCase().trim();
+
+    // 1. Đang diễn ra
+    if (s == 'PUBLISHED' || s == 'ONGOING' || s == 'IN_PROGRESS' || s == 'ACTIVE') {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
@@ -306,20 +462,61 @@ class ExamCardWidget extends StatelessWidget {
       );
     }
 
-    if (status == 'DRAFT') {
+    // 2. Bản nháp
+    if (s == 'DRAFT') {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: const Color(0xFFFEF3C7),
+          color: const Color(0xFFF1F5F9),
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: const Color(0xFFF59E0B)),
+          border: Border.all(color: const Color(0xFFCBD5E1)),
         ),
         child: const Text(
           'Bản nháp',
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.bold,
-            color: Color(0xFFB45309),
+            color: Color(0xFF475569),
+          ),
+        ),
+      );
+    }
+
+    // 3. Sắp diễn ra
+    if (s == 'UPCOMING' || s == 'SCHEDULED') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEFF6FF),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: const Color(0xFF3B82F6)),
+        ),
+        child: const Text(
+          'Sắp diễn ra',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1D4ED8),
+          ),
+        ),
+      );
+    }
+
+    // 4. Đã kết thúc
+    if (s == 'ENDED' || s == 'COMPLETED' || s == 'CLOSED') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFEF2F2),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: const Color(0xFFEF4444)),
+        ),
+        child: const Text(
+          'Đã kết thúc',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFFB91C1C),
           ),
         ),
       );
@@ -330,6 +527,7 @@ class ExamCardWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFF1F5F9),
         borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Text(
         status,
@@ -340,6 +538,16 @@ class ExamCardWidget extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatDateTime(DateTime dt) {
+    final local = dt.toLocal();
+    final h = local.hour.toString().padLeft(2, '0');
+    final m = local.minute.toString().padLeft(2, '0');
+    final d = local.day.toString().padLeft(2, '0');
+    final mo = local.month.toString().padLeft(2, '0');
+    final y = local.year.toString();
+    return '$h:$m $d/$mo/$y';
   }
 
   Widget _buildInfoItem({

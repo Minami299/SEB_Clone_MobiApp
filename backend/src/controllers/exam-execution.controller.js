@@ -37,11 +37,15 @@ const startAttempt = async (req, res) => {
       });
     }
 
-    if (exam.access_pin && exam.access_pin !== access_pin) {
-      return res.status(403).json({
-        success: false,
-        message: 'Mã PIN ca thi không chính xác'
-      });
+    if (exam.access_pin) {
+      const isCurrentPin = exam.access_pin === access_pin;
+      const isPreviousPin = exam.previous_pin && exam.previous_pin === access_pin;
+      if (!isCurrentPin && !isPreviousPin) {
+        return res.status(403).json({
+          success: false,
+          message: 'Mã PIN ca thi không chính xác hoặc đã hết hạn (Mã tự đổi mỗi 5 phút)'
+        });
+      }
     }
 
     // Kiểm tra danh sách thí sinh hợp lệ (nếu có phân bổ)
@@ -335,6 +339,9 @@ const getExamViolationLogs = async (req, res) => {
   try {
     const { exam_id } = req.params;
 
+    const eligibilities = await ExamEligibility.find({ exam_id })
+      .populate('student_id', 'full_name user_code email');
+
     const attempts = await ExamAttempt.find({ exam_id })
       .populate('student_id', 'full_name user_code email');
 
@@ -346,10 +353,63 @@ const getExamViolationLogs = async (req, res) => {
       })
       .sort({ detected_at: -1 });
 
+    const attemptsMap = new Map();
+    attempts.forEach((att) => {
+      if (att.student_id) {
+        attemptsMap.set(att.student_id._id.toString(), att);
+      }
+    });
+
+    const studentStatuses = [];
+    eligibilities.forEach((el) => {
+      const stu = el.student_id;
+      if (!stu) return;
+      const att = attemptsMap.get(stu._id.toString());
+      studentStatuses.push({
+        student_id: stu._id,
+        user_code: stu.user_code,
+        full_name: stu.full_name,
+        email: stu.email,
+        attempt_id: att ? att._id : null,
+        status: att ? att.status : 'NOT_STARTED',
+        violation_count: att ? (att.violation_count || 0) : 0,
+        started_at: att ? att.started_at : null,
+        submitted_at: att ? att.submitted_at : null
+      });
+    });
+
+    attempts.forEach((att) => {
+      if (att.student_id && !studentStatuses.some(s => s.student_id.toString() === att.student_id._id.toString())) {
+        studentStatuses.push({
+          student_id: att.student_id._id,
+          user_code: att.student_id.user_code,
+          full_name: att.student_id.full_name,
+          email: att.student_id.email,
+          attempt_id: att._id,
+          status: att.status,
+          violation_count: att.violation_count || 0,
+          started_at: att.started_at,
+          submitted_at: att.submitted_at
+        });
+      }
+    });
+
+    const inProgressCount = studentStatuses.filter(s => s.status === 'IN_PROGRESS').length;
+    const submittedCount = studentStatuses.filter(s => s.status === 'SUBMITTED').length;
+    const notStartedCount = studentStatuses.filter(s => s.status === 'NOT_STARTED').length;
+    const suspendedCount = studentStatuses.filter(s => s.status === 'DISQUALIFIED' || s.status === 'SUSPENDED').length;
+
     res.status(200).json({
       success: true,
       data: {
         total_violations: violations.length,
+        total_registered: studentStatuses.length,
+        in_progress_count: inProgressCount,
+        submitted_count: submittedCount,
+        not_started_count: notStartedCount,
+        suspended_count: suspendedCount,
+        active_in_exam: inProgressCount + submittedCount + suspendedCount,
+        student_statuses: studentStatuses,
         violations
       }
     });
@@ -598,6 +658,35 @@ const forceSuspendAttempt = async (req, res) => {
   }
 };
 
+const unlockAttempt = async (req, res) => {
+  try {
+    const { attemptId } = req.params;
+    const attempt = await ExamAttempt.findById(attemptId).populate('student_id', 'full_name user_code email');
+    if (!attempt) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy lượt thi'
+      });
+    }
+
+    attempt.status = 'IN_PROGRESS';
+    attempt.end_reason = null;
+    attempt.violation_count = Math.max(0, (attempt.violation_count || 1) - 1);
+    await attempt.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Đã mở khóa cho thí sinh tiếp tục làm bài',
+      data: attempt
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 const getMySubmissions = async (req, res) => {
   try {
     const studentId = req.user._id;
@@ -636,6 +725,7 @@ module.exports = {
   getExamViolationLogs,
   getAttemptResult,
   forceSuspendAttempt,
+  unlockAttempt,
   getMySubmissions
 };
 

@@ -680,6 +680,7 @@ class _CreateQuestionPageState extends State<CreateQuestionPage>
                 flex: 3,
                 child: DropdownButtonFormField<String>(
                   initialValue: _selectedChapterId,
+                  isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Chương *',
                     border: OutlineInputBorder(),

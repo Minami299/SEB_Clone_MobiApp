@@ -91,5 +91,18 @@ class ExamRemoteDataSource {
     final response = await apiClient.get(ApiEndpoints.examViolations(examId));
     return response['data'] as Map<String, dynamic>;
   }
+
+  Future<Map<String, dynamic>> forceSuspendAttempt(String attemptId, {String? reason}) async {
+    final response = await apiClient.post(
+      ApiEndpoints.examForceSuspend(attemptId),
+      body: {'reason': reason ?? 'PROCTOR_FORCE_SUSPEND'},
+    );
+    return response['data'] as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> unlockAttempt(String attemptId) async {
+    final response = await apiClient.post(ApiEndpoints.examUnlockAttempt(attemptId));
+    return response['data'] as Map<String, dynamic>;
+  }
 }
 

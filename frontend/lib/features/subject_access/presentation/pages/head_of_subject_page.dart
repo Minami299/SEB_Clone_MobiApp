@@ -602,10 +602,6 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
                   'Duyệt yêu cầu truy cập môn học từ giảng viên.',
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: _fetchPendingRequests,
-              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -649,10 +645,6 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
                   'Báo cáo',
                   'Báo cáo và thống kê các kỳ thi của bộ môn.',
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: _fetchExams,
               ),
             ],
           ),
@@ -790,17 +782,6 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
             ),
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Làm mới',
-            onPressed: () {
-              if (_currentTabIndex == 0) _fetchSubjects();
-              if (_currentTabIndex == 2) _fetchPendingRequests();
-              if (_currentTabIndex == 3) _fetchExams();
-            },
-          ),
-        ],
       ),
       body: SafeArea(child: currentBody),
       bottomNavigationBar: Container(
