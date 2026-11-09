@@ -364,8 +364,28 @@ const createUser = async (req, res) => {
       });
     }
 
+    const cleanPassword = password.trim();
+    if (cleanPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mật khẩu phải có ít nhất 6 ký tự'
+      });
+    }
+    if (/\s/.test(password)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mật khẩu không được chứa khoảng trắng'
+      });
+    }
+    if (!/[a-zA-Z]/.test(cleanPassword) || !/[0-9]/.test(cleanPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mật khẩu phải bao gồm cả chữ cái và chữ số'
+      });
+    }
+
     const salt = await bcrypt.genSalt(10);
-    const password_hash = await bcrypt.hash(password, salt);
+    const password_hash = await bcrypt.hash(cleanPassword, salt);
 
     const newUser = await User.create({
       user_code,
@@ -440,8 +460,27 @@ const updateUser = async (req, res) => {
     if (status) user.status = status;
 
     if (password && password.trim().length > 0) {
+      const cleanPassword = password.trim();
+      if (cleanPassword.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mật khẩu phải có ít nhất 6 ký tự'
+        });
+      }
+      if (/\s/.test(password)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mật khẩu không được chứa khoảng trắng'
+        });
+      }
+      if (!/[a-zA-Z]/.test(cleanPassword) || !/[0-9]/.test(cleanPassword)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mật khẩu phải bao gồm cả chữ cái và chữ số'
+        });
+      }
       const salt = await bcrypt.genSalt(10);
-      user.password_hash = await bcrypt.hash(password.trim(), salt);
+      user.password_hash = await bcrypt.hash(cleanPassword, salt);
     }
 
     await user.save();
