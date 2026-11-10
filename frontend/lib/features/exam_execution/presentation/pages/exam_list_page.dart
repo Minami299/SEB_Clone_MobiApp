@@ -209,7 +209,10 @@ class _ExamListPageState extends State<ExamListPage> {
         title: Text(
           (!isStudent && _lecturerNavIndex == 1)
               ? 'Môn học & Question Bank'
-              : 'Hệ thống Khảo thí SEB',
+              : ((!isStudent && _lecturerNavIndex == 2) ||
+                      (isStudent && _bottomNavIndex == 2))
+                  ? 'Thông tin cá nhân'
+                  : 'Hệ thống Khảo thí SEB',
           style: const TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.bold,
@@ -227,10 +230,16 @@ class _ExamListPageState extends State<ExamListPage> {
             ),
             tooltip: 'Hồ sơ cá nhân',
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfilePage()),
-              ).then((_) => setState(() {}));
+              if (user?.role == 'LECTURER') {
+                setState(() => _lecturerNavIndex = 2);
+              } else if (isStudent) {
+                setState(() => _bottomNavIndex = 2);
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfilePage()),
+                ).then((_) => setState(() {}));
+              }
             },
           ),
           IconButton(
@@ -246,7 +255,10 @@ class _ExamListPageState extends State<ExamListPage> {
       ),
       body: (!isStudent && _lecturerNavIndex == 1)
           ? const LecturerQuestionBankView()
-          : RefreshIndicator(
+          : (((!isStudent && _lecturerNavIndex == 2) ||
+                  (isStudent && _bottomNavIndex == 2))
+              ? const ProfilePage(showAppBar: false)
+              : RefreshIndicator(
         onRefresh: () async {
           await Future.wait([_fetchExams(), _checkServerPing()]);
         },
@@ -675,7 +687,7 @@ class _ExamListPageState extends State<ExamListPage> {
             ],
           ),
         ),
-      ),
+      )),
       floatingActionButton: (isProctor && _lecturerNavIndex == 0)
           ? FloatingActionButton.extended(
               onPressed: () async {
@@ -712,12 +724,7 @@ class _ExamListPageState extends State<ExamListPage> {
                 } else if (idx == 1) {
                   setState(() => _bottomNavIndex = 1);
                 } else if (idx == 2) {
-                  Navigator.push(
-                    context,
-                    smoothPageRoute(const ProfilePage()),
-                  ).then((_) {
-                    if (mounted) setState(() => _bottomNavIndex = 1);
-                  });
+                  setState(() => _bottomNavIndex = 2);
                 }
               },
               destinations: const [
@@ -757,12 +764,7 @@ class _ExamListPageState extends State<ExamListPage> {
                     } else if (idx == 1) {
                       setState(() => _lecturerNavIndex = 1);
                     } else if (idx == 2) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ProfilePage()),
-                      ).then((_) {
-                        if (mounted) setState(() => _lecturerNavIndex = 0);
-                      });
+                      setState(() => _lecturerNavIndex = 2);
                     }
                   },
                   destinations: const [
