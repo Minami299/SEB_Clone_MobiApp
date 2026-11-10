@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../../core/services/session_service.dart';
+import '../../../../core/utils/smooth_page_route.dart';
 import '../../../auth/data/datasources/auth_remote_datasource.dart';
 import '../../../auth/data/models/user_model.dart';
+import '../../../auth/presentation/pages/profile_page.dart';
 import '../../../auth/presentation/pages/welcome_page.dart';
 import '../widgets/create_user_modal.dart';
 import '../widgets/user_action_sheet.dart';
@@ -19,10 +21,11 @@ class UserManagementPage extends StatefulWidget {
 
 class _UserManagementPageState extends State<UserManagementPage> {
   final _authDataSource = AuthRemoteDataSource();
-  List<UserModel> _users = [];
+  List<UserModel> _allUsers = [];
   bool _isLoading = true;
   String? _errorMessage;
   String _selectedRoleFilter = 'ALL';
+  int _currentNavIndex = 0;
   final _searchController = TextEditingController();
   Timer? _searchDebounce;
 
@@ -62,15 +65,13 @@ class _UserManagementPageState extends State<UserManagementPage> {
     }
 
     try {
-      final role = _selectedRoleFilter == 'ALL' ? null : _selectedRoleFilter;
       final search = _searchController.text.trim();
       final users = await _authDataSource.getAllUsers(
-        role: role,
-        search: search,
+        search: search.isNotEmpty ? search : null,
       );
       if (mounted) {
         setState(() {
-          _users = users;
+          _allUsers = users;
           _isLoading = false;
         });
       }
@@ -82,6 +83,11 @@ class _UserManagementPageState extends State<UserManagementPage> {
         });
       }
     }
+  }
+
+  List<UserModel> get _displayedUsers {
+    if (_selectedRoleFilter == 'ALL') return _allUsers;
+    return _allUsers.where((u) => u.role == _selectedRoleFilter).toList();
   }
 
   // Chuyển đổi trạng thái Khóa / Kích hoạt
@@ -324,6 +330,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
               role: role,
               status: status,
             );
+            if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Tạo người dùng mới thành công!'),
@@ -347,7 +354,6 @@ class _UserManagementPageState extends State<UserManagementPage> {
         setState(() {
           _selectedRoleFilter = roleKey;
         });
-        _fetchUsers();
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
@@ -381,9 +387,12 @@ class _UserManagementPageState extends State<UserManagementPage> {
 
   @override
   Widget build(BuildContext context) {
-    final studentCount = _users.where((u) => u.role == 'STUDENT').length;
-    final lecturerCount = _users.where((u) => u.role == 'LECTURER').length;
-    final adminCount = _users.where((u) => u.role == 'ADMIN').length;
+    final allCount = _allUsers.length;
+    final studentCount = _allUsers.where((u) => u.role == 'STUDENT').length;
+    final lecturerCount = _allUsers.where((u) => u.role == 'LECTURER').length;
+    final headOfSubjectCount =
+        _allUsers.where((u) => u.role == 'HEAD_OF_SUBJECT').length;
+    final adminCount = _allUsers.where((u) => u.role == 'ADMIN').length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -471,7 +480,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
                           ),
                         ),
                         Text(
-                          'Tổng cộng: ${_users.length} tài khoản trong hệ thống',
+                          'Tổng cộng: ${_allUsers.length} tài khoản trong hệ thống',
                           style: const TextStyle(
                             fontSize: 12,
                             color: Color(0xFF64748B),
@@ -643,7 +652,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
                   _buildFilterChip(
                     label: 'Tất cả',
                     roleKey: 'ALL',
-                    count: _users.length,
+                    count: allCount,
                   ),
                   const SizedBox(width: 8),
                   _buildFilterChip(
@@ -656,6 +665,12 @@ class _UserManagementPageState extends State<UserManagementPage> {
                     label: 'Giám thị',
                     roleKey: 'LECTURER',
                     count: lecturerCount,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(
+                    label: 'Trưởng bộ môn',
+                    roleKey: 'HEAD_OF_SUBJECT',
+                    count: headOfSubjectCount,
                   ),
                   const SizedBox(width: 8),
                   _buildFilterChip(
@@ -697,7 +712,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
                         ],
                       ),
                     )
-                  : _users.isEmpty
+                  : _displayedUsers.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -720,10 +735,10 @@ class _UserManagementPageState extends State<UserManagementPage> {
                     )
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
-                      itemCount: _users.length,
+                      itemCount: _displayedUsers.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 10),
                       itemBuilder: (context, index) {
-                        final user = _users[index];
+                        final user = _displayedUsers[index];
                         return UserCardWidget(
                           user: user,
                           onTap: () {
@@ -741,6 +756,39 @@ class _UserManagementPageState extends State<UserManagementPage> {
             ),
           ],
         ),
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: (_currentNavIndex >= 0 && _currentNavIndex < 2)
+            ? _currentNavIndex
+            : 0,
+        height: 64,
+        backgroundColor: Colors.white,
+        indicatorColor: const Color(0xFFE2E8F0),
+        elevation: 3,
+        onDestinationSelected: (idx) {
+          if (idx == 0) {
+            setState(() => _currentNavIndex = 0);
+          } else if (idx == 1) {
+            Navigator.push(
+              context,
+              smoothPageRoute(const ProfilePage()),
+            ).then((_) {
+              if (mounted) setState(() => _currentNavIndex = 0);
+            });
+          }
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.people_outline),
+            selectedIcon: Icon(Icons.people, color: Color(0xFF0F172A)),
+            label: 'Người dùng',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person, color: Color(0xFF0F172A)),
+            label: 'Cá nhân',
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _openCreateUserModal,
