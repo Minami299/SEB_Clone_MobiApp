@@ -660,6 +660,7 @@ const unlockAttempt = async (req, res) => {
 
     attempt.status = 'IN_PROGRESS';
     attempt.end_reason = null;
+    attempt.submitted_at = null;
     attempt.violation_count = Math.max(0, (attempt.violation_count || 1) - 1);
     await attempt.save();
 
