@@ -102,6 +102,6 @@ class ExamRemoteDataSource {
 
   Future<Map<String, dynamic>> unlockAttempt(String attemptId) async {
     final response = await apiClient.post(ApiEndpoints.examUnlockAttempt(attemptId));
-    return response['data'] as Map<String, dynamic>;
+    return response as Map<String, dynamic>;
   }
 }

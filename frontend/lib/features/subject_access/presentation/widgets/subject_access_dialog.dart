@@ -46,7 +46,8 @@ class _SubjectAccessDialogState extends State<SubjectAccessDialog> {
       ]);
       final accessResponse = results[0] as Map<String, dynamic>;
       final lecturerResponse = results[1] as Map<String, dynamic>;
-      if (accessResponse['success'] != true || lecturerResponse['success'] != true) {
+      if (accessResponse['success'] != true ||
+          lecturerResponse['success'] != true) {
         throw Exception('Không thể tải danh sách quyền hoặc giảng viên');
       }
       if (!mounted) return;
@@ -73,7 +74,9 @@ class _SubjectAccessDialogState extends State<SubjectAccessDialog> {
         .map((record) => record['lecturer_id']?['_id']?.toString())
         .toSet();
     return _lecturers
-        .where((lecturer) => !alreadyGranted.contains(lecturer['_id']?.toString()))
+        .where(
+          (lecturer) => !alreadyGranted.contains(lecturer['_id']?.toString()),
+        )
         .toList();
   }
 
@@ -102,10 +105,18 @@ class _SubjectAccessDialogState extends State<SubjectAccessDialog> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Thu hồi quyền truy cập?'),
-        content: Text('Giảng viên ${lecturer['full_name'] ?? ''} sẽ không còn quyền đóng góp câu hỏi cho môn này.'),
+        content: Text(
+          'Giảng viên ${lecturer['full_name'] ?? ''} sẽ không còn quyền đóng góp câu hỏi cho môn này.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Thu hồi')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Thu hồi'),
+          ),
         ],
       ),
     );
@@ -114,7 +125,10 @@ class _SubjectAccessDialogState extends State<SubjectAccessDialog> {
     setState(() => _saving = true);
     try {
       await _apiClient.delete(
-        ApiEndpoints.subjectAccessRevoke(widget.subjectId, record['_id'].toString()),
+        ApiEndpoints.subjectAccessRevoke(
+          widget.subjectId,
+          record['_id'].toString(),
+        ),
       );
       await _loadData();
       if (mounted) setState(() => _saving = false);
@@ -134,16 +148,25 @@ class _SubjectAccessDialogState extends State<SubjectAccessDialog> {
       content: SizedBox(
         width: 440,
         child: _loading
-            ? const SizedBox(height: 140, child: Center(child: CircularProgressIndicator()))
+            ? const SizedBox(
+                height: 140,
+                child: Center(child: CircularProgressIndicator()),
+              )
             : SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.subjectName, style: Theme.of(context).textTheme.titleSmall),
+                    Text(
+                      widget.subjectName,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
                     const SizedBox(height: 16),
                     if (_error != null) ...[
-                      Text(_error!, style: const TextStyle(color: Color(0xFFDC2626))),
+                      Text(
+                        _error!,
+                        style: const TextStyle(color: Color(0xFFDC2626)),
+                      ),
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton.icon(
@@ -155,18 +178,26 @@ class _SubjectAccessDialogState extends State<SubjectAccessDialog> {
                     ],
                     if (_availableLecturers.isNotEmpty) ...[
                       DropdownButtonFormField<String>(
-                        value: _selectedLecturerId,
+                        initialValue: _selectedLecturerId,
                         isExpanded: true,
-                        decoration: const InputDecoration(labelText: 'Chọn giảng viên'),
+                        decoration: const InputDecoration(
+                          labelText: 'Chọn giảng viên',
+                        ),
                         items: _availableLecturers.map((lecturer) {
                           final name = lecturer['full_name'] ?? 'Giảng viên';
                           final code = lecturer['user_code'] ?? '';
                           return DropdownMenuItem<String>(
                             value: lecturer['_id'].toString(),
-                            child: Text('$name${code.isNotEmpty ? ' · $code' : ''}', overflow: TextOverflow.ellipsis),
+                            child: Text(
+                              '$name${code.isNotEmpty ? ' · $code' : ''}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           );
                         }).toList(),
-                        onChanged: _saving ? null : (value) => setState(() => _selectedLecturerId = value),
+                        onChanged: _saving
+                            ? null
+                            : (value) =>
+                                  setState(() => _selectedLecturerId = value),
                       ),
                       const SizedBox(height: 8),
                       SizedBox(
@@ -178,30 +209,55 @@ class _SubjectAccessDialogState extends State<SubjectAccessDialog> {
                         ),
                       ),
                     ] else
-                      const Text('Không còn giảng viên phù hợp để cấp quyền trong khoa này.'),
+                      const Text(
+                        'Không còn giảng viên phù hợp để cấp quyền trong khoa này.',
+                      ),
                     const Divider(height: 28),
-                    Text('Quyền đã cấp', style: Theme.of(context).textTheme.titleSmall),
+                    Text(
+                      'Quyền đã cấp',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
                     const SizedBox(height: 8),
-                    ..._accessRecords.where((record) => record['status'] == 'APPROVED').map((record) {
-                      final lecturer = record['lecturer_id'] as Map<String, dynamic>? ?? {};
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(lecturer['full_name'] ?? 'Giảng viên'),
-                        subtitle: Text(lecturer['user_code'] ?? lecturer['email'] ?? ''),
-                        trailing: IconButton(
-                          tooltip: 'Thu hồi quyền',
-                          onPressed: _saving ? null : () => _revokeAccess(record as Map<String, dynamic>),
-                          icon: const Icon(Icons.person_remove_outlined, color: Color(0xFFDC2626)),
-                        ),
-                      );
-                    }),
-                    if (!_accessRecords.any((record) => record['status'] == 'APPROVED'))
+                    ..._accessRecords
+                        .where((record) => record['status'] == 'APPROVED')
+                        .map((record) {
+                          final lecturer =
+                              record['lecturer_id'] as Map<String, dynamic>? ??
+                              {};
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(lecturer['full_name'] ?? 'Giảng viên'),
+                            subtitle: Text(
+                              lecturer['user_code'] ?? lecturer['email'] ?? '',
+                            ),
+                            trailing: IconButton(
+                              tooltip: 'Thu hồi quyền',
+                              onPressed: _saving
+                                  ? null
+                                  : () => _revokeAccess(
+                                      record as Map<String, dynamic>,
+                                    ),
+                              icon: const Icon(
+                                Icons.person_remove_outlined,
+                                color: Color(0xFFDC2626),
+                              ),
+                            ),
+                          );
+                        }),
+                    if (!_accessRecords.any(
+                      (record) => record['status'] == 'APPROVED',
+                    ))
                       const Text('Chưa có giảng viên nào được cấp quyền.'),
                   ],
                 ),
               ),
       ),
-      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Đóng'))],
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Đóng'),
+        ),
+      ],
     );
   }
 }

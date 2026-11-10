@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../exam_execution/data/datasources/exam_remote_datasource.dart';
@@ -10,11 +11,7 @@ class ExamReportDetailPage extends StatefulWidget {
   final String examId;
   final String? examTitle;
 
-  const ExamReportDetailPage({
-    super.key,
-    required this.examId,
-    this.examTitle,
-  });
+  const ExamReportDetailPage({super.key, required this.examId, this.examTitle});
 
   @override
   State<ExamReportDetailPage> createState() => _ExamReportDetailPageState();
@@ -48,7 +45,9 @@ class _ExamReportDetailPageState extends State<ExamReportDetailPage> {
     });
 
     try {
-      final response = await _apiClient.get(ApiEndpoints.examStatistics(widget.examId));
+      final response = await _apiClient.get(
+        ApiEndpoints.examStatistics(widget.examId),
+      );
       if (response['success'] == true && response['data'] != null) {
         if (mounted) {
           setState(() {
@@ -57,7 +56,9 @@ class _ExamReportDetailPageState extends State<ExamReportDetailPage> {
           });
         }
       } else {
-        throw Exception(response['message'] ?? 'Không thể tải báo cáo thống kê');
+        throw Exception(
+          response['message'] ?? 'Không thể tải báo cáo thống kê',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -74,7 +75,10 @@ class _ExamReportDetailPageState extends State<ExamReportDetailPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: Text(widget.examTitle ?? 'Báo cáo & Phổ điểm Ca thi', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+        title: Text(
+          widget.examTitle ?? 'Báo cáo & Phổ điểm Ca thi',
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1E293B),
         elevation: 0.5,
@@ -82,19 +86,25 @@ class _ExamReportDetailPageState extends State<ExamReportDetailPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
-                      const SizedBox(height: 12),
-                      ElevatedButton(onPressed: _fetchStatistics, child: const Text('Thử lại')),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Colors.red),
                   ),
-                )
-              : _reportData == null
-                  ? const Center(child: Text('Không có dữ liệu báo cáo'))
-                  : _buildReportContent(),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: _fetchStatistics,
+                    child: const Text('Thử lại'),
+                  ),
+                ],
+              ),
+            )
+          : _reportData == null
+          ? const Center(child: Text('Không có dữ liệu báo cáo'))
+          : _buildReportContent(),
     );
   }
 
@@ -157,7 +167,7 @@ class _ExamReportDetailPageState extends State<ExamReportDetailPage> {
               border: Border.all(color: const Color(0xFFE2E8F0)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
@@ -176,10 +186,15 @@ class _ExamReportDetailPageState extends State<ExamReportDetailPage> {
                         alignment: Alignment.center,
                         children: [
                           CircularProgressIndicator(
-                            value: ((summary['pass_rate'] ?? 0) as num).toDouble() / 100.0,
+                            value:
+                                ((summary['pass_rate'] ?? 0) as num)
+                                    .toDouble() /
+                                100.0,
                             strokeWidth: 6,
                             backgroundColor: const Color(0xFFF1F5F9),
-                            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF10B981)),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              Color(0xFF10B981),
+                            ),
                           ),
                           Text(
                             '${summary['pass_rate'] ?? 0}%',
@@ -195,13 +210,20 @@ class _ExamReportDetailPageState extends State<ExamReportDetailPage> {
                     const SizedBox(height: 6),
                     const Text(
                       'Tỷ lệ Đạt',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
+                      ),
                     ),
                   ],
                 ),
 
                 const SizedBox(width: 16),
-                const SizedBox(height: 60, child: VerticalDivider(color: Color(0xFFE2E8F0))),
+                const SizedBox(
+                  height: 60,
+                  child: VerticalDivider(color: Color(0xFFE2E8F0)),
+                ),
                 const SizedBox(width: 12),
 
                 // 3 cột điểm: Điểm TB | Cao nhất | Thấp nhất
@@ -236,21 +258,26 @@ class _ExamReportDetailPageState extends State<ExamReportDetailPage> {
           // Visual Histogram (Extracted)
           const Text(
             'Phổ điểm ca thi (Score Distribution):',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+            ),
           ),
           const SizedBox(height: 10),
 
-          ScoreHistogramWidget(
-            histogram: histogram,
-            totalSubmitted: submitted,
-          ),
+          ScoreHistogramWidget(histogram: histogram, totalSubmitted: submitted),
 
           const SizedBox(height: 20),
 
           // Student List Header & Search
           Text(
             'Danh sách thí sinh (${filteredStudents.length}):',
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+            ),
           ),
           const SizedBox(height: 8),
 
@@ -268,8 +295,13 @@ class _ExamReportDetailPageState extends State<ExamReportDetailPage> {
                       },
                     )
                   : null,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
               filled: true,
               fillColor: Colors.white,
               isDense: true,
@@ -310,12 +342,15 @@ class _ExamReportDetailPageState extends State<ExamReportDetailPage> {
     final name = student['full_name'] ?? 'Sinh viên';
     final code = student['user_code'] ?? '';
     final email = student['email'] ?? '';
-    final status = (student['status'] ?? 'NOT_STARTED').toString().toUpperCase();
+    final status = (student['status'] ?? 'NOT_STARTED')
+        .toString()
+        .toUpperCase();
     final isDisqualified = status == 'DISQUALIFIED' || status == 'SUSPENDED';
     final isSubmitted = status == 'SUBMITTED';
     final score = student['score'];
     final violationCount = student['violation_count'] ?? 0;
-    final attemptId = student['attempt_id']?.toString() ?? student['_id']?.toString() ?? '';
+    final attemptId =
+        student['attempt_id']?.toString() ?? student['_id']?.toString() ?? '';
 
     showModalBottomSheet(
       context: context,
@@ -333,7 +368,10 @@ class _ExamReportDetailPageState extends State<ExamReportDetailPage> {
               child: Container(
                 width: 40,
                 height: 4,
-                decoration: BoxDecoration(color: const Color(0xFFCBD5E1), borderRadius: BorderRadius.circular(2)),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -341,10 +379,16 @@ class _ExamReportDetailPageState extends State<ExamReportDetailPage> {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: isDisqualified ? const Color(0xFFFEE2E2) : const Color(0xFFEFF6FF),
+                  backgroundColor: isDisqualified
+                      ? const Color(0xFFFEE2E2)
+                      : const Color(0xFFEFF6FF),
                   child: Icon(
-                    isDisqualified ? Icons.block : (isSubmitted ? Icons.check_circle : Icons.person),
-                    color: isDisqualified ? const Color(0xFFDC2626) : const Color(0xFF1D4ED8),
+                    isDisqualified
+                        ? Icons.block
+                        : (isSubmitted ? Icons.check_circle : Icons.person),
+                    color: isDisqualified
+                        ? const Color(0xFFDC2626)
+                        : const Color(0xFF1D4ED8),
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -352,9 +396,22 @@ class _ExamReportDetailPageState extends State<ExamReportDetailPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
                       const SizedBox(height: 2),
-                      Text('MSSV: $code ${email.isNotEmpty ? "• $email" : ""}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                      Text(
+                        'MSSV: $code ${email.isNotEmpty ? "• $email" : ""}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -365,8 +422,18 @@ class _ExamReportDetailPageState extends State<ExamReportDetailPage> {
             const SizedBox(height: 14),
             Row(
               children: [
-                _buildSheetInfo('Trạng thái', status == 'SUBMITTED' ? 'Đã nộp bài' : (status == 'IN_PROGRESS' ? 'Đang thi' : (isDisqualified ? 'Bị đình chỉ' : 'Chưa thi'))),
-                _buildSheetInfo('Điểm số', score != null ? '$score đ' : 'Chưa có'),
+                _buildSheetInfo(
+                  'Trạng thái',
+                  status == 'SUBMITTED'
+                      ? 'Đã nộp bài'
+                      : (status == 'IN_PROGRESS'
+                            ? 'Đang thi'
+                            : (isDisqualified ? 'Bị đình chỉ' : 'Chưa thi')),
+                ),
+                _buildSheetInfo(
+                  'Điểm số',
+                  score != null ? '$score đ' : 'Chưa có',
+                ),
                 _buildSheetInfo('Vi phạm', '$violationCount lần'),
               ],
             ),
@@ -379,26 +446,48 @@ class _ExamReportDetailPageState extends State<ExamReportDetailPage> {
                   onPressed: () async {
                     Navigator.pop(ctx);
                     try {
-                      final res = await _examDataSource.unlockAttempt(attemptId);
+                      final res = await _examDataSource.unlockAttempt(
+                        attemptId,
+                      );
                       if (res['success'] == true) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Đã mở khóa / cho thi lại thí sinh $name thành công!'), backgroundColor: Colors.green),
+                          SnackBar(
+                            content: Text(
+                              'Đã mở khóa / cho thi lại thí sinh $name thành công!',
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
                         );
                         _fetchStatistics();
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(res['message'] ?? 'Mở khóa thất bại'), backgroundColor: Colors.red),
+                          SnackBar(
+                            content: Text(res['message'] ?? 'Mở khóa thất bại'),
+                            backgroundColor: Colors.red,
+                          ),
                         );
                       }
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
+                        SnackBar(
+                          content: Text('Lỗi: $e'),
+                          backgroundColor: Colors.red,
+                        ),
                       );
                     }
                   },
                   icon: const Icon(Icons.lock_open, size: 18),
-                  label: const Text('Mở khóa / Cho phép thi lại', style: TextStyle(fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                  label: const Text(
+                    'Mở khóa / Cho phép thi lại',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
@@ -408,7 +497,11 @@ class _ExamReportDetailPageState extends State<ExamReportDetailPage> {
               height: 44,
               child: OutlinedButton(
                 onPressed: () => Navigator.pop(ctx),
-                style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                style: OutlinedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
                 child: const Text('Đóng'),
               ),
             ),
@@ -423,9 +516,19 @@ class _ExamReportDetailPageState extends State<ExamReportDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+          ),
           const SizedBox(height: 2),
-          Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF0F172A),
+            ),
+          ),
         ],
       ),
     );

@@ -1,8 +1,12 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+
 import '../../../../core/services/session_service.dart';
+import '../../../../core/utils/smooth_page_route.dart';
 import '../../../auth/data/datasources/auth_remote_datasource.dart';
 import '../../../auth/data/models/user_model.dart';
+import '../../../auth/presentation/pages/profile_page.dart';
 import '../../../auth/presentation/pages/welcome_page.dart';
 import '../widgets/create_user_modal.dart';
 import '../widgets/user_action_sheet.dart';
@@ -17,10 +21,11 @@ class UserManagementPage extends StatefulWidget {
 
 class _UserManagementPageState extends State<UserManagementPage> {
   final _authDataSource = AuthRemoteDataSource();
-  List<UserModel> _users = [];
+  List<UserModel> _allUsers = [];
   bool _isLoading = true;
   String? _errorMessage;
   String _selectedRoleFilter = 'ALL';
+  int _currentNavIndex = 0;
   final _searchController = TextEditingController();
   Timer? _searchDebounce;
 
@@ -60,15 +65,13 @@ class _UserManagementPageState extends State<UserManagementPage> {
     }
 
     try {
-      final role = _selectedRoleFilter == 'ALL' ? null : _selectedRoleFilter;
       final search = _searchController.text.trim();
       final users = await _authDataSource.getAllUsers(
-        role: role,
-        search: search,
+        search: search.isNotEmpty ? search : null,
       );
       if (mounted) {
         setState(() {
-          _users = users;
+          _allUsers = users;
           _isLoading = false;
         });
       }
@@ -82,14 +85,16 @@ class _UserManagementPageState extends State<UserManagementPage> {
     }
   }
 
+  List<UserModel> get _displayedUsers {
+    if (_selectedRoleFilter == 'ALL') return _allUsers;
+    return _allUsers.where((u) => u.role == _selectedRoleFilter).toList();
+  }
+
   // Chuyển đổi trạng thái Khóa / Kích hoạt
   Future<void> _handleToggleStatus(UserModel user) async {
     final newStatus = user.status == 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     try {
-      await _authDataSource.updateUser(
-        userId: user.id,
-        status: newStatus,
-      );
+      await _authDataSource.updateUser(userId: user.id, status: newStatus);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -98,14 +103,19 @@ class _UserManagementPageState extends State<UserManagementPage> {
                 ? 'Đã kích hoạt lại tài khoản ${user.userCode}'
                 : 'Đã khóa tài khoản ${user.userCode}',
           ),
-          backgroundColor: newStatus == 'ACTIVE' ? const Color(0xFF059669) : const Color(0xFFD97706),
+          backgroundColor: newStatus == 'ACTIVE'
+              ? const Color(0xFF059669)
+              : const Color(0xFFD97706),
         ),
       );
       _fetchUsers(showLoading: false);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: $e'), backgroundColor: const Color(0xFFDC2626)),
+        SnackBar(
+          content: Text('Lỗi: $e'),
+          backgroundColor: const Color(0xFFDC2626),
+        ),
       );
     }
   }
@@ -125,7 +135,11 @@ class _UserManagementPageState extends State<UserManagementPage> {
           ),
           title: Text(
             'Phân vai trò: ${user.fullName}',
-            style: const TextStyle(color: Color(0xFF0F172A), fontSize: 16, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: Color(0xFF0F172A),
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -138,7 +152,11 @@ class _UserManagementPageState extends State<UserManagementPage> {
               const SizedBox(height: 16),
               const Text(
                 'Chọn vai trò mới:',
-                style: TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.bold, fontSize: 13),
+                style: TextStyle(
+                  color: Color(0xFF334155),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
               ),
               const SizedBox(height: 8),
               Container(
@@ -153,7 +171,10 @@ class _UserManagementPageState extends State<UserManagementPage> {
                     value: selectedRole,
                     dropdownColor: Colors.white,
                     isExpanded: true,
-                    style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14),
+                    style: const TextStyle(
+                      color: Color(0xFF0F172A),
+                      fontSize: 14,
+                    ),
                     items: _roleDisplayNames.entries
                         .map(
                           (entry) => DropdownMenuItem(
@@ -175,14 +196,19 @@ class _UserManagementPageState extends State<UserManagementPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, null),
-              child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B))),
+              child: const Text(
+                'Hủy',
+                style: TextStyle(color: Color(0xFF64748B)),
+              ),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, selectedRole),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4F46E5),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: const Text('Cập nhật'),
             ),
@@ -208,7 +234,10 @@ class _UserManagementPageState extends State<UserManagementPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: $e'), backgroundColor: const Color(0xFFDC2626)),
+        SnackBar(
+          content: Text('Lỗi: $e'),
+          backgroundColor: const Color(0xFFDC2626),
+        ),
       );
     }
   }
@@ -223,7 +252,13 @@ class _UserManagementPageState extends State<UserManagementPage> {
           borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: Color(0xFFE2E8F0)),
         ),
-        title: const Text('Xác nhận xóa tài khoản', style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Xác nhận xóa tài khoản',
+          style: TextStyle(
+            color: Color(0xFF0F172A),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: Text(
           'Bạn có chắc chắn muốn xóa tài khoản ${user.fullName} (${user.userCode}) khỏi hệ thống?',
           style: const TextStyle(color: Color(0xFF64748B)),
@@ -231,14 +266,19 @@ class _UserManagementPageState extends State<UserManagementPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B))),
+            child: const Text(
+              'Hủy',
+              style: TextStyle(color: Color(0xFF64748B)),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFDC2626),
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: const Text('Xóa'),
           ),
@@ -261,7 +301,10 @@ class _UserManagementPageState extends State<UserManagementPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: $e'), backgroundColor: const Color(0xFFDC2626)),
+        SnackBar(
+          content: Text('Lỗi: $e'),
+          backgroundColor: const Color(0xFFDC2626),
+        ),
       );
     }
   }
@@ -270,30 +313,32 @@ class _UserManagementPageState extends State<UserManagementPage> {
   void _openCreateUserModal() {
     CreateUserModal.show(
       context,
-      onSubmit: ({
-        required String userCode,
-        required String email,
-        required String password,
-        required String fullName,
-        required String role,
-        required String status,
-      }) async {
-        await _authDataSource.createUser(
-          userCode: userCode,
-          email: email,
-          fullName: fullName,
-          password: password,
-          role: role,
-          status: status,
-        );
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tạo người dùng mới thành công!'),
-            backgroundColor: Color(0xFF059669),
-          ),
-        );
-        _fetchUsers(showLoading: false);
-      },
+      onSubmit:
+          ({
+            required String userCode,
+            required String email,
+            required String password,
+            required String fullName,
+            required String role,
+            required String status,
+          }) async {
+            await _authDataSource.createUser(
+              userCode: userCode,
+              email: email,
+              fullName: fullName,
+              password: password,
+              role: role,
+              status: status,
+            );
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Tạo người dùng mới thành công!'),
+                backgroundColor: Color(0xFF059669),
+              ),
+            );
+            _fetchUsers(showLoading: false);
+          },
     );
   }
 
@@ -309,7 +354,6 @@ class _UserManagementPageState extends State<UserManagementPage> {
         setState(() {
           _selectedRoleFilter = roleKey;
         });
-        _fetchUsers();
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
@@ -317,11 +361,13 @@ class _UserManagementPageState extends State<UserManagementPage> {
           color: isSelected ? const Color(0xFF4F46E5) : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFF4F46E5) : const Color(0xFFE2E8F0),
+            color: isSelected
+                ? const Color(0xFF4F46E5)
+                : const Color(0xFFE2E8F0),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),
@@ -341,9 +387,13 @@ class _UserManagementPageState extends State<UserManagementPage> {
 
   @override
   Widget build(BuildContext context) {
-    final studentCount = _users.where((u) => u.role == 'STUDENT').length;
-    final lecturerCount = _users.where((u) => u.role == 'LECTURER').length;
-    final adminCount = _users.where((u) => u.role == 'ADMIN').length;
+    final allCount = _allUsers.length;
+    final studentCount = _allUsers.where((u) => u.role == 'STUDENT').length;
+    final lecturerCount = _allUsers.where((u) => u.role == 'LECTURER').length;
+    final headOfSubjectCount = _allUsers
+        .where((u) => u.role == 'HEAD_OF_SUBJECT')
+        .length;
+    final adminCount = _allUsers.where((u) => u.role == 'ADMIN').length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -354,11 +404,16 @@ class _UserManagementPageState extends State<UserManagementPage> {
             const SizedBox(height: 8),
             Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEEF2FF),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFC7D2FE).withOpacity(0.5)),
+                  border: Border.all(
+                    color: const Color(0xFFC7D2FE).withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -406,7 +461,11 @@ class _UserManagementPageState extends State<UserManagementPage> {
                       color: const Color(0xFFEEF2FF),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.groups_2_rounded, color: Color(0xFF4F46E5), size: 22),
+                    child: const Icon(
+                      Icons.groups_2_rounded,
+                      color: Color(0xFF4F46E5),
+                      size: 22,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -422,8 +481,11 @@ class _UserManagementPageState extends State<UserManagementPage> {
                           ),
                         ),
                         Text(
-                          'Tổng cộng: ${_users.length} tài khoản trong hệ thống',
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                          'Tổng cộng: ${_allUsers.length} tài khoản trong hệ thống',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF64748B),
+                          ),
                         ),
                       ],
                     ),
@@ -431,13 +493,24 @@ class _UserManagementPageState extends State<UserManagementPage> {
                   ElevatedButton.icon(
                     onPressed: _openCreateUserModal,
                     icon: const Icon(Icons.person_add_alt_1, size: 16),
-                    label: const Text('Tạo mới', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                    label: const Text(
+                      'Tạo mới',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF4F46E5),
                       foregroundColor: Colors.white,
                       elevation: 1,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -451,33 +524,51 @@ class _UserManagementPageState extends State<UserManagementPage> {
                     ),
                     child: IconButton(
                       padding: EdgeInsets.zero,
-                      icon: const Icon(Icons.logout_rounded, color: Color(0xFFDC2626), size: 18),
+                      icon: const Icon(
+                        Icons.logout_rounded,
+                        color: Color(0xFFDC2626),
+                        size: 18,
+                      ),
                       tooltip: 'Đăng xuất',
                       onPressed: () {
                         showDialog(
                           context: context,
                           builder: (ctx) => AlertDialog(
                             backgroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            title: const Text('Đăng xuất', style: TextStyle(fontWeight: FontWeight.bold)),
-                            content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?'),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            title: const Text(
+                              'Đăng xuất',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            content: const Text(
+                              'Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?',
+                            ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(ctx),
-                                child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B))),
+                                child: const Text(
+                                  'Hủy',
+                                  style: TextStyle(color: Color(0xFF64748B)),
+                                ),
                               ),
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFFDC2626),
                                   foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
                                 ),
                                 onPressed: () {
                                   Navigator.pop(ctx);
                                   SessionService().clearSession();
                                   Navigator.pushAndRemoveUntil(
                                     context,
-                                    MaterialPageRoute(builder: (_) => const WelcomePage()),
+                                    MaterialPageRoute(
+                                      builder: (_) => const WelcomePage(),
+                                    ),
                                     (route) => false,
                                   );
                                 },
@@ -504,7 +595,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.02),
+                      color: Colors.black.withValues(alpha: 0.02),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -512,14 +603,28 @@ class _UserManagementPageState extends State<UserManagementPage> {
                 ),
                 child: TextField(
                   controller: _searchController,
-                  style: const TextStyle(color: Color(0xFF0F172A), fontSize: 13),
+                  style: const TextStyle(
+                    color: Color(0xFF0F172A),
+                    fontSize: 13,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Tìm tên, email, MSSV hoặc Mã cán bộ...',
-                    hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-                    prefixIcon: const Icon(Icons.search, color: Color(0xFF94A3B8), size: 20),
+                    hintStyle: const TextStyle(
+                      color: Color(0xFF94A3B8),
+                      fontSize: 13,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: Color(0xFF94A3B8),
+                      size: 20,
+                    ),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, color: Color(0xFF94A3B8), size: 18),
+                            icon: const Icon(
+                              Icons.clear,
+                              color: Color(0xFF94A3B8),
+                              size: 18,
+                            ),
                             onPressed: () {
                               _searchController.clear();
                               _fetchUsers();
@@ -527,7 +632,10 @@ class _UserManagementPageState extends State<UserManagementPage> {
                           )
                         : null,
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                   ),
                   onChanged: _onSearchChanged,
                 ),
@@ -542,13 +650,35 @@ class _UserManagementPageState extends State<UserManagementPage> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 children: [
-                  _buildFilterChip(label: 'Tất cả', roleKey: 'ALL', count: _users.length),
+                  _buildFilterChip(
+                    label: 'Tất cả',
+                    roleKey: 'ALL',
+                    count: allCount,
+                  ),
                   const SizedBox(width: 8),
-                  _buildFilterChip(label: 'Sinh viên', roleKey: 'STUDENT', count: studentCount),
+                  _buildFilterChip(
+                    label: 'Sinh viên',
+                    roleKey: 'STUDENT',
+                    count: studentCount,
+                  ),
                   const SizedBox(width: 8),
-                  _buildFilterChip(label: 'Giám thị', roleKey: 'LECTURER', count: lecturerCount),
+                  _buildFilterChip(
+                    label: 'Giám thị',
+                    roleKey: 'LECTURER',
+                    count: lecturerCount,
+                  ),
                   const SizedBox(width: 8),
-                  _buildFilterChip(label: 'Quản trị', roleKey: 'ADMIN', count: adminCount),
+                  _buildFilterChip(
+                    label: 'Trưởng bộ môn',
+                    roleKey: 'HEAD_OF_SUBJECT',
+                    count: headOfSubjectCount,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildFilterChip(
+                    label: 'Quản trị',
+                    roleKey: 'ADMIN',
+                    count: adminCount,
+                  ),
                 ],
               ),
             ),
@@ -558,66 +688,107 @@ class _UserManagementPageState extends State<UserManagementPage> {
             Expanded(
               child: _isLoading
                   ? const Center(
-                      child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF4F46E5),
+                      ),
                     )
                   : _errorMessage != null
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                _errorMessage!,
-                                style: const TextStyle(color: Color(0xFFDC2626)),
-                              ),
-                              const SizedBox(height: 12),
-                              ElevatedButton(
-                                onPressed: _fetchUsers,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF4F46E5),
-                                  foregroundColor: Colors.white,
-                                ),
-                                child: const Text('Thử lại'),
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _errorMessage!,
+                            style: const TextStyle(color: Color(0xFFDC2626)),
                           ),
-                        )
-                      : _users.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Icon(Icons.search_off_rounded, size: 48, color: Color(0xFFCBD5E1)),
-                                  SizedBox(height: 12),
-                                  Text(
-                                    'Không tìm thấy tài khoản nào',
-                                    style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : ListView.separated(
-                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
-                              itemCount: _users.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 10),
-                              itemBuilder: (context, index) {
-                                final user = _users[index];
-                                return UserCardWidget(
-                                  user: user,
-                                  onTap: () {
-                                    UserActionSheet.show(
-                                      context,
-                                      user: user,
-                                      onUpdateRole: () => _handleUpdateRoleDialog(user),
-                                      onToggleStatus: () => _handleToggleStatus(user),
-                                      onDelete: () => _handleDeleteUser(user),
-                                    );
-                                  },
-                                );
-                              },
+                          const SizedBox(height: 12),
+                          ElevatedButton(
+                            onPressed: _fetchUsers,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4F46E5),
+                              foregroundColor: Colors.white,
                             ),
+                            child: const Text('Thử lại'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : _displayedUsers.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(
+                            Icons.search_off_rounded,
+                            size: 48,
+                            color: Color(0xFFCBD5E1),
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            'Không tìm thấy tài khoản nào',
+                            style: TextStyle(
+                              color: Color(0xFF64748B),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
+                      itemCount: _displayedUsers.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final user = _displayedUsers[index];
+                        return UserCardWidget(
+                          user: user,
+                          onTap: () {
+                            UserActionSheet.show(
+                              context,
+                              user: user,
+                              onUpdateRole: () => _handleUpdateRoleDialog(user),
+                              onToggleStatus: () => _handleToggleStatus(user),
+                              onDelete: () => _handleDeleteUser(user),
+                            );
+                          },
+                        );
+                      },
+                    ),
             ),
           ],
         ),
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: (_currentNavIndex >= 0 && _currentNavIndex < 2)
+            ? _currentNavIndex
+            : 0,
+        height: 64,
+        backgroundColor: Colors.white,
+        indicatorColor: const Color(0xFFE2E8F0),
+        elevation: 3,
+        onDestinationSelected: (idx) {
+          if (idx == 0) {
+            setState(() => _currentNavIndex = 0);
+          } else if (idx == 1) {
+            Navigator.push(context, smoothPageRoute(const ProfilePage())).then((
+              _,
+            ) {
+              if (mounted) setState(() => _currentNavIndex = 0);
+            });
+          }
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.people_outline),
+            selectedIcon: Icon(Icons.people, color: Color(0xFF0F172A)),
+            label: 'Người dùng',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person, color: Color(0xFF0F172A)),
+            label: 'Cá nhân',
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _openCreateUserModal,
