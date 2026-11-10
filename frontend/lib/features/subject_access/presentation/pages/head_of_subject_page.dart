@@ -6,8 +6,9 @@ import '../../../../core/services/session_service.dart';
 import '../../../auth/presentation/pages/profile_page.dart';
 import '../../../question_bank/presentation/pages/question_list_page.dart';
 import '../widgets/subject_card_widget.dart';
-import '../widgets/pending_access_request_card.dart';
 import '../widgets/exam_summary_report_card.dart';
+import '../widgets/subject_access_dialog.dart';
+import '../widgets/pending_access_requests_dialog.dart';
 
 class SubjectItem {
   final String id;
@@ -71,11 +72,7 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
   List<SubjectItem> _subjects = [];
   bool _isLoading = true;
   String? _errorMessage;
-
-  // Requests tab data
-  List<dynamic> _pendingRequests = [];
-  bool _isLoadingRequests = false;
-  String? _requestsError;
+  int _pendingRequestCount = 0;
 
   // Reports / Exams tab data
   List<dynamic> _exams = [];
@@ -113,7 +110,19 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
   void initState() {
     super.initState();
     _fetchSubjects();
-    _fetchPendingRequests();
+    _fetchPendingRequestCount();
+  }
+
+  Future<void> _fetchPendingRequestCount() async {
+    try {
+      final response = await _apiClient.get(ApiEndpoints.subjectAccessPending);
+      if (!mounted || response['success'] != true || response['data'] is! List) {
+        return;
+      }
+      setState(() => _pendingRequestCount = (response['data'] as List).length);
+    } catch (_) {
+      // Keep the last known count when the network is unavailable.
+    }
   }
 
   Future<void> _fetchSubjects() async {
@@ -216,66 +225,6 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
             ),
             backgroundColor: Colors.red,
           ),
-        );
-      }
-    }
-  }
-
-  Future<void> _fetchPendingRequests() async {
-    setState(() {
-      _isLoadingRequests = true;
-      _requestsError = null;
-    });
-
-    try {
-      final response = await _apiClient.get(ApiEndpoints.subjectAccessPending);
-      if (response['success'] == true && response['data'] is List) {
-        if (mounted) {
-          setState(() {
-            _pendingRequests = response['data'] as List;
-            _isLoadingRequests = false;
-          });
-        }
-      } else {
-        throw Exception(response['message'] ?? 'Không thể tải yêu cầu duyệt');
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoadingRequests = false;
-          _requestsError = e.toString().replaceAll('Exception:', '').trim();
-        });
-      }
-    }
-  }
-
-  Future<void> _reviewRequest(String requestId, String status) async {
-    try {
-      final response = await _apiClient.patch(
-        ApiEndpoints.subjectAccessReview(requestId),
-        body: {'status': status},
-      );
-      if (response['success'] == true) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                status == 'APPROVED'
-                    ? 'Đã phê duyệt yêu cầu'
-                    : 'Đã từ chối yêu cầu',
-              ),
-              backgroundColor: status == 'APPROVED' ? Colors.green : Colors.red,
-            ),
-          );
-        }
-        await _fetchPendingRequests();
-      } else {
-        throw Exception(response['message'] ?? 'Không thể xử lý yêu cầu');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -472,10 +421,10 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
                     ),
                   ],
                 ),
-                if (_pendingRequests.isNotEmpty) ...[
+                if (_pendingRequestCount > 0) ...[
                   const SizedBox(height: 12),
                   InkWell(
-                    onTap: () => setState(() => _currentTabIndex = 2),
+                    onTap: _showPendingAccessRequestsDialog,
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -490,7 +439,7 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'Có ${_pendingRequests.length} yêu cầu đăng ký môn học đang chờ bạn phê duyệt.',
+                              'Có $_pendingRequestCount yêu cầu đăng ký môn học đang chờ bạn phê duyệt.',
                               style: const TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.bold,
@@ -570,6 +519,25 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
     );
   }
 
+  void _showSubjectAccessDialog(SubjectItem subject) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => SubjectAccessDialog(
+        subjectId: subject.id,
+        subjectCode: subject.code,
+        subjectName: subject.name,
+      ),
+    );
+  }
+
+  Future<void> _showPendingAccessRequestsDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (_) => const PendingAccessRequestsDialog(),
+    );
+    if (mounted) await _fetchPendingRequestCount();
+  }
+
   Widget _buildQBankView() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -617,6 +585,7 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
                                 subjectId: s.id,
                                 subjectCode: s.code,
                                 subjectName: s.name,
+                                showPrivateTab: false,
                               ),
                             ),
                           );
@@ -637,37 +606,62 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: _buildPageHeading(
-                  'Yêu cầu cấp quyền',
-                  'Duyệt yêu cầu truy cập môn học từ giảng viên.',
+                  'Quản lý quyền môn học',
+                  'Cấp, xem và thu hồi quyền của giảng viên theo môn học.',
                 ),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                onPressed: _showPendingAccessRequestsDialog,
+                icon: const Icon(Icons.fact_check_outlined, size: 18),
+                label: const Text('Duyệt yêu cầu'),
               ),
             ],
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: _isLoadingRequests
+            child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : _requestsError != null
-                ? _buildLoadError(_requestsError!, _fetchPendingRequests)
-                : _pendingRequests.isEmpty
-                ? const Center(
-                    child: Text('Hiện không có yêu cầu nào đang chờ duyệt'),
-                  )
+                : _errorMessage != null
+                ? _buildLoadError(_errorMessage!, _fetchSubjects)
+                : _subjects.isEmpty
+                ? const Center(child: Text('Chưa có môn học để quản lý quyền.'))
                 : ListView.separated(
-                    itemCount: _pendingRequests.length,
-                    separatorBuilder: (context, _) =>
-                        const SizedBox(height: 10),
+                    itemCount: _subjects.length,
+                    separatorBuilder: (context, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
-                      return PendingAccessRequestCard(
-                        request: _pendingRequests[index] as Map<String, dynamic>,
-                        onReview: _reviewRequest,
+                      final subject = _subjects[index];
+                      return Card(
+                        elevation: 0,
+                        color: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        ),
+                        child: ListTile(
+                          leading: const CircleAvatar(
+                            backgroundColor: Color(0xFFE8EEF5),
+                            child: Icon(
+                              Icons.menu_book_outlined,
+                              color: Color(0xFF173A5E),
+                            ),
+                          ),
+                          title: Text('${subject.code} · ${subject.name}'),
+                          subtitle: Text(
+                            'Trạng thái: ${_subjectStatusLabel(subject.status)}',
+                          ),
+                          trailing: OutlinedButton.icon(
+                            onPressed: () => _showSubjectAccessDialog(subject),
+                            icon: const Icon(Icons.manage_accounts_outlined, size: 18),
+                            label: const Text('Quản lý'),
+                          ),
+                        ),
                       );
                     },
-                  ),
+                  )
           ),
         ],
       ),
@@ -765,6 +759,7 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1E293B),
         elevation: 0.5,
@@ -835,7 +830,6 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
           currentIndex: _currentTabIndex,
           onTap: (index) {
             setState(() => _currentTabIndex = index);
-            if (index == 2) _fetchPendingRequests();
             if (index == 3) _fetchExams();
           },
           type: BottomNavigationBarType.fixed,
@@ -859,19 +853,19 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
               label: 'Câu hỏi',
             ),
             BottomNavigationBarItem(
-              icon: _pendingRequests.isNotEmpty
+              icon: _pendingRequestCount > 0
                   ? Badge(
-                      label: Text('${_pendingRequests.length}'),
+                      label: Text('$_pendingRequestCount'),
                       child: const Icon(Icons.group_outlined),
                     )
                   : const Icon(Icons.group_outlined),
-              activeIcon: _pendingRequests.isNotEmpty
+              activeIcon: _pendingRequestCount > 0
                   ? Badge(
-                      label: Text('${_pendingRequests.length}'),
+                      label: Text('$_pendingRequestCount'),
                       child: const Icon(Icons.group),
                     )
                   : const Icon(Icons.group),
-              label: 'Yêu cầu',
+              label: 'Quản lý quyền',
             ),
             const BottomNavigationBarItem(
               icon: Icon(Icons.pie_chart_outline),

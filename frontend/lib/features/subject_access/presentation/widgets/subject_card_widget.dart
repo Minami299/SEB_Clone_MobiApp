@@ -81,14 +81,12 @@ class SubjectCardWidget extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          // Trạng thái môn học và nút xem chi tiết.
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Thao tác xem thông tin môn học.
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
             children: [
-              const Text(
-                'Trạng thái môn học',
-                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-              ),
               OutlinedButton(
                 onPressed: onViewDetails,
                 style: OutlinedButton.styleFrom(

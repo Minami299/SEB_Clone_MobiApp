@@ -13,6 +13,103 @@ const canManageSubject = async (user, subjectId) => {
   }));
 };
 
+const getSubjectAccessRecords = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!await canManageSubject(req.user, id)) {
+      return res.status(403).json({ success: false, message: 'Bạn không phụ trách môn học này' });
+    }
+    const records = await SubjectAccess.find({ subject_id: id })
+      .populate('lecturer_id', 'full_name email user_code status department_id')
+      .populate('approved_by', 'full_name user_code')
+      .sort({ updated_at: -1 });
+    res.status(200).json({ success: true, data: records });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getGrantableLecturers = async (req, res) => {
+  try {
+    if (req.user.role !== 'ADMIN' && !req.user.department_id) {
+      return res.status(403).json({ success: false, message: 'Tài khoản chưa được gán khoa' });
+    }
+    const filter = { role: 'LECTURER', status: 'ACTIVE' };
+    if (req.user.role !== 'ADMIN') filter.department_id = req.user.department_id;
+    const lecturers = await User.find(filter)
+      .select('full_name email user_code department_id')
+      .populate('department_id', 'department_name department_code')
+      .sort({ full_name: 1 });
+    res.status(200).json({ success: true, data: lecturers });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const grantLecturerAccess = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { lecturer_id, grant_type = 'INVITATION' } = req.body;
+    if (!lecturer_id) return res.status(400).json({ success: false, message: 'Giảng viên là bắt buộc' });
+    if (grant_type !== 'INVITATION') {
+      return res.status(400).json({ success: false, message: 'Loại quyền không hợp lệ' });
+    }
+    if (!await canManageSubject(req.user, id)) {
+      return res.status(403).json({ success: false, message: 'Bạn không phụ trách môn học này' });
+    }
+    const lecturer = await User.findOne({ _id: lecturer_id, role: 'LECTURER', status: 'ACTIVE' });
+    if (!lecturer) return res.status(404).json({ success: false, message: 'Không tìm thấy giảng viên đang hoạt động' });
+    if (req.user.role !== 'ADMIN' && lecturer.department_id?.toString() !== req.user.department_id.toString()) {
+      return res.status(403).json({ success: false, message: 'Chỉ có thể cấp quyền cho giảng viên trong khoa phụ trách' });
+    }
+
+    const existing = await SubjectAccess.findOne({ subject_id: id, lecturer_id }).sort({ updated_at: -1 });
+    if (existing?.status === 'APPROVED') {
+      return res.status(409).json({ success: false, message: 'Giảng viên đã có quyền với môn học này' });
+    }
+    if (existing) {
+      existing.status = 'APPROVED';
+      existing.grant_type = grant_type;
+      existing.approved_by = req.user._id;
+      await existing.save();
+      await existing.populate('lecturer_id', 'full_name email user_code status');
+      return res.status(200).json({ success: true, message: 'Đã cấp lại quyền cho giảng viên', data: existing });
+    }
+
+    const access = await SubjectAccess.create({
+      subject_id: id,
+      lecturer_id,
+      grant_type,
+      status: 'APPROVED',
+      approved_by: req.user._id
+    });
+    await access.populate('lecturer_id', 'full_name email user_code status');
+    res.status(201).json({ success: true, message: 'Đã cấp quyền cho giảng viên', data: access });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const revokeLecturerAccess = async (req, res) => {
+  try {
+    const { id, accessId } = req.params;
+    if (!await canManageSubject(req.user, id)) {
+      return res.status(403).json({ success: false, message: 'Bạn không phụ trách môn học này' });
+    }
+    const access = await SubjectAccess.findOne({ _id: accessId, subject_id: id });
+    if (!access) return res.status(404).json({ success: false, message: 'Không tìm thấy quyền truy cập' });
+    if (access.status !== 'APPROVED') {
+      return res.status(409).json({ success: false, message: 'Quyền này hiện không ở trạng thái đã cấp' });
+    }
+    access.status = 'REVOKED';
+    access.approved_by = req.user._id;
+    await access.save();
+    res.status(200).json({ success: true, message: 'Đã thu hồi quyền truy cập' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 const requestAccess = async (req, res) => {
   try {
     const { subject_id, grant_type } = req.body;
@@ -39,6 +136,15 @@ const requestAccess = async (req, res) => {
       status: 'PENDING'
     });
 
+    const existingApproved = await SubjectAccess.exists({
+      subject_id,
+      lecturer_id,
+      status: 'APPROVED'
+    });
+    if (existingApproved) {
+      return res.status(409).json({ success: false, message: 'Bạn đã được cấp quyền cho môn học này' });
+    }
+
     if (existingPending) {
       return res.status(400).json({
         success: false,
@@ -49,7 +155,7 @@ const requestAccess = async (req, res) => {
     const newRequest = await SubjectAccess.create({
       subject_id,
       lecturer_id,
-      grant_type: grant_type || 'QUESTION_CONTRIBUTION',
+      grant_type: grant_type || 'REQUEST',
       status: 'PENDING'
     });
 
@@ -319,6 +425,10 @@ module.exports = {
   getPendingRequests,
   reviewRequest,
   getAllSubjects,
-  updateSubjectStatus
+  updateSubjectStatus,
+  getSubjectAccessRecords,
+  getGrantableLecturers,
+  grantLecturerAccess,
+  revokeLecturerAccess
 };
 
