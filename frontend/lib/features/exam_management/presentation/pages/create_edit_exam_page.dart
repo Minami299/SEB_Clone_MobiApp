@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/services/session_service.dart';
@@ -48,7 +49,8 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
 
   List<dynamic> _availableQuestions = [];
   final Set<String> _selectedQuestionIds = {};
-  int _questionSourceFilter = 0; // 0: Tất cả, 1: Kho chung bộ môn, 2: Kho riêng cá nhân
+  int _questionSourceFilter =
+      0; // 0: Tất cả, 1: Kho chung bộ môn, 2: Kho riêng cá nhân
 
   bool _isLoading = true;
   bool _isLoadingQuestions = false;
@@ -99,7 +101,9 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
       }
 
       if (isEditing) {
-        final examRes = await _apiClient.get(ApiEndpoints.examDetail(widget.examId!));
+        final examRes = await _apiClient.get(
+          ApiEndpoints.examDetail(widget.examId!),
+        );
         if (examRes['success'] == true && examRes['data'] != null) {
           final exam = examRes['data']['exam'];
           _titleController.text = exam['exam_title'] ?? '';
@@ -107,17 +111,20 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
           _durationController.text = (exam['duration_minutes'] ?? 60).toString();
           _maxViolationsController.text = (exam['max_violations'] ?? 3).toString();
           _quitPinController.text = exam['exit_pin'] ?? '888888';
-          _minPassController.text = (exam['min_pass_percentage'] ?? 50).toString();
+          _minPassController.text = (exam['min_pass_percentage'] ?? 50)
+              .toString();
           _selectedGradingMethod = exam['mcq_grading_method'] ?? 'ALL_CORRECT';
           _allowReview = exam['allow_review'] == true;
           _shuffleQuestions = exam['shuffle_questions'] == true;
           _shuffleOptions = exam['shuffle_options'] == true;
 
           if (exam['start_time'] != null) {
-            _startTime = DateTime.tryParse(exam['start_time'])?.toLocal() ?? _startTime;
+            _startTime =
+                DateTime.tryParse(exam['start_time'])?.toLocal() ?? _startTime;
           }
           if (exam['end_time'] != null) {
-            _endTime = DateTime.tryParse(exam['end_time'])?.toLocal() ?? _endTime;
+            _endTime =
+                DateTime.tryParse(exam['end_time'])?.toLocal() ?? _endTime;
           }
 
           if (exam['subject_id'] is Map) {
@@ -144,15 +151,26 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
           }
 
           // Kiểm tra cấu hình ma trận
-          if (exam['matrix_config'] != null && exam['matrix_config']['is_dynamic'] == true) {
+          if (exam['matrix_config'] != null &&
+              exam['matrix_config']['is_dynamic'] == true) {
             _isDynamicMatrix = true;
-            _includePrivateInMatrix = exam['matrix_config']['include_private'] != false;
+            _includePrivateInMatrix =
+                exam['matrix_config']['include_private'] != false;
             final rules = exam['matrix_config']['rules'] as List? ?? [];
             for (var r in rules) {
-              final cNum = r['chapter_num'] is int ? r['chapter_num'] as int : int.tryParse(r['chapter_num'].toString()) ?? 1;
-              final diff = (r['difficulty'] ?? 'MEDIUM').toString().toUpperCase();
-              final count = r['count'] is int ? r['count'] as int : int.tryParse(r['count'].toString()) ?? 0;
-              _matrixConfigRules.putIfAbsent(cNum, () => {'EASY': 0, 'MEDIUM': 0, 'HARD': 0});
+              final cNum = r['chapter_num'] is int
+                  ? r['chapter_num'] as int
+                  : int.tryParse(r['chapter_num'].toString()) ?? 1;
+              final diff = (r['difficulty'] ?? 'MEDIUM')
+                  .toString()
+                  .toUpperCase();
+              final count = r['count'] is int
+                  ? r['count'] as int
+                  : int.tryParse(r['count'].toString()) ?? 0;
+              _matrixConfigRules.putIfAbsent(
+                cNum,
+                () => {'EASY': 0, 'MEDIUM': 0, 'HARD': 0},
+              );
               _matrixConfigRules[cNum]![diff] = count;
             }
           }
@@ -184,7 +202,10 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
           _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi tải dữ liệu: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Lỗi tải dữ liệu: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -193,7 +214,9 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
   Future<void> _fetchClassesBySubject(String subjectId) async {
     setState(() => _isLoadingClasses = true);
     try {
-      final res = await _apiClient.get(ApiEndpoints.examClassesBySubject(subjectId));
+      final res = await _apiClient.get(
+        ApiEndpoints.examClassesBySubject(subjectId),
+      );
       if (res['success'] == true && res['data'] is List) {
         final list = res['data'] as List;
         if (mounted) {
@@ -259,7 +282,9 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
               final name = (s['full_name'] ?? '').toString().toLowerCase();
               final code = (s['user_code'] ?? '').toString().toLowerCase();
               final email = (s['email'] ?? '').toString().toLowerCase();
-              return name.contains(searchQuery) || code.contains(searchQuery) || email.contains(searchQuery);
+              return name.contains(searchQuery) ||
+                  code.contains(searchQuery) ||
+                  email.contains(searchQuery);
             }).toList();
 
             return Container(
@@ -272,7 +297,10 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                     child: Container(
                       width: 40,
                       height: 4,
-                      decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -286,11 +314,18 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                         children: [
                           const Text(
                             'Danh sách thí sinh dự thi',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                            ),
                           ),
                           Text(
                             'Đã chọn ${_selectedStudentIds.length} / ${_classStudents.length} thí sinh',
-                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF64748B),
+                            ),
                           ),
                         ],
                       ),
@@ -300,12 +335,23 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                           _showAddRetakeStudentDialog();
                         },
                         icon: const Icon(Icons.person_add, size: 14),
-                        label: const Text('Thêm thi lại', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        label: const Text(
+                          'Thêm thi lại',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF1E3A5F),
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           elevation: 0,
                         ),
                       ),
@@ -318,8 +364,13 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                     decoration: InputDecoration(
                       hintText: 'Tìm theo Tên hoặc Mã sinh viên...',
                       prefixIcon: const Icon(Icons.search, size: 20),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       isDense: true,
                     ),
                     onChanged: (val) {
@@ -339,12 +390,20 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                           setModalState(() {
                             setState(() {
                               for (var s in _classStudents) {
-                                if (s['_id'] != null) _selectedStudentIds.add(s['_id']);
+                                if (s['_id'] != null) {
+                                  _selectedStudentIds.add(s['_id']);
+                                }
                               }
                             });
                           });
                         },
-                        child: const Text('Chọn tất cả', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'Chọn tất cả',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                       TextButton(
                         onPressed: () {
@@ -354,7 +413,10 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                             });
                           });
                         },
-                        child: const Text('Bỏ chọn tất cả', style: TextStyle(fontSize: 12, color: Colors.red)),
+                        child: const Text(
+                          'Bỏ chọn tất cả',
+                          style: TextStyle(fontSize: 12, color: Colors.red),
+                        ),
                       ),
                     ],
                   ),
@@ -371,29 +433,38 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                           )
                         : ListView.separated(
                             itemCount: filteredStudents.length,
-                            separatorBuilder: (_, __) => const Divider(height: 1, indent: 56),
+                            separatorBuilder: (_, _) =>
+                                const Divider(height: 1, indent: 56),
                             itemBuilder: (c, idx) {
                               final s = filteredStudents[idx];
                               final id = s['_id'];
-                              final isSelected = _selectedStudentIds.contains(id);
+                              final isSelected = _selectedStudentIds.contains(
+                                id,
+                              );
                               final isRetake = s['is_retake'] == true;
                               final name = s['full_name'] ?? 'Sinh viên';
                               final code = s['user_code'] ?? '';
                               final email = s['email'] ?? '';
-                              final initial = name.isNotEmpty ? name.trim()[0].toUpperCase() : 'S';
+                              final initial = name.isNotEmpty
+                                  ? name.trim()[0].toUpperCase()
+                                  : 'S';
 
                               return ListTile(
                                 dense: true,
                                 contentPadding: EdgeInsets.zero,
                                 leading: CircleAvatar(
                                   radius: 16,
-                                  backgroundColor: isRetake ? const Color(0xFFFFF7ED) : const Color(0xFFEFF6FF),
+                                  backgroundColor: isRetake
+                                      ? const Color(0xFFFFF7ED)
+                                      : const Color(0xFFEFF6FF),
                                   child: Text(
                                     initial,
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
-                                      color: isRetake ? const Color(0xFFEA580C) : const Color(0xFF1D4ED8),
+                                      color: isRetake
+                                          ? const Color(0xFFEA580C)
+                                          : const Color(0xFF1D4ED8),
                                     ),
                                   ),
                                 ),
@@ -402,21 +473,35 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                     Expanded(
                                       child: Text(
                                         name,
-                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                     if (isRetake) ...[
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFFFF7ED),
-                                          borderRadius: BorderRadius.circular(4),
-                                          border: Border.all(color: const Color(0xFFFED7AA)),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                          border: Border.all(
+                                            color: const Color(0xFFFED7AA),
+                                          ),
                                         ),
                                         child: const Text(
                                           'Thi lại / Khác lớp',
-                                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFEA580C)),
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFFEA580C),
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -424,7 +509,10 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                 ),
                                 subtitle: Text(
                                   code.isNotEmpty ? '$code • $email' : email,
-                                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF64748B),
+                                  ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 trailing: Checkbox(
@@ -455,10 +543,14 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF1E3A5F),
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                       onPressed: () => Navigator.pop(ctx),
-                      child: Text('Xác nhận (${_selectedStudentIds.length} thí sinh)'),
+                      child: Text(
+                        'Xác nhận (${_selectedStudentIds.length} thí sinh)',
+                      ),
                     ),
                   ),
                 ],
@@ -483,7 +575,9 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
             Future<void> executeSearch(String q) async {
               setDialogState(() => isSearching = true);
               try {
-                final res = await _apiClient.get(ApiEndpoints.examSearchStudents(q: q.trim()));
+                final res = await _apiClient.get(
+                  ApiEndpoints.examSearchStudents(q: q.trim()),
+                );
                 if (res['success'] == true && res['data'] is List) {
                   setDialogState(() {
                     searchResults = res['data'] as List;
@@ -498,12 +592,21 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
             }
 
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
               title: const Row(
                 children: [
-                  Icon(Icons.person_add_alt_1, color: Color(0xFF1E3A5F), size: 20),
+                  Icon(
+                    Icons.person_add_alt_1,
+                    color: Color(0xFF1E3A5F),
+                    size: 20,
+                  ),
                   SizedBox(width: 8),
-                  Text('Thêm thí sinh thi lại', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                  Text(
+                    'Thêm thí sinh thi lại',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
                 ],
               ),
               content: SizedBox(
@@ -521,20 +624,28 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                           onPressed: () => executeSearch(searchController.text),
                         ),
                         border: const OutlineInputBorder(),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
                         isDense: true,
                       ),
                       onSubmitted: (val) => executeSearch(val),
                     ),
                     const SizedBox(height: 10),
                     if (isSearching)
-                      const Expanded(child: Center(child: CircularProgressIndicator()))
+                      const Expanded(
+                        child: Center(child: CircularProgressIndicator()),
+                      )
                     else if (searchResults.isEmpty)
                       const Expanded(
                         child: Center(
                           child: Text(
                             'Nhập thông tin và bấm tìm kiếm để thêm thí sinh ngoài lớp vào ca thi',
-                            style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF64748B),
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -543,50 +654,91 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                       Expanded(
                         child: ListView.separated(
                           itemCount: searchResults.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          separatorBuilder: (_, _) => const Divider(height: 1),
                           itemBuilder: (c, idx) {
                             final s = searchResults[idx];
                             final id = s['_id'];
                             final name = s['full_name'] ?? 'Sinh viên';
                             final code = s['user_code'] ?? '';
                             final email = s['email'] ?? '';
-                            final alreadyAdded = _classStudents.any((existing) => existing['_id'] == id);
+                            final alreadyAdded = _classStudents.any(
+                              (existing) => existing['_id'] == id,
+                            );
 
                             return ListTile(
                               dense: true,
                               contentPadding: EdgeInsets.zero,
-                              title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              subtitle: Text('$code • $email', style: const TextStyle(fontSize: 11)),
+                              title: Text(
+                                name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              subtitle: Text(
+                                '$code • $email',
+                                style: const TextStyle(fontSize: 11),
+                              ),
                               trailing: alreadyAdded
                                   ? Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFECFDF5),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
-                                      child: const Text('Đã thêm', style: TextStyle(fontSize: 11, color: Color(0xFF047857), fontWeight: FontWeight.bold)),
+                                      child: const Text(
+                                        'Đã thêm',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Color(0xFF047857),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     )
                                   : ElevatedButton(
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF1E3A5F),
+                                        backgroundColor: const Color(
+                                          0xFF1E3A5F,
+                                        ),
                                         foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
                                         visualDensity: VisualDensity.compact,
                                         elevation: 0,
                                       ),
                                       onPressed: () {
                                         setState(() {
-                                          final newStudent = Map<String, dynamic>.from(s);
+                                          final newStudent =
+                                              Map<String, dynamic>.from(s);
                                           newStudent['is_retake'] = true;
                                           _classStudents.add(newStudent);
-                                          if (id != null) _selectedStudentIds.add(id);
+                                          if (id != null) {
+                                            _selectedStudentIds.add(id);
+                                          }
                                         });
                                         setDialogState(() {});
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('Đã thêm thí sinh $name ($code) vào ca thi'), duration: const Duration(seconds: 1)),
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Đã thêm thí sinh $name ($code) vào ca thi',
+                                            ),
+                                            duration: const Duration(
+                                              seconds: 1,
+                                            ),
+                                          ),
                                         );
                                       },
-                                      child: const Text('+ Thêm', style: TextStyle(fontSize: 11)),
+                                      child: const Text(
+                                        '+ Thêm',
+                                        style: TextStyle(fontSize: 11),
+                                      ),
                                     ),
                             );
                           },
@@ -635,8 +787,13 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
           if (chRes['success'] == true && chRes['data'] is List) {
             _subjectChapters = chRes['data'] as List;
             for (var ch in _subjectChapters) {
-              final cNum = ch['chapter_number'] is int ? ch['chapter_number'] as int : int.tryParse(ch['chapter_number'].toString()) ?? 1;
-              _matrixConfigRules.putIfAbsent(cNum, () => {'EASY': 0, 'MEDIUM': 0, 'HARD': 0});
+              final cNum = ch['chapter_number'] is int
+                  ? ch['chapter_number'] as int
+                  : int.tryParse(ch['chapter_number'].toString()) ?? 1;
+              _matrixConfigRules.putIfAbsent(
+                cNum,
+                () => {'EASY': 0, 'MEDIUM': 0, 'HARD': 0},
+              );
             }
           }
           _isLoadingQuestions = false;
@@ -659,12 +816,16 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
       int qChNum = 1;
       if (q['chapter_num'] != null) {
         qChNum = int.tryParse(q['chapter_num'].toString()) ?? 1;
-      } else if (q['chapter_id'] is Map && q['chapter_id']['chapter_number'] != null) {
-        qChNum = int.tryParse(q['chapter_id']['chapter_number'].toString()) ?? 1;
+      } else if (q['chapter_id'] is Map &&
+          q['chapter_id']['chapter_number'] != null) {
+        qChNum =
+            int.tryParse(q['chapter_id']['chapter_number'].toString()) ?? 1;
       }
       if (qChNum != chapterNum) return false;
 
-      final qDiff = (q['difficulty'] ?? q['difficulty_level'] ?? 'MEDIUM').toString().toUpperCase();
+      final qDiff = (q['difficulty'] ?? q['difficulty_level'] ?? 'MEDIUM')
+          .toString()
+          .toUpperCase();
       return qDiff == diff.toUpperCase();
     }).length;
   }
@@ -672,7 +833,8 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
   int _getTotalMatrixQuestions() {
     int total = 0;
     _matrixConfigRules.forEach((_, diffs) {
-      total += (diffs['EASY'] ?? 0) + (diffs['MEDIUM'] ?? 0) + (diffs['HARD'] ?? 0);
+      total +=
+          (diffs['EASY'] ?? 0) + (diffs['MEDIUM'] ?? 0) + (diffs['HARD'] ?? 0);
     });
     return total;
   }
@@ -737,7 +899,9 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
       if (isStart) {
         _startTime = combined;
         if (_endTime.isBefore(_startTime)) {
-          _endTime = _startTime.add(Duration(minutes: int.tryParse(_durationController.text) ?? 60));
+          _endTime = _startTime.add(
+            Duration(minutes: int.tryParse(_durationController.text) ?? 60),
+          );
         }
       } else {
         _endTime = combined;
@@ -745,14 +909,15 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
     });
   }
 
-
-
   Future<void> _handleSave({bool publishImmediately = true}) async {
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedSubjectId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn môn học cho ca thi'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Vui lòng chọn môn học cho ca thi'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -768,7 +933,10 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
     } else {
       if (_selectedQuestionIds.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Vui lòng chọn ít nhất 1 câu hỏi vào đề thi'), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text('Vui lòng chọn ít nhất 1 câu hỏi vào đề thi'),
+            backgroundColor: Colors.red,
+          ),
         );
         return;
       }
@@ -783,13 +951,25 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
       if (_isDynamicMatrix) {
         _matrixConfigRules.forEach((cNum, diffs) {
           if ((diffs['EASY'] ?? 0) > 0) {
-            compiledRules.add({'chapter_num': cNum, 'difficulty': 'EASY', 'count': diffs['EASY']});
+            compiledRules.add({
+              'chapter_num': cNum,
+              'difficulty': 'EASY',
+              'count': diffs['EASY'],
+            });
           }
           if ((diffs['MEDIUM'] ?? 0) > 0) {
-            compiledRules.add({'chapter_num': cNum, 'difficulty': 'MEDIUM', 'count': diffs['MEDIUM']});
+            compiledRules.add({
+              'chapter_num': cNum,
+              'difficulty': 'MEDIUM',
+              'count': diffs['MEDIUM'],
+            });
           }
           if ((diffs['HARD'] ?? 0) > 0) {
-            compiledRules.add({'chapter_num': cNum, 'difficulty': 'HARD', 'count': diffs['HARD']});
+            compiledRules.add({
+              'chapter_num': cNum,
+              'difficulty': 'HARD',
+              'count': diffs['HARD'],
+            });
           }
         });
       }
@@ -804,7 +984,8 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
         'duration_minutes': int.tryParse(_durationController.text.trim()) ?? 60,
         'max_violations': int.tryParse(_maxViolationsController.text.trim()) ?? 3,
         'exit_pin': _quitPinController.text.trim(),
-        'min_pass_percentage': int.tryParse(_minPassController.text.trim()) ?? 50,
+        'min_pass_percentage':
+            int.tryParse(_minPassController.text.trim()) ?? 50,
         'mcq_grading_method': _selectedGradingMethod,
         'allow_review': _allowReview,
         'shuffle_questions': _shuffleQuestions,
@@ -815,8 +996,7 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
           'rules': compiledRules,
           'include_private': _includePrivateInMatrix,
         },
-        if (!_isDynamicMatrix)
-          'question_ids': _selectedQuestionIds.toList(),
+        if (!_isDynamicMatrix) 'question_ids': _selectedQuestionIds.toList(),
       };
 
       String examId;
@@ -856,9 +1036,13 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(isEditing
-              ? 'Cập nhật ca thi thành công'
-              : (publishImmediately ? 'Đã tạo và mở ca thi thành công' : 'Đã lưu ca thi ở dạng bản nháp')),
+          content: Text(
+            isEditing
+                ? 'Cập nhật ca thi thành công'
+                : (publishImmediately
+                      ? 'Đã tạo và mở ca thi thành công'
+                      : 'Đã lưu ca thi ở dạng bản nháp'),
+          ),
           backgroundColor: Colors.green,
         ),
       );
@@ -869,7 +1053,12 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
         _isSaving = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: ${e.toString().replaceAll("Exception:", "").trim()}'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(
+            'Lỗi: ${e.toString().replaceAll("Exception:", "").trim()}',
+          ),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -879,7 +1068,10 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: Text(isEditing ? 'Chỉnh sửa Ca thi' : 'Tạo mới Ca thi', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+        title: Text(
+          isEditing ? 'Chỉnh sửa Ca thi' : 'Tạo mới Ca thi',
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1E293B),
         elevation: 0.5,
@@ -891,7 +1083,7 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 8,
                 offset: const Offset(0, -3),
               ),
@@ -906,12 +1098,27 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1E3A5F),
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       elevation: 1,
                     ),
                     child: _isSaving
-                        ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('Lưu thay đổi', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Lưu thay đổi',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 )
               : Row(
@@ -920,15 +1127,34 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                       child: SizedBox(
                         height: 48,
                         child: OutlinedButton(
-                          onPressed: _isSaving ? null : () => _handleSave(publishImmediately: false),
+                          onPressed: _isSaving
+                              ? null
+                              : () => _handleSave(publishImmediately: false),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFF1E3A5F),
-                            side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            side: const BorderSide(
+                              color: Color(0xFFCBD5E1),
+                              width: 1.5,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
                           child: _isSaving
-                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                              : const Text('Lưu bản nháp', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
+                                  'Lưu bản nháp',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                         ),
                       ),
                     ),
@@ -937,16 +1163,33 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                       child: SizedBox(
                         height: 48,
                         child: ElevatedButton(
-                          onPressed: _isSaving ? null : () => _handleSave(publishImmediately: true),
+                          onPressed: _isSaving
+                              ? null
+                              : () => _handleSave(publishImmediately: true),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1E3A5F),
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                             elevation: 1,
                           ),
                           child: _isSaving
-                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                              : const Text('Mở ca thi ngay', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
+                                  'Mở ca thi ngay',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                         ),
                       ),
                     ),
@@ -974,7 +1217,11 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: const Color(0xFFE2E8F0)),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 2)),
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
                         ],
                       ),
                       child: Column(
@@ -982,11 +1229,20 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                         children: [
                           const Row(
                             children: [
-                              Icon(Icons.info_outline, size: 18, color: Color(0xFF1E3A5F)),
+                              Icon(
+                                Icons.info_outline,
+                                size: 18,
+                                color: Color(0xFF1E3A5F),
+                              ),
                               SizedBox(width: 8),
                               Text(
                                 'THÔNG TIN CHUNG',
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E3A5F), letterSpacing: 0.5),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1E3A5F),
+                                  letterSpacing: 0.5,
+                                ),
                               ),
                             ],
                           ),
@@ -999,16 +1255,25 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                               decoration: BoxDecoration(
                                 color: const Color(0xFFFEF2F2),
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: const Color(0xFFFECACA)),
+                                border: Border.all(
+                                  color: const Color(0xFFFECACA),
+                                ),
                               ),
                               child: const Row(
                                 children: [
-                                  Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 20),
+                                  Icon(
+                                    Icons.warning_amber_rounded,
+                                    color: Color(0xFFDC2626),
+                                    size: 20,
+                                  ),
                                   SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
                                       'Bạn chưa được cấp quyền giảng dạy môn học nào để tạo ca thi. Vui lòng vào mục Môn học để đăng ký và chờ phê duyệt.',
-                                      style: TextStyle(color: Color(0xFF991B1B), fontSize: 12.5),
+                                      style: TextStyle(
+                                        color: Color(0xFF991B1B),
+                                        fontSize: 12.5,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -1016,17 +1281,23 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                             )
                           else
                             DropdownButtonFormField<String>(
-                              value: _selectedSubjectId,
+                              initialValue: _selectedSubjectId,
                               isExpanded: true,
                               decoration: const InputDecoration(
                                 labelText: 'Môn học *',
                                 border: OutlineInputBorder(),
-                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 10,
+                                ),
                               ),
                               items: _subjects.map((s) {
                                 return DropdownMenuItem<String>(
                                   value: s['_id'],
-                                  child: Text('${s['subject_code']} - ${s['subject_name']}', overflow: TextOverflow.ellipsis),
+                                  child: Text(
+                                    '${s['subject_code']} - ${s['subject_name']}',
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 );
                               }).toList(),
                               onChanged: (val) {
@@ -1047,22 +1318,37 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
 
                           // Lớp học (isExpanded: true)
                           DropdownButtonFormField<String>(
-                            value: _selectedClassId,
+                            initialValue: _selectedClassId,
                             isExpanded: true,
                             decoration: InputDecoration(
                               labelText: 'Lớp học ca thi',
                               border: const OutlineInputBorder(),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
                               suffixIcon: _isLoadingClasses
-                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
                                   : null,
                             ),
                             items: [
-                              const DropdownMenuItem<String>(value: null, child: Text('Không gắn theo lớp cụ thể')),
+                              const DropdownMenuItem<String>(
+                                value: null,
+                                child: Text('Không gắn theo lớp cụ thể'),
+                              ),
                               ..._classes.map((c) {
                                 return DropdownMenuItem<String>(
                                   value: c['_id'],
-                                  child: Text('Lớp ${c['class_code']} (${c['semester']})', overflow: TextOverflow.ellipsis),
+                                  child: Text(
+                                    'Lớp ${c['class_code']} (${c['semester']})',
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 );
                               }),
                             ],
@@ -1085,31 +1371,49 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                             decoration: BoxDecoration(
                               color: const Color(0xFFF8FAFC),
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Row(
                                       children: [
-                                        Icon(Icons.groups_outlined, size: 18, color: Color(0xFF1E3A5F)),
+                                        Icon(
+                                          Icons.groups_outlined,
+                                          size: 18,
+                                          color: Color(0xFF1E3A5F),
+                                        ),
                                         SizedBox(width: 6),
                                         Text(
                                           'Thí sinh dự thi',
-                                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                            color: Color(0xFF0F172A),
+                                          ),
                                         ),
                                       ],
                                     ),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: _selectedStudentIds.isNotEmpty ? const Color(0xFFEFF6FF) : const Color(0xFFF1F5F9),
+                                        color: _selectedStudentIds.isNotEmpty
+                                            ? const Color(0xFFEFF6FF)
+                                            : const Color(0xFFF1F5F9),
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
-                                          color: _selectedStudentIds.isNotEmpty ? const Color(0xFFBFDBFE) : const Color(0xFFE2E8F0),
+                                          color: _selectedStudentIds.isNotEmpty
+                                              ? const Color(0xFFBFDBFE)
+                                              : const Color(0xFFE2E8F0),
                                         ),
                                       ),
                                       child: Text(
@@ -1117,7 +1421,9 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                         style: TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.bold,
-                                          color: _selectedStudentIds.isNotEmpty ? const Color(0xFF1D4ED8) : const Color(0xFF64748B),
+                                          color: _selectedStudentIds.isNotEmpty
+                                              ? const Color(0xFF1D4ED8)
+                                              : const Color(0xFF64748B),
                                         ),
                                       ),
                                     ),
@@ -1129,13 +1435,32 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                     Expanded(
                                       child: OutlinedButton.icon(
                                         onPressed: _showManageStudentsSheet,
-                                        icon: const Icon(Icons.checklist, size: 15),
-                                        label: const Text('Xem danh sách', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                        icon: const Icon(
+                                          Icons.checklist,
+                                          size: 15,
+                                        ),
+                                        label: const Text(
+                                          'Xem danh sách',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
                                         style: OutlinedButton.styleFrom(
-                                          foregroundColor: const Color(0xFF1E3A5F),
-                                          side: const BorderSide(color: Color(0xFFCBD5E1)),
-                                          padding: const EdgeInsets.symmetric(vertical: 8),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                          foregroundColor: const Color(
+                                            0xFF1E3A5F,
+                                          ),
+                                          side: const BorderSide(
+                                            color: Color(0xFFCBD5E1),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 8,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -1143,13 +1468,30 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                     Expanded(
                                       child: ElevatedButton.icon(
                                         onPressed: _showAddRetakeStudentDialog,
-                                        icon: const Icon(Icons.person_add_alt_1, size: 15),
-                                        label: const Text('+ Thêm thi lại', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                        icon: const Icon(
+                                          Icons.person_add_alt_1,
+                                          size: 15,
+                                        ),
+                                        label: const Text(
+                                          '+ Thêm thi lại',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF1E3A5F),
+                                          backgroundColor: const Color(
+                                            0xFF1E3A5F,
+                                          ),
                                           foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(vertical: 8),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 8,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
                                           elevation: 0,
                                         ),
                                       ),
@@ -1166,11 +1508,17 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                             controller: _titleController,
                             decoration: const InputDecoration(
                               labelText: 'Tiêu đề ca thi *',
-                              hintText: 'VD: Thi kết thúc học phần Kỳ Fall 2026',
+                              hintText:
+                                  'VD: Thi kết thúc học phần Kỳ Fall 2026',
                               border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 12,
+                              ),
                             ),
-                            validator: (v) => (v == null || v.trim().isEmpty) ? 'Vui lòng nhập tiêu đề ca thi' : null,
+                            validator: (v) => (v == null || v.trim().isEmpty)
+                                ? 'Vui lòng nhập tiêu đề ca thi'
+                                : null,
                           ),
                           const SizedBox(height: 12),
 
@@ -1184,12 +1532,22 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                     decoration: const InputDecoration(
                                       labelText: 'Bắt đầu *',
                                       border: OutlineInputBorder(),
-                                      prefixIcon: Icon(Icons.calendar_today_outlined, size: 18, color: Color(0xFF64748B)),
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                      prefixIcon: Icon(
+                                        Icons.calendar_today_outlined,
+                                        size: 18,
+                                        color: Color(0xFF64748B),
+                                      ),
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 8,
+                                      ),
                                     ),
                                     child: Text(
                                       '${_startTime.day}/${_startTime.month} ${_startTime.hour.toString().padLeft(2, '0')}:${_startTime.minute.toString().padLeft(2, '0')}',
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1202,12 +1560,22 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                     decoration: const InputDecoration(
                                       labelText: 'Kết thúc *',
                                       border: OutlineInputBorder(),
-                                      prefixIcon: Icon(Icons.calendar_today_outlined, size: 18, color: Color(0xFF64748B)),
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                      prefixIcon: Icon(
+                                        Icons.calendar_today_outlined,
+                                        size: 18,
+                                        color: Color(0xFF64748B),
+                                      ),
+                                      contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 8,
+                                      ),
                                     ),
                                     child: Text(
                                       '${_endTime.day}/${_endTime.month} ${_endTime.hour.toString().padLeft(2, '0')}:${_endTime.minute.toString().padLeft(2, '0')}',
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1231,7 +1599,11 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: const Color(0xFFE2E8F0)),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 6, offset: const Offset(0, 2)),
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
                         ],
                       ),
                       child: Column(
@@ -1239,11 +1611,20 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                         children: [
                           const Row(
                             children: [
-                              Icon(Icons.tune, size: 18, color: Color(0xFF1E3A5F)),
+                              Icon(
+                                Icons.tune,
+                                size: 18,
+                                color: Color(0xFF1E3A5F),
+                              ),
                               SizedBox(width: 8),
                               Text(
                                 'CẤU HÌNH & BẢO MẬT',
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E3A5F), letterSpacing: 0.5),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1E3A5F),
+                                  letterSpacing: 0.5,
+                                ),
                               ),
                             ],
                           ),
@@ -1260,12 +1641,19 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                     labelText: 'Thời lượng (p) *',
                                     border: OutlineInputBorder(),
                                     helperText: '30-300p',
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 10,
+                                    ),
                                   ),
                                   validator: (v) {
-                                    if (v == null || v.trim().isEmpty) return 'Bắt buộc';
+                                    if (v == null || v.trim().isEmpty) {
+                                      return 'Bắt buộc';
+                                    }
                                     final d = int.tryParse(v.trim());
-                                    if (d == null || d < 30 || d > 300) return '30-300';
+                                    if (d == null || d < 30 || d > 300) {
+                                      return '30-300';
+                                    }
                                     return null;
                                   },
                                 ),
@@ -1279,9 +1667,15 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                     labelText: 'Vi phạm tối đa',
                                     border: OutlineInputBorder(),
                                     helperText: 'Mặc định 3',
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 10,
+                                    ),
                                   ),
-                                  validator: (v) => (v == null || int.tryParse(v) == null) ? 'Hợp lệ' : null,
+                                  validator: (v) =>
+                                      (v == null || int.tryParse(v) == null)
+                                      ? 'Hợp lệ'
+                                      : null,
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -1293,12 +1687,19 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                     labelText: 'Điểm sàn (%)',
                                     border: OutlineInputBorder(),
                                     helperText: 'Mặc định 50%',
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 10,
+                                    ),
                                   ),
                                   validator: (v) {
-                                    if (v == null || v.trim().isEmpty) return 'Bắt buộc';
+                                    if (v == null || v.trim().isEmpty) {
+                                      return 'Bắt buộc';
+                                    }
                                     final p = int.tryParse(v.trim());
-                                    if (p == null || p < 0 || p > 100) return '0-100';
+                                    if (p == null || p < 0 || p > 100) {
+                                      return '0-100';
+                                    }
                                     return null;
                                   },
                                 ),
@@ -1309,28 +1710,40 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
 
                           // Tách dòng cho trường "Cách chấm điểm trắc nghiệm" (Dễ hiểu, rõ ràng)
                           DropdownButtonFormField<String>(
-                            value: _selectedGradingMethod,
+                            initialValue: _selectedGradingMethod,
                             isExpanded: true,
                             decoration: const InputDecoration(
                               labelText: 'Cách tính điểm câu trắc nghiệm',
                               border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
                             ),
                             items: const [
                               DropdownMenuItem(
                                 value: 'ALL_CORRECT',
-                                child: Text('Đúng hết mới có điểm (Không chia nhỏ điểm)', overflow: TextOverflow.ellipsis),
+                                child: Text(
+                                  'Đúng hết mới có điểm (Không chia nhỏ điểm)',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                               DropdownMenuItem(
                                 value: 'PARTIAL',
-                                child: Text('Đúng phần nào tính điểm phần đó (Chia nhỏ điểm)', overflow: TextOverflow.ellipsis),
+                                child: Text(
+                                  'Đúng phần nào tính điểm phần đó (Chia nhỏ điểm)',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ],
                             onChanged: (val) {
-                              if (val != null) setState(() => _selectedGradingMethod = val);
+                              if (val != null) {
+                                setState(() => _selectedGradingMethod = val);
+                              }
                             },
                           ),
                           const SizedBox(height: 14),
+
 
                           /*
                           // Mã thoát Kiosk khẩn cấp (Quit PIN / Safe Exam Browser standard)
@@ -1393,36 +1806,62 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
 
                           // 3 Switch bảo mật
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF8FAFC),
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
                             ),
                             child: Column(
                               children: [
                                 SwitchListTile(
                                   contentPadding: EdgeInsets.zero,
-                                  title: const Text('Cho phép xem lại bài thi sau khi nộp', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                  title: const Text(
+                                    'Cho phép xem lại bài thi sau khi nộp',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                   value: _allowReview,
-                                  activeColor: const Color(0xFF1E3A5F),
-                                  onChanged: (val) => setState(() => _allowReview = val),
+                                  activeThumbColor: const Color(0xFF1E3A5F),
+                                  onChanged: (val) =>
+                                      setState(() => _allowReview = val),
                                 ),
                                 const Divider(height: 1),
                                 SwitchListTile(
                                   contentPadding: EdgeInsets.zero,
-                                  title: const Text('Xáo trộn thứ tự câu hỏi', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                  title: const Text(
+                                    'Xáo trộn thứ tự câu hỏi',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                   value: _shuffleQuestions,
-                                  activeColor: const Color(0xFF1E3A5F),
-                                  onChanged: (val) => setState(() => _shuffleQuestions = val),
+                                  activeThumbColor: const Color(0xFF1E3A5F),
+                                  onChanged: (val) =>
+                                      setState(() => _shuffleQuestions = val),
                                 ),
                                 const Divider(height: 1),
                                 SwitchListTile(
                                   contentPadding: EdgeInsets.zero,
-                                  title: const Text('Xáo trộn thứ tự đáp án', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                  title: const Text(
+                                    'Xáo trộn thứ tự đáp án',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                   value: _shuffleOptions,
-                                  activeColor: const Color(0xFF1E3A5F),
-                                  onChanged: (val) => setState(() => _shuffleOptions = val),
+                                  activeThumbColor: const Color(0xFF1E3A5F),
+                                  onChanged: (val) =>
+                                      setState(() => _shuffleOptions = val),
                                 ),
                               ],
                             ),
@@ -1446,7 +1885,11 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                         children: [
                           const Text(
                             'Cách tạo đề thi trắc nghiệm',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Color(0xFF1E293B),
+                            ),
                           ),
                           const SizedBox(height: 10),
                           Row(
@@ -1454,15 +1897,23 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                               // Cách 1: Tự chọn câu hỏi (Đề cố định)
                               Expanded(
                                 child: InkWell(
-                                  onTap: () => setState(() => _isDynamicMatrix = false),
+                                  onTap: () =>
+                                      setState(() => _isDynamicMatrix = false),
                                   borderRadius: BorderRadius.circular(8),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                      horizontal: 8,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: !_isDynamicMatrix ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
+                                      color: !_isDynamicMatrix
+                                          ? const Color(0xFFEFF6FF)
+                                          : const Color(0xFFF8FAFC),
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border.all(
-                                        color: !_isDynamicMatrix ? const Color(0xFF1E3A5F) : const Color(0xFFE2E8F0),
+                                        color: !_isDynamicMatrix
+                                            ? const Color(0xFF1E3A5F)
+                                            : const Color(0xFFE2E8F0),
                                         width: !_isDynamicMatrix ? 1.5 : 1,
                                       ),
                                     ),
@@ -1471,7 +1922,9 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                         Icon(
                                           Icons.playlist_add_check,
                                           size: 20,
-                                          color: !_isDynamicMatrix ? const Color(0xFF1E3A5F) : const Color(0xFF94A3B8),
+                                          color: !_isDynamicMatrix
+                                              ? const Color(0xFF1E3A5F)
+                                              : const Color(0xFF94A3B8),
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
@@ -1479,7 +1932,9 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                           style: TextStyle(
                                             fontSize: 12.5,
                                             fontWeight: FontWeight.bold,
-                                            color: !_isDynamicMatrix ? const Color(0xFF1E3A5F) : const Color(0xFF475569),
+                                            color: !_isDynamicMatrix
+                                                ? const Color(0xFF1E3A5F)
+                                                : const Color(0xFF475569),
                                           ),
                                         ),
                                         const SizedBox(height: 2),
@@ -1487,7 +1942,9 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                           'Cả lớp chung 1 đề',
                                           style: TextStyle(
                                             fontSize: 11,
-                                            color: !_isDynamicMatrix ? const Color(0xFF2563EB) : const Color(0xFF94A3B8),
+                                            color: !_isDynamicMatrix
+                                                ? const Color(0xFF2563EB)
+                                                : const Color(0xFF94A3B8),
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -1501,15 +1958,23 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                               // Cách 2: Bốc đề ngẫu nhiên (Mỗi em 1 đề)
                               Expanded(
                                 child: InkWell(
-                                  onTap: () => setState(() => _isDynamicMatrix = true),
+                                  onTap: () =>
+                                      setState(() => _isDynamicMatrix = true),
                                   borderRadius: BorderRadius.circular(8),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                      horizontal: 8,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: _isDynamicMatrix ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
+                                      color: _isDynamicMatrix
+                                          ? const Color(0xFFEFF6FF)
+                                          : const Color(0xFFF8FAFC),
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border.all(
-                                        color: _isDynamicMatrix ? const Color(0xFF1E3A5F) : const Color(0xFFE2E8F0),
+                                        color: _isDynamicMatrix
+                                            ? const Color(0xFF1E3A5F)
+                                            : const Color(0xFFE2E8F0),
                                         width: _isDynamicMatrix ? 1.5 : 1,
                                       ),
                                     ),
@@ -1518,7 +1983,9 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                         Icon(
                                           Icons.shuffle,
                                           size: 20,
-                                          color: _isDynamicMatrix ? const Color(0xFF1E3A5F) : const Color(0xFF94A3B8),
+                                          color: _isDynamicMatrix
+                                              ? const Color(0xFF1E3A5F)
+                                              : const Color(0xFF94A3B8),
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
@@ -1526,7 +1993,9 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                           style: TextStyle(
                                             fontSize: 12.5,
                                             fontWeight: FontWeight.bold,
-                                            color: _isDynamicMatrix ? const Color(0xFF1E3A5F) : const Color(0xFF475569),
+                                            color: _isDynamicMatrix
+                                                ? const Color(0xFF1E3A5F)
+                                                : const Color(0xFF475569),
                                           ),
                                         ),
                                         const SizedBox(height: 2),
@@ -1534,7 +2003,9 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                           'Mỗi em 1 đề khác nhau',
                                           style: TextStyle(
                                             fontSize: 11,
-                                            color: _isDynamicMatrix ? const Color(0xFF2563EB) : const Color(0xFF94A3B8),
+                                            color: _isDynamicMatrix
+                                                ? const Color(0xFF2563EB)
+                                                : const Color(0xFF94A3B8),
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -1552,18 +2023,28 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF1F5F9),
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: const Color(0xFFCBD5E1)),
+                                border: Border.all(
+                                  color: const Color(0xFFCBD5E1),
+                                ),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const Row(
                                     children: [
-                                      Icon(Icons.source_outlined, size: 16, color: Color(0xFF1E3A5F)),
+                                      Icon(
+                                        Icons.source_outlined,
+                                        size: 16,
+                                        color: Color(0xFF1E3A5F),
+                                      ),
                                       SizedBox(width: 6),
                                       Text(
                                         'Nguồn câu hỏi bốc ma trận đề:',
-                                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF0F172A),
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -1572,7 +2053,10 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                     dense: true,
                                     title: const Text(
                                       'Bao gồm câu hỏi từ Kho riêng của tôi',
-                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                     subtitle: Text(
                                       _includePrivateInMatrix
@@ -1580,12 +2064,16 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                           : 'Đề thi chỉ bốc ngẫu nhiên từ Kho chung chuẩn do Trưởng bộ môn phê duyệt.',
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: _includePrivateInMatrix ? const Color(0xFF7E22CE) : const Color(0xFF64748B),
+                                        color: _includePrivateInMatrix
+                                            ? const Color(0xFF7E22CE)
+                                            : const Color(0xFF64748B),
                                       ),
                                     ),
                                     value: _includePrivateInMatrix,
-                                    activeColor: const Color(0xFF7E22CE),
-                                    onChanged: (val) => setState(() => _includePrivateInMatrix = val),
+                                    activeThumbColor: const Color(0xFF7E22CE),
+                                    onChanged: (val) => setState(
+                                      () => _includePrivateInMatrix = val,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -1602,19 +2090,39 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                       // CÁCH 1: TỰ CHỌN CÂU HỎI THỦ CÔNG
                       Builder(
                         builder: (context) {
-                          final publicQuestions = _availableQuestions.where((q) => q['scope'] == 'PUBLIC' || q['is_public'] == true).toList();
-                          final privateQuestions = _availableQuestions.where((q) => q['scope'] == 'PRIVATE' || q['is_public'] == false).toList();
+                          final publicQuestions = _availableQuestions
+                              .where(
+                                (q) =>
+                                    q['scope'] == 'PUBLIC' ||
+                                    q['is_public'] == true,
+                              )
+                              .toList();
+                          final privateQuestions = _availableQuestions
+                              .where(
+                                (q) =>
+                                    q['scope'] == 'PRIVATE' ||
+                                    q['is_public'] == false,
+                              )
+                              .toList();
                           final displayedQuestions = _questionSourceFilter == 1
                               ? publicQuestions
                               : _questionSourceFilter == 2
-                                  ? privateQuestions
-                                  : _availableQuestions;
+                              ? privateQuestions
+                              : _availableQuestions;
 
-                          final selectedPublicCount = _selectedQuestionIds.where((id) {
-                            final q = _availableQuestions.firstWhere((x) => x['_id'] == id, orElse: () => null);
-                            return q != null && (q['scope'] == 'PUBLIC' || q['is_public'] == true);
-                          }).length;
-                          final selectedPrivateCount = _selectedQuestionIds.length - selectedPublicCount;
+                          final selectedPublicCount = _selectedQuestionIds
+                              .where((id) {
+                                final q = _availableQuestions.firstWhere(
+                                  (x) => x['_id'] == id,
+                                  orElse: () => null,
+                                );
+                                return q != null &&
+                                    (q['scope'] == 'PUBLIC' ||
+                                        q['is_public'] == true);
+                              })
+                              .length;
+                          final selectedPrivateCount =
+                              _selectedQuestionIds.length - selectedPublicCount;
 
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1624,22 +2132,40 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                   Expanded(
                                     child: Text(
                                       'Chọn câu hỏi (${_selectedQuestionIds.length}/${_availableQuestions.length}):',
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        color: Color(0xFF1E293B),
+                                      ),
                                     ),
                                   ),
                                   TextButton(
                                     onPressed: () {
                                       setState(() {
-                                        final allDisplayedIds = displayedQuestions.map((q) => q['_id'].toString()).toSet();
-                                        final allSelected = allDisplayedIds.every((id) => _selectedQuestionIds.contains(id));
+                                        final allDisplayedIds =
+                                            displayedQuestions
+                                                .map((q) => q['_id'].toString())
+                                                .toSet();
+                                        final allSelected = allDisplayedIds
+                                            .every(
+                                              (id) => _selectedQuestionIds
+                                                  .contains(id),
+                                            );
                                         if (allSelected) {
-                                          _selectedQuestionIds.removeAll(allDisplayedIds);
+                                          _selectedQuestionIds.removeAll(
+                                            allDisplayedIds,
+                                          );
                                         } else {
-                                          _selectedQuestionIds.addAll(allDisplayedIds);
+                                          _selectedQuestionIds.addAll(
+                                            allDisplayedIds,
+                                          );
                                         }
                                       });
                                     },
-                                    child: const Text('Chọn / Bỏ chọn nhóm này', style: TextStyle(fontSize: 12)),
+                                    child: const Text(
+                                      'Chọn / Bỏ chọn nhóm này',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -1656,14 +2182,31 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                   children: [
                                     Expanded(
                                       child: GestureDetector(
-                                        onTap: () => setState(() => _questionSourceFilter = 0),
+                                        onTap: () => setState(
+                                          () => _questionSourceFilter = 0,
+                                        ),
                                         child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 6),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 6,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: _questionSourceFilter == 0 ? Colors.white : Colors.transparent,
-                                            borderRadius: BorderRadius.circular(6),
-                                            boxShadow: _questionSourceFilter == 0
-                                                ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 3)]
+                                            color: _questionSourceFilter == 0
+                                                ? Colors.white
+                                                : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                            boxShadow:
+                                                _questionSourceFilter == 0
+                                                ? [
+                                                    BoxShadow(
+                                                      color: Colors.black
+                                                          .withValues(
+                                                            alpha: 0.05,
+                                                          ),
+                                                      blurRadius: 3,
+                                                    ),
+                                                  ]
                                                 : null,
                                           ),
                                           child: Center(
@@ -1671,8 +2214,14 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                               'Tất cả (${_availableQuestions.length})',
                                               style: TextStyle(
                                                 fontSize: 11,
-                                                fontWeight: _questionSourceFilter == 0 ? FontWeight.bold : FontWeight.w500,
-                                                color: _questionSourceFilter == 0 ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+                                                fontWeight:
+                                                    _questionSourceFilter == 0
+                                                    ? FontWeight.bold
+                                                    : FontWeight.w500,
+                                                color:
+                                                    _questionSourceFilter == 0
+                                                    ? const Color(0xFF0F172A)
+                                                    : const Color(0xFF64748B),
                                               ),
                                             ),
                                           ),
@@ -1681,14 +2230,31 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                     ),
                                     Expanded(
                                       child: GestureDetector(
-                                        onTap: () => setState(() => _questionSourceFilter = 1),
+                                        onTap: () => setState(
+                                          () => _questionSourceFilter = 1,
+                                        ),
                                         child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 6),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 6,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: _questionSourceFilter == 1 ? Colors.white : Colors.transparent,
-                                            borderRadius: BorderRadius.circular(6),
-                                            boxShadow: _questionSourceFilter == 1
-                                                ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 3)]
+                                            color: _questionSourceFilter == 1
+                                                ? Colors.white
+                                                : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                            boxShadow:
+                                                _questionSourceFilter == 1
+                                                ? [
+                                                    BoxShadow(
+                                                      color: Colors.black
+                                                          .withValues(
+                                                            alpha: 0.05,
+                                                          ),
+                                                      blurRadius: 3,
+                                                    ),
+                                                  ]
                                                 : null,
                                           ),
                                           child: Center(
@@ -1696,8 +2262,14 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                               '🏛️ Kho chung (${publicQuestions.length})',
                                               style: TextStyle(
                                                 fontSize: 11,
-                                                fontWeight: _questionSourceFilter == 1 ? FontWeight.bold : FontWeight.w500,
-                                                color: _questionSourceFilter == 1 ? const Color(0xFF1D4ED8) : const Color(0xFF64748B),
+                                                fontWeight:
+                                                    _questionSourceFilter == 1
+                                                    ? FontWeight.bold
+                                                    : FontWeight.w500,
+                                                color:
+                                                    _questionSourceFilter == 1
+                                                    ? const Color(0xFF1D4ED8)
+                                                    : const Color(0xFF64748B),
                                               ),
                                             ),
                                           ),
@@ -1706,14 +2278,31 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                     ),
                                     Expanded(
                                       child: GestureDetector(
-                                        onTap: () => setState(() => _questionSourceFilter = 2),
+                                        onTap: () => setState(
+                                          () => _questionSourceFilter = 2,
+                                        ),
                                         child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 6),
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 6,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: _questionSourceFilter == 2 ? Colors.white : Colors.transparent,
-                                            borderRadius: BorderRadius.circular(6),
-                                            boxShadow: _questionSourceFilter == 2
-                                                ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 3)]
+                                            color: _questionSourceFilter == 2
+                                                ? Colors.white
+                                                : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                            boxShadow:
+                                                _questionSourceFilter == 2
+                                                ? [
+                                                    BoxShadow(
+                                                      color: Colors.black
+                                                          .withValues(
+                                                            alpha: 0.05,
+                                                          ),
+                                                      blurRadius: 3,
+                                                    ),
+                                                  ]
                                                 : null,
                                           ),
                                           child: Center(
@@ -1721,8 +2310,14 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                               '👤 Kho riêng (${privateQuestions.length})',
                                               style: TextStyle(
                                                 fontSize: 11,
-                                                fontWeight: _questionSourceFilter == 2 ? FontWeight.bold : FontWeight.w500,
-                                                color: _questionSourceFilter == 2 ? const Color(0xFF7E22CE) : const Color(0xFF64748B),
+                                                fontWeight:
+                                                    _questionSourceFilter == 2
+                                                    ? FontWeight.bold
+                                                    : FontWeight.w500,
+                                                color:
+                                                    _questionSourceFilter == 2
+                                                    ? const Color(0xFF7E22CE)
+                                                    : const Color(0xFF64748B),
                                               ),
                                             ),
                                           ),
@@ -1740,12 +2335,21 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                   padding: const EdgeInsets.only(bottom: 6),
                                   child: Text(
                                     'Đã chọn: ${_selectedQuestionIds.length} câu (🏛️ $selectedPublicCount Kho chung Bộ môn, 👤 $selectedPrivateCount Kho riêng của bạn)',
-                                    style: const TextStyle(fontSize: 11, color: Color(0xFF475569), fontWeight: FontWeight.w600),
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Color(0xFF475569),
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
 
                               if (_isLoadingQuestions)
-                                const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()))
+                                const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(16.0),
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                )
                               else if (displayedQuestions.isEmpty)
                                 Padding(
                                   padding: const EdgeInsets.all(12.0),
@@ -1753,28 +2357,44 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                     _questionSourceFilter == 2
                                         ? 'Kho riêng của bạn chưa có câu hỏi nào. Hãy quản lý Kho Quiz ở màn hình chính để thêm câu hỏi.'
                                         : 'Chưa có câu hỏi nào trong danh mục này.',
-                                    style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                                    style: const TextStyle(
+                                      color: Color(0xFF64748B),
+                                      fontSize: 12,
+                                    ),
                                   ),
                                 )
                               else
                                 Container(
-                                  constraints: const BoxConstraints(maxHeight: 250),
+                                  constraints: const BoxConstraints(
+                                    maxHeight: 250,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                                    border: Border.all(
+                                      color: const Color(0xFFE2E8F0),
+                                    ),
                                   ),
                                   child: ListView.separated(
                                     shrinkWrap: true,
                                     itemCount: displayedQuestions.length,
-                                    separatorBuilder: (context, _) => const Divider(height: 1),
+                                    separatorBuilder: (context, _) =>
+                                        const Divider(height: 1),
                                     itemBuilder: (context, index) {
                                       final q = displayedQuestions[index];
                                       final id = q['_id'];
-                                      final isChecked = _selectedQuestionIds.contains(id);
-                                      final isPublicQ = (q['scope'] == 'PUBLIC' || q['is_public'] == true);
+                                      final isChecked = _selectedQuestionIds
+                                          .contains(id);
+                                      final isPublicQ =
+                                          (q['scope'] == 'PUBLIC' ||
+                                          q['is_public'] == true);
 
-                                      final diff = (q['difficulty_level'] ?? q['difficulty'] ?? 'MEDIUM').toString().toUpperCase();
+                                      final diff =
+                                          (q['difficulty_level'] ??
+                                                  q['difficulty'] ??
+                                                  'MEDIUM')
+                                              .toString()
+                                              .toUpperCase();
                                       Color diffColor;
                                       String diffText;
                                       if (diff == 'EASY') {
@@ -1789,44 +2409,87 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                       }
 
                                       return CheckboxListTile(
-                                        controlAffinity: ListTileControlAffinity.leading,
+                                        controlAffinity:
+                                            ListTileControlAffinity.leading,
                                         dense: true,
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 4,
+                                            ),
                                         value: isChecked,
                                         activeColor: const Color(0xFF1E3A5F),
                                         title: Text(
                                           q['content'] ?? '',
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
                                         subtitle: Padding(
-                                          padding: const EdgeInsets.only(top: 4.0),
+                                          padding: const EdgeInsets.only(
+                                            top: 4.0,
+                                          ),
                                           child: Row(
                                             children: [
                                               Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 2,
+                                                    ),
                                                 decoration: BoxDecoration(
-                                                  color: isPublicQ ? const Color(0xFFEFF6FF) : const Color(0xFFFAF5FF),
-                                                  borderRadius: BorderRadius.circular(4),
-                                                  border: Border.all(color: isPublicQ ? const Color(0xFFBFDBFE) : const Color(0xFFE9D5FF)),
+                                                  color: isPublicQ
+                                                      ? const Color(0xFFEFF6FF)
+                                                      : const Color(0xFFFAF5FF),
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
+                                                  border: Border.all(
+                                                    color: isPublicQ
+                                                        ? const Color(
+                                                            0xFFBFDBFE,
+                                                          )
+                                                        : const Color(
+                                                            0xFFE9D5FF,
+                                                          ),
+                                                  ),
                                                 ),
                                                 child: Text(
-                                                  isPublicQ ? '🏛️ Kho Chung (Bộ môn)' : '👤 Kho Riêng (Cá nhân)',
+                                                  isPublicQ
+                                                      ? '🏛️ Kho Chung (Bộ môn)'
+                                                      : '👤 Kho Riêng (Cá nhân)',
                                                   style: TextStyle(
                                                     fontSize: 10,
                                                     fontWeight: FontWeight.bold,
-                                                    color: isPublicQ ? const Color(0xFF1D4ED8) : const Color(0xFF7E22CE),
+                                                    color: isPublicQ
+                                                        ? const Color(
+                                                            0xFF1D4ED8,
+                                                          )
+                                                        : const Color(
+                                                            0xFF7E22CE,
+                                                          ),
                                                   ),
                                                 ),
                                               ),
                                               const SizedBox(width: 6),
                                               Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 6,
+                                                      vertical: 2,
+                                                    ),
                                                 decoration: BoxDecoration(
-                                                  color: diffColor.withOpacity(0.12),
-                                                  borderRadius: BorderRadius.circular(4),
-                                                  border: Border.all(color: diffColor.withOpacity(0.3)),
+                                                  color: diffColor.withValues(
+                                                    alpha: 0.12,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
+                                                  border: Border.all(
+                                                    color: diffColor.withValues(
+                                                      alpha: 0.3,
+                                                    ),
+                                                  ),
                                                 ),
                                                 child: Text(
                                                   diffText,
@@ -1864,37 +2527,65 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                         children: [
                           const Text(
                             'Cấu hình Ma trận bốc ngẫu nhiên:',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: Color(0xFF1E293B),
+                            ),
                           ),
                           Text(
                             'Tổng: ${_getTotalMatrixQuestions()} câu',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E3A5F)),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: Color(0xFF1E3A5F),
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 6),
                       if (_isLoadingQuestions)
-                        const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()))
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                        )
                       else if (_subjectChapters.isEmpty)
                         const Padding(
                           padding: EdgeInsets.all(12.0),
-                          child: Text('Môn học này chưa có danh sách chương học.', style: TextStyle(color: Colors.red)),
+                          child: Text(
+                            'Môn học này chưa có danh sách chương học.',
+                            style: TextStyle(color: Colors.red),
+                          ),
                         )
                       else
                         ListView.separated(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: _subjectChapters.length,
-                          separatorBuilder: (context, _) => const SizedBox(height: 10),
+                          separatorBuilder: (context, _) =>
+                              const SizedBox(height: 10),
                           itemBuilder: (context, index) {
                             final ch = _subjectChapters[index];
-                            final cNum = ch['chapter_number'] is int ? ch['chapter_number'] as int : int.tryParse(ch['chapter_number'].toString()) ?? 1;
+                            final cNum = ch['chapter_number'] is int
+                                ? ch['chapter_number'] as int
+                                : int.tryParse(
+                                        ch['chapter_number'].toString(),
+                                      ) ??
+                                      1;
                             final cTitle = ch['chapter_title'] ?? '';
 
-                            _matrixConfigRules.putIfAbsent(cNum, () => {'EASY': 0, 'MEDIUM': 0, 'HARD': 0});
-                            final curEasy = _matrixConfigRules[cNum]!['EASY'] ?? 0;
-                            final curMed = _matrixConfigRules[cNum]!['MEDIUM'] ?? 0;
-                            final curHard = _matrixConfigRules[cNum]!['HARD'] ?? 0;
+                            _matrixConfigRules.putIfAbsent(
+                              cNum,
+                              () => {'EASY': 0, 'MEDIUM': 0, 'HARD': 0},
+                            );
+                            final curEasy =
+                                _matrixConfigRules[cNum]!['EASY'] ?? 0;
+                            final curMed =
+                                _matrixConfigRules[cNum]!['MEDIUM'] ?? 0;
+                            final curHard =
+                                _matrixConfigRules[cNum]!['HARD'] ?? 0;
 
                             final maxEasy = _getAvailableCount(cNum, 'EASY');
                             final maxMed = _getAvailableCount(cNum, 'MEDIUM');

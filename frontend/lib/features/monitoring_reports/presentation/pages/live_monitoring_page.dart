@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../exam_execution/data/datasources/exam_remote_datasource.dart';
@@ -100,7 +101,8 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
     for (var v in _violations) {
       final attempt = v['attempt_id'];
       final student = attempt?['student_id'];
-      final studentId = student?['_id'] ?? (student?['user_code'] ?? 'unknown_${v['_id']}');
+      final studentId =
+          student?['_id'] ?? (student?['user_code'] ?? 'unknown_${v['_id']}');
       final attemptId = attempt?['_id'] ?? '';
       final fullName = student?['full_name'] ?? 'Thí sinh';
       final userCode = student?['user_code'] ?? '';
@@ -147,7 +149,10 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
             child: const Text('Hủy'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Đình chỉ ngay'),
           ),
@@ -161,14 +166,17 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
           ApiEndpoints.examForceSuspend(group.attemptId),
           body: {
             'reason': 'PROCTOR_MANUAL_SUSPEND',
-            'details': 'Giám thị chủ động đình chỉ do phát hiện vi phạm an toàn',
+            'details':
+                'Giám thị chủ động đình chỉ do phát hiện vi phạm an toàn',
           },
         );
         await _fetchViolations();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Đã đình chỉ thí sinh ${group.fullName} thành công.'),
+              content: Text(
+                'Đã đình chỉ thí sinh ${group.fullName} thành công.',
+              ),
               backgroundColor: Colors.orange,
             ),
           );
@@ -183,16 +191,27 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
     }
   }
 
-  Future<void> _handleUnlockStudent(String attemptId, String studentName) async {
+  Future<void> _handleUnlockStudent(
+    String attemptId,
+    String studentName,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Mở khóa thí sinh'),
-        content: Text('Xác nhận mở khóa cho thí sinh "$studentName" để tiếp tục làm bài thi?'),
+        content: Text(
+          'Xác nhận mở khóa cho thí sinh "$studentName" để tiếp tục làm bài thi?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10B981), foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+              foregroundColor: Colors.white,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Xác nhận Mở khóa'),
           ),
@@ -206,14 +225,22 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
         if (res['success'] == true) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Đã mở khóa thành công cho thí sinh $studentName!'), backgroundColor: Colors.green),
+              SnackBar(
+                content: Text(
+                  'Đã mở khóa thành công cho thí sinh $studentName!',
+                ),
+                backgroundColor: Colors.green,
+              ),
             );
           }
           await _fetchViolations();
         } else {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(res['message'] ?? 'Mở khóa thất bại'), backgroundColor: Colors.red),
+              SnackBar(
+                content: Text(res['message'] ?? 'Mở khóa thất bại'),
+                backgroundColor: Colors.red,
+              ),
             );
           }
         }
@@ -227,16 +254,27 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
     }
   }
 
-  Future<void> _handleDirectSuspend(String attemptId, String studentName) async {
+  Future<void> _handleDirectSuspend(
+    String attemptId,
+    String studentName,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Đình chỉ thi khẩn cấp'),
-        content: Text('Bạn có chắc chắn muốn đình chỉ thí sinh "$studentName"? Thí sinh sẽ bị dừng làm bài ngay lập tức.'),
+        content: Text(
+          'Bạn có chắc chắn muốn đình chỉ thí sinh "$studentName"? Thí sinh sẽ bị dừng làm bài ngay lập tức.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Đình chỉ ngay'),
           ),
@@ -246,11 +284,17 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
 
     if (confirmed == true && attemptId.isNotEmpty) {
       try {
-        await _dataSource.forceSuspendAttempt(attemptId, reason: 'PROCTOR_MANUAL_SUSPEND');
+        await _dataSource.forceSuspendAttempt(
+          attemptId,
+          reason: 'PROCTOR_MANUAL_SUSPEND',
+        );
         await _fetchViolations();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Đã đình chỉ thí sinh $studentName thành công.'), backgroundColor: Colors.orange),
+            SnackBar(
+              content: Text('Đã đình chỉ thí sinh $studentName thành công.'),
+              backgroundColor: Colors.orange,
+            ),
           );
         }
       } catch (e) {
@@ -342,7 +386,11 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
           children: [
             const Text(
               'Giám sát phòng thi',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
             Text(
               widget.examTitle,
@@ -374,28 +422,36 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
                   _buildMetricColumn(
                     label: 'Sĩ số vào thi',
                     value: '$_activeInExam/$_totalRegistered',
-                    color: _activeInExam > 0 ? const Color(0xFF60A5FA) : const Color(0xFF94A3B8),
+                    color: _activeInExam > 0
+                        ? const Color(0xFF60A5FA)
+                        : const Color(0xFF94A3B8),
                     icon: Icons.people_outline,
                   ),
                   _buildMetricDivider(),
                   _buildMetricColumn(
                     label: 'Tổng vi phạm',
                     value: '$totalViolations',
-                    color: totalViolations > 0 ? const Color(0xFFF87171) : const Color(0xFF34D399),
+                    color: totalViolations > 0
+                        ? const Color(0xFFF87171)
+                        : const Color(0xFF34D399),
                     icon: Icons.warning_amber_rounded,
                   ),
                   _buildMetricDivider(),
                   _buildMetricColumn(
                     label: 'Thí sinh vi phạm',
                     value: '$totalViolatingStudents',
-                    color: totalViolatingStudents > 0 ? const Color(0xFFFBBF24) : const Color(0xFF34D399),
+                    color: totalViolatingStudents > 0
+                        ? const Color(0xFFFBBF24)
+                        : const Color(0xFF34D399),
                     icon: Icons.person_off_outlined,
                   ),
                   _buildMetricDivider(),
                   _buildMetricColumn(
                     label: 'Đã đình chỉ',
                     value: '$suspendedCount',
-                    color: suspendedCount > 0 ? const Color(0xFFEF4444) : const Color(0xFF94A3B8),
+                    color: suspendedCount > 0
+                        ? const Color(0xFFEF4444)
+                        : const Color(0xFF94A3B8),
                     icon: Icons.lock_person_outlined,
                   ),
                 ],
@@ -416,7 +472,9 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: _selectedViewMode == 0 ? const Color(0xFF1E3A5F) : const Color(0xFFF1F5F9),
+                        color: _selectedViewMode == 0
+                            ? const Color(0xFF1E3A5F)
+                            : const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       alignment: Alignment.center,
@@ -425,7 +483,9 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: _selectedViewMode == 0 ? Colors.white : const Color(0xFF64748B),
+                          color: _selectedViewMode == 0
+                              ? Colors.white
+                              : const Color(0xFF64748B),
                         ),
                       ),
                     ),
@@ -439,7 +499,9 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: _selectedViewMode == 1 ? const Color(0xFF1E3A5F) : const Color(0xFFF1F5F9),
+                        color: _selectedViewMode == 1
+                            ? const Color(0xFF1E3A5F)
+                            : const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       alignment: Alignment.center,
@@ -448,7 +510,9 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: _selectedViewMode == 1 ? Colors.white : const Color(0xFF64748B),
+                          color: _selectedViewMode == 1
+                              ? Colors.white
+                              : const Color(0xFF64748B),
                         ),
                       ),
                     ),
@@ -462,7 +526,9 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
-                        color: _selectedViewMode == 2 ? const Color(0xFF1E3A5F) : const Color(0xFFF1F5F9),
+                        color: _selectedViewMode == 2
+                            ? const Color(0xFF1E3A5F)
+                            : const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       alignment: Alignment.center,
@@ -471,7 +537,9 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: _selectedViewMode == 2 ? Colors.white : const Color(0xFF64748B),
+                          color: _selectedViewMode == 2
+                              ? Colors.white
+                              : const Color(0xFF64748B),
                         ),
                       ),
                     ),
@@ -488,21 +556,31 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _errorMessage != null
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
-                            const SizedBox(height: 12),
-                            ElevatedButton(onPressed: _fetchViolations, child: const Text('Thử lại')),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: Colors.red),
                         ),
-                      )
-                    : _selectedViewMode == 0
-                        ? _buildAllCandidatesList()
-                        : _selectedViewMode == 1
-                            ? (groups.isEmpty ? _buildNoViolationState() : _buildGroupedByStudentList(groups))
-                            : (_violations.isEmpty ? _buildNoViolationState() : _buildLiveTimelineList()),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: _fetchViolations,
+                          child: const Text('Thử lại'),
+                        ),
+                      ],
+                    ),
+                  )
+                : _selectedViewMode == 0
+                ? _buildAllCandidatesList()
+                : _selectedViewMode == 1
+                ? (groups.isEmpty
+                      ? _buildNoViolationState()
+                      : _buildGroupedByStudentList(groups))
+                : (_violations.isEmpty
+                      ? _buildNoViolationState()
+                      : _buildLiveTimelineList()),
           ),
         ],
       ),
@@ -525,7 +603,11 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
               const SizedBox(width: 4),
               Text(
                 value,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
               ),
             ],
           ),
@@ -540,11 +622,7 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
   }
 
   Widget _buildMetricDivider() {
-    return Container(
-      width: 1,
-      height: 28,
-      color: const Color(0xFF334155),
-    );
+    return Container(width: 1, height: 28, color: const Color(0xFF334155));
   }
 
   // Danh sách Toàn bộ Thí sinh trong ca thi (Theo dõi sĩ số, trạng thái kết nối & đình chỉ/mở khóa)
@@ -554,11 +632,19 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.people_outline, size: 56, color: Color(0xFF94A3B8)),
+            const Icon(
+              Icons.people_outline,
+              size: 56,
+              color: Color(0xFF94A3B8),
+            ),
             const SizedBox(height: 12),
             const Text(
               'Chưa có dữ liệu danh sách thí sinh',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: Color(0xFF1E293B),
+              ),
             ),
             const SizedBox(height: 4),
             Text(
@@ -620,7 +706,7 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.02),
+                color: Colors.black.withValues(alpha: 0.02),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -644,21 +730,34 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
                         Expanded(
                           child: Text(
                             name,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Color(0xFF0F172A),
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: statusBg,
                             borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: statusColor.withOpacity(0.3)),
+                            border: Border.all(
+                              color: statusColor.withValues(alpha: 0.3),
+                            ),
                           ),
                           child: Text(
                             statusLabel,
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: statusColor),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: statusColor,
+                            ),
                           ),
                         ),
                       ],
@@ -666,18 +765,32 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Text('MSSV: $code', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+                        Text(
+                          'MSSV: $code',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                         if (vCount > 0) ...[
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 1,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFFFEF2F2),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               '$vCount vi phạm',
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFDC2626),
+                              ),
                             ),
                           ),
                         ],
@@ -685,7 +798,10 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
                           const SizedBox(width: 8),
                           Text(
                             '• Vào thi: ${_formatDateTime(stu['started_at'])}',
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF64748B),
+                            ),
                           ),
                         ],
                       ],
@@ -700,23 +816,36 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFFDC2626),
                     side: const BorderSide(color: Color(0xFFFECACA)),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     visualDensity: VisualDensity.compact,
                   ),
-                  child: const Text('Đình chỉ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Đình chỉ',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
-              if ((status == 'DISQUALIFIED' || status == 'SUSPENDED') && attemptId.isNotEmpty) ...[
+              if ((status == 'DISQUALIFIED' || status == 'SUSPENDED') &&
+                  attemptId.isNotEmpty) ...[
                 const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: () => _handleUnlockStudent(attemptId, name),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF10B981),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     visualDensity: VisualDensity.compact,
                   ),
-                  child: const Text('Mở khóa', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Mở khóa',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ],
@@ -735,7 +864,11 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
           SizedBox(height: 12),
           Text(
             'Chưa ghi nhận vi phạm an toàn nào',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+              color: Color(0xFF1E293B),
+            ),
           ),
           SizedBox(height: 4),
           Text(
@@ -752,11 +885,13 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: groups.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 14),
+      separatorBuilder: (_, _) => const SizedBox(height: 14),
       itemBuilder: (context, index) {
         final g = groups[index];
         final isExpanded = _expandedStudentIds.contains(g.studentId);
-        final initial = g.fullName.isNotEmpty ? g.fullName.trim()[0].toUpperCase() : 'S';
+        final initial = g.fullName.isNotEmpty
+            ? g.fullName.trim()[0].toUpperCase()
+            : 'S';
         final latestLog = g.logs.isNotEmpty ? g.logs.first : null;
 
         return Container(
@@ -764,12 +899,16 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: g.isSuspended ? const Color(0xFFFCA5A5) : const Color(0xFFE2E8F0),
+              color: g.isSuspended
+                  ? const Color(0xFFFCA5A5)
+                  : const Color(0xFFE2E8F0),
               width: g.isSuspended ? 1.5 : 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: g.isSuspended ? const Color(0xFFEF4444).withOpacity(0.06) : Colors.black.withOpacity(0.02),
+                color: g.isSuspended
+                    ? const Color(0xFFEF4444).withValues(alpha: 0.06)
+                    : Colors.black.withValues(alpha: 0.02),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -797,13 +936,17 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
                       // Avatar
                       CircleAvatar(
                         radius: 20,
-                        backgroundColor: g.isSuspended ? const Color(0xFFFEF2F2) : const Color(0xFFEFF6FF),
+                        backgroundColor: g.isSuspended
+                            ? const Color(0xFFFEF2F2)
+                            : const Color(0xFFEFF6FF),
                         child: Text(
                           initial,
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: g.isSuspended ? const Color(0xFFDC2626) : const Color(0xFF1D4ED8),
+                            color: g.isSuspended
+                                ? const Color(0xFFDC2626)
+                                : const Color(0xFF1D4ED8),
                           ),
                         ),
                       ),
@@ -816,12 +959,21 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
                           children: [
                             Text(
                               g.fullName,
-                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
+                              ),
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              g.userCode.isNotEmpty ? 'Mã SV: ${g.userCode}' : g.email,
-                              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                              g.userCode.isNotEmpty
+                                  ? 'Mã SV: ${g.userCode}'
+                                  : g.email,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF64748B),
+                              ),
                             ),
                           ],
                         ),
@@ -829,29 +981,44 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
 
                       // Badge Trạng thái
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: g.isSuspended ? const Color(0xFFFEF2F2) : const Color(0xFFFFF7ED),
+                          color: g.isSuspended
+                              ? const Color(0xFFFEF2F2)
+                              : const Color(0xFFFFF7ED),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: g.isSuspended ? const Color(0xFFFECACA) : const Color(0xFFFED7AA),
+                            color: g.isSuspended
+                                ? const Color(0xFFFECACA)
+                                : const Color(0xFFFED7AA),
                           ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              g.isSuspended ? Icons.lock : Icons.warning_amber_rounded,
+                              g.isSuspended
+                                  ? Icons.lock
+                                  : Icons.warning_amber_rounded,
                               size: 13,
-                              color: g.isSuspended ? const Color(0xFFDC2626) : const Color(0xFFEA580C),
+                              color: g.isSuspended
+                                  ? const Color(0xFFDC2626)
+                                  : const Color(0xFFEA580C),
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              g.isSuspended ? 'ĐÃ ĐÌNH CHỈ' : '${g.logs.length} VI PHẠM',
+                              g.isSuspended
+                                  ? 'ĐÃ ĐÌNH CHỈ'
+                                  : '${g.logs.length} VI PHẠM',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: g.isSuspended ? const Color(0xFFDC2626) : const Color(0xFFEA580C),
+                                color: g.isSuspended
+                                    ? const Color(0xFFDC2626)
+                                    : const Color(0xFFEA580C),
                               ),
                             ),
                           ],
@@ -861,41 +1028,67 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
                   ),
                 ),
 
-                const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+                const Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: Color(0xFFF1F5F9),
+                ),
 
                 // Tóm tắt vi phạm gần nhất & gợi ý ấn vào xem chi tiết
                 if (latestLog != null)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFFEF2F2),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             _formatDateTime(latestLog['detected_at']),
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFDC2626),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             _formatViolationType(latestLog['violation_type']),
-                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF334155),
+                            ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         Row(
                           children: [
                             Text(
-                              isExpanded ? 'Đóng' : 'Xem chi tiết (${g.logs.length})',
-                              style: const TextStyle(fontSize: 12, color: Color(0xFF2563EB), fontWeight: FontWeight.w600),
+                              isExpanded
+                                  ? 'Đóng'
+                                  : 'Xem chi tiết (${g.logs.length})',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF2563EB),
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             Icon(
-                              isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                              isExpanded
+                                  ? Icons.keyboard_arrow_up
+                                  : Icons.keyboard_arrow_down,
                               size: 16,
                               color: const Color(0xFF2563EB),
                             ),
@@ -905,109 +1098,146 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
                     ),
                   ),
 
-              // Timeline chi tiết từng lần vi phạm (khi mở rộng)
-              if (isExpanded) ...[
-                Container(
-                  color: const Color(0xFFF8FAFC),
-                  padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'LỊCH SỬ VI PHẠM CỦA THÍ SINH:',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.5),
-                      ),
-                      const SizedBox(height: 8),
-                      ...g.logs.asMap().entries.map((entry) {
-                        final i = entry.key;
-                        final log = entry.value;
-                        final reverseIndex = g.logs.length - i;
-                        final time = _formatDateTime(log['detected_at']);
-                        final type = _formatViolationType(log['violation_type']);
-                        final details = log['violation_details'] ?? '';
+                // Timeline chi tiết từng lần vi phạm (khi mở rộng)
+                if (isExpanded) ...[
+                  Container(
+                    color: const Color(0xFFF8FAFC),
+                    padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'LỊCH SỬ VI PHẠM CỦA THÍ SINH:',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF64748B),
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ...g.logs.asMap().entries.map((entry) {
+                          final i = entry.key;
+                          final log = entry.value;
+                          final reverseIndex = g.logs.length - i;
+                          final time = _formatDateTime(log['detected_at']);
+                          final type = _formatViolationType(
+                            log['violation_type'],
+                          );
+                          final details = log['violation_details'] ?? '';
 
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: 20,
-                                height: 20,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFFEE2E2),
-                                  shape: BoxShape.circle,
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 20,
+                                  height: 20,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFFEE2E2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    '$reverseIndex',
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFDC2626),
+                                    ),
+                                  ),
                                 ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  '$reverseIndex',
-                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            time,
+                                            style: const TextStyle(
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF0F172A),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Text(
+                                              type,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: Color(0xFFDC2626),
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      if (details.isNotEmpty) ...[
+                                        const SizedBox(height: 2),
                                         Text(
-                                          time,
-                                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Expanded(
-                                          child: Text(
-                                            type,
-                                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFDC2626)),
-                                            overflow: TextOverflow.ellipsis,
+                                          details,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: Color(0xFF64748B),
+                                            height: 1.3,
                                           ),
                                         ),
                                       ],
-                                    ),
-                                    if (details.isNotEmpty) ...[
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        details,
-                                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), height: 1.3),
-                                      ),
                                     ],
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ],
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
 
-              // Footer: Nút hành động giám thị
-              if (!g.isSuspended) ...[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () => _handleSuspendStudent(g),
-                      icon: const Icon(Icons.block, size: 15, color: Color(0xFFDC2626)),
-                      label: const Text('Đình chỉ thi thí sinh này', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFFECACA)),
-                        backgroundColor: const Color(0xFFFEF2F2),
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                // Footer: Nút hành động giám thị
+                if (!g.isSuspended) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _handleSuspendStudent(g),
+                        icon: const Icon(
+                          Icons.block,
+                          size: 15,
+                          color: Color(0xFFDC2626),
+                        ),
+                        label: const Text(
+                          'Đình chỉ thi thí sinh này',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFDC2626),
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFFECACA)),
+                          backgroundColor: const Color(0xFFFEF2F2),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
-        ),
-      );
+        );
       },
     );
   }
@@ -1017,7 +1247,7 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: _violations.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final v = _violations[index];
         final student = v['attempt_id']?['student_id'];
@@ -1050,13 +1280,21 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
                   children: [
                     Text(
                       timeStr,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                      ),
                     ),
                     if (dateStr.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
                         dateStr,
-                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF64748B),
+                        ),
                       ),
                     ],
                   ],
@@ -1069,18 +1307,29 @@ class _LiveMonitoringPageState extends State<LiveMonitoringPage> {
                   children: [
                     Text(
                       '$studentName ($studentCode)',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       _formatViolationType(violationType),
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFFDC2626)),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFDC2626),
+                      ),
                     ),
                     if (details.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
                         details,
-                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF64748B),
+                        ),
                       ),
                     ],
                   ],
