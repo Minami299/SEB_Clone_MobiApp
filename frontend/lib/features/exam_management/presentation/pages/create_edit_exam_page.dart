@@ -22,7 +22,7 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
   final _descController = TextEditingController();
   final _durationController = TextEditingController(text: '60');
   final _maxViolationsController = TextEditingController(text: '3');
-  final _quitPinController = TextEditingController(text: '888888');
+  final _entryPinController = TextEditingController();
   final _minPassController = TextEditingController(text: '50');
 
   DateTime _startTime = DateTime.now().add(const Duration(minutes: 10));
@@ -72,7 +72,7 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
     _descController.dispose();
     _durationController.dispose();
     _maxViolationsController.dispose();
-    _quitPinController.dispose();
+    _entryPinController.dispose();
     _minPassController.dispose();
     super.dispose();
   }
@@ -110,9 +110,7 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
           _descController.text = exam['description'] ?? '';
           _durationController.text = (exam['duration_minutes'] ?? 60).toString();
           _maxViolationsController.text = (exam['max_violations'] ?? 3).toString();
-          _quitPinController.text = exam['exit_pin'] ?? '888888';
-          _minPassController.text = (exam['min_pass_percentage'] ?? 50)
-              .toString();
+          _minPassController.text = (exam['min_pass_percentage'] ?? 50).toString();
           _selectedGradingMethod = exam['mcq_grading_method'] ?? 'ALL_CORRECT';
           _allowReview = exam['allow_review'] == true;
           _shuffleQuestions = exam['shuffle_questions'] == true;
@@ -998,6 +996,9 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
         },
         if (!_isDynamicMatrix) 'question_ids': _selectedQuestionIds.toList(),
       };
+      if (_entryPinController.text.trim().isNotEmpty) {
+        body['entry_pin'] = _entryPinController.text.trim();
+      }
 
       String examId;
 
@@ -1705,6 +1706,27 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                                 ),
                               ),
                             ],
+                          ),
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            controller: _entryPinController,
+                            keyboardType: TextInputType.number,
+                            maxLength: 6,
+                            obscureText: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Mã vào thi của sinh viên *',
+                              helperText: 'Mã hiện tại sẽ tự đổi mỗi 5 phút. Khi chỉnh sửa, để trống nếu giữ mã cũ.',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.password_outlined),
+                              counterText: '',
+                            ),
+                            validator: (value) {
+                              final pin = value?.trim() ?? '';
+                              if (isEditing && pin.isEmpty) return null;
+                              return RegExp(r'^\d{6}$').hasMatch(pin)
+                                  ? null
+                                  : 'Nhập đúng 6 chữ số';
+                            },
                           ),
                           const SizedBox(height: 14),
 

@@ -153,7 +153,8 @@ erDiagram
         boolean shuffle_questions
         boolean shuffle_options
         int max_violations
-        string exit_pin_hash "proctor exit PIN"
+        string entry_pin_secret "lecturer-configured PIN seed"
+        int pin_refresh_seconds "default 30"
         string qr_secret
         int qr_refresh_seconds
         string venue_name
@@ -239,7 +240,7 @@ erDiagram
         ObjectId attempt_id FK
         ObjectId proctor_id FK
         string reason "MEDICAL_EMERGENCY | TECHNICAL_FAULT | MISCONDUCT | EARLY_SUBMISSION"
-        string auth_method "PIN | NFC"
+        string auth_method "NFC"
         string action "UNLOCK_KIOSK | RESUME_EXAM"
         string notes
         date authorized_at

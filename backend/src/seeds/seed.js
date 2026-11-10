@@ -14,7 +14,6 @@ const M = require('../models');
 const QUESTION_DATA = require('./question-data');
 
 const DEFAULT_PASSWORD = 'Password@123';
-const EXIT_PIN = '654321';
 
 // ---------------------------------------------------------------- helpers
 function mulberry32(seed) {
@@ -111,8 +110,6 @@ async function main() {
   }
 
   const passwordHash = bcrypt.hashSync(DEFAULT_PASSWORD, 10);
-  const exitPinHash = bcrypt.hashSync(EXIT_PIN, 10);
-
   // ------------------------------------------------ departments
   const departments = [
     { _id: oid(), department_code: 'SE', department_name: 'Software Engineering' },
@@ -159,10 +156,8 @@ async function main() {
     ['MAX_LOGIN_ATTEMPTS', '5', 'Failed logins before the account is temporarily locked'],
     ['MAX_VIOLATIONS', '3', 'Violations allowed before the exam is terminated (BR_SEC_04)'],
     ['QR_REFRESH_SECONDS', '30', 'Dynamic QR code refresh interval'],
-    ['ACCESS_PIN_LENGTH', '6', 'Length of the proctor exit PIN'],
     ['MAX_IMPORT_FILE_MB', '10', 'Maximum size of user import files (.xlsx/.csv)'],
     ['AUTOSAVE_INTERVAL_SECONDS', '15', 'Interval between answer autosaves on the mobile app'],
-    ['EXIT_AUTH_METHODS', 'PIN,NFC', 'Allowed proctor authentication methods for emergency exit'],
     ['BLOCK_ROOTED_DEVICES', 'true', 'Reject login from rooted / jailbroken devices'],
     ['DEFAULT_PASS_PERCENTAGE', '50', 'Default minimum percentage required to pass an exam']
   ];
@@ -328,7 +323,8 @@ async function main() {
       shuffle_questions: true,
       shuffle_options: o.shuffleOptions !== false,
       max_violations: 3,
-      exit_pin_hash: secured ? exitPinHash : null,
+      entry_pin_secret: '123456',
+      pin_refresh_seconds: 300,
       qr_secret: secured ? crypto.randomBytes(16).toString('hex') : null,
       qr_refresh_seconds: 30,
       ...venue,
@@ -518,12 +514,6 @@ async function main() {
     }
     buildAttempt('E1', i, opts);
   }
-  const a6 = attemptOf['E1:6'];
-  proctorAuths.push({
-    _id: oid(), attempt_id: a6._id, proctor_id: lec.LEC001._id, reason: 'MEDICAL_EMERGENCY', auth_method: 'PIN',
-    action: 'UNLOCK_KIOSK', notes: 'Student felt dizzy, escorted to the medical room.', authorized_at: a6.submitted_at, created_at: a6.submitted_at
-  });
-
   // E2: PRM393 Midterm (ongoing, students 15-22)
   const ongoing = (i, ratio, v = []) =>
     buildAttempt('E2', i, {
@@ -543,10 +533,6 @@ async function main() {
   });
   const faultAt = new Date(a17.started_at.getTime() + 10 * MIN); // matches the chat: unlocked at minute 24
   proctorAuths.push(
-    {
-      _id: oid(), attempt_id: a17._id, proctor_id: lec.LEC002._id, reason: 'TECHNICAL_FAULT', auth_method: 'PIN',
-      action: 'RESUME_EXAM', notes: 'App froze after force-close; exam resumed, timer unchanged.', authorized_at: faultAt, created_at: faultAt
-    },
     {
       _id: oid(), attempt_id: a22._id, proctor_id: lec.LEC002._id, reason: 'EARLY_SUBMISSION', auth_method: 'NFC',
       action: 'UNLOCK_KIOSK', notes: 'Student finished early.', authorized_at: a22.submitted_at, created_at: a22.submitted_at
@@ -646,7 +632,6 @@ async function main() {
   console.log('  Head of Subject:  HOS001, HOS002');
   console.log('  Lecturers:        LEC001-LEC005 (LEC006 inactive)');
   console.log('  Students:         SE180001-SE180030 (SE180029 inactive)');
-  console.log(`Ongoing exam "${exams.E2.exam_title}": proctor exit PIN ${EXIT_PIN}`);
 
   await mongoose.disconnect();
 }

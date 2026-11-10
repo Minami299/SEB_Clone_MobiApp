@@ -31,7 +31,14 @@ class _ExamLobbyPageState extends State<ExamLobbyPage> {
 
   bool _rulesAgreed = false;
   bool _isStarting = false;
+  final _pinController = TextEditingController();
   String? _errorMessage;
+
+  @override
+  void dispose() {
+    _pinController.dispose();
+    super.dispose();
+  }
 
   Future<void> _handleStartExam() async {
     if (!_rulesAgreed) {
@@ -52,6 +59,7 @@ class _ExamLobbyPageState extends State<ExamLobbyPage> {
     try {
       final attempt = await _startExamUseCase(
         examId: widget.examId,
+        accessPin: _pinController.text.trim(),
       );
 
       if (!mounted) return;
@@ -83,7 +91,9 @@ class _ExamLobbyPageState extends State<ExamLobbyPage> {
 
   @override
   Widget build(BuildContext context) {
-    final canStart = _rulesAgreed && !_isStarting;
+    final canStart = _rulesAgreed &&
+        _pinController.text.trim().length == 6 &&
+        !_isStarting;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
@@ -160,6 +170,21 @@ class _ExamLobbyPageState extends State<ExamLobbyPage> {
             ),
 
             const SizedBox(height: 14),
+
+            TextField(
+              controller: _pinController,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Mã vào thi hiện tại',
+                helperText: 'Nhập mã 6 chữ số do giảng viên cung cấp.',
+                prefixIcon: Icon(Icons.password_outlined),
+                border: OutlineInputBorder(),
+                counterText: '',
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
 
             // Agreement Checkbox
             CheckboxListTile(

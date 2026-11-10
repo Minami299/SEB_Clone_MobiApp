@@ -4,7 +4,6 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/services/session_service.dart';
 import '../../../../core/utils/smooth_page_route.dart';
-import '../../../auth/presentation/pages/login_page.dart';
 import '../../../auth/presentation/pages/profile_page.dart';
 import '../../data/repositories/exam_repository_impl.dart';
 import '../../domain/entities/exam_entity.dart';
@@ -134,7 +133,9 @@ class _StudentHomePageState extends State<StudentHomePage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
+      body: _currentTabIndex == 2
+          ? const ProfilePage(showAppBar: false)
+          : SafeArea(
         child: RefreshIndicator(
           onRefresh: _loadDashboardData,
           color: const Color(0xFF0F172A),
@@ -257,11 +258,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
               smoothPageRoute(const ExamListPage()),
             );
           } else if (idx == 2) {
-            Navigator.push(context, smoothPageRoute(const ProfilePage())).then((
-              _,
-            ) {
-              if (mounted) setState(() => _currentTabIndex = 0);
-            });
+            setState(() => _currentTabIndex = 2);
           }
         },
         destinations: const [
@@ -377,17 +374,6 @@ class _StudentHomePageState extends State<StudentHomePage> {
                       ),
                     ],
                   ),
-                );
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.logout_outlined, color: Color(0xFF334155)),
-              tooltip: 'Đăng xuất',
-              onPressed: () {
-                SessionService().clearSession();
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginPage()),
                 );
               },
             ),
