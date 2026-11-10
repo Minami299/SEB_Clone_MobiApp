@@ -12,7 +12,7 @@ const {
 
 const startAttempt = async (req, res) => {
   try {
-    const { exam_id, access_pin } = req.body;
+    const { exam_id } = req.body;
     const student_id = req.user._id;
 
     if (!exam_id) {
@@ -35,17 +35,6 @@ const startAttempt = async (req, res) => {
         success: false,
         message: 'Kỳ thi chưa được mở hoặc đã kết thúc'
       });
-    }
-
-    if (exam.access_pin) {
-      const isCurrentPin = exam.access_pin === access_pin;
-      const isPreviousPin = exam.previous_pin && exam.previous_pin === access_pin;
-      if (!isCurrentPin && !isPreviousPin) {
-        return res.status(403).json({
-          success: false,
-          message: 'Mã PIN ca thi không chính xác hoặc đã hết hạn (Mã tự đổi mỗi 5 phút)'
-        });
-      }
     }
 
     // Kiểm tra danh sách thí sinh hợp lệ (nếu có phân bổ)

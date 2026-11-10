@@ -20,11 +20,9 @@ class ExamRepositoryImpl implements ExamRepository {
   @override
   Future<ExamAttemptEntity> startExam({
     required String examId,
-    String? accessPin,
   }) async {
     final result = await remoteDataSource.startAttempt(
       examId: examId,
-      accessPin: accessPin,
     );
 
     final rawQuestions = result['questions'];

@@ -17,19 +17,16 @@ class ExamRemoteDataSource {
 
   Future<Map<String, dynamic>> startExam({
     required String examId,
-    String? accessPin,
   }) =>
-      startAttempt(examId: examId, accessPin: accessPin);
+      startAttempt(examId: examId);
 
   Future<Map<String, dynamic>> startAttempt({
     required String examId,
-    String? accessPin,
   }) async {
     final response = await apiClient.post(
       ApiEndpoints.examStart,
       body: {
         'exam_id': examId,
-        if (accessPin != null && accessPin.isNotEmpty) 'access_pin': accessPin,
       },
     );
 

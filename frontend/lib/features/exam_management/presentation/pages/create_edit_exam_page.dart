@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 
 import '../../../../core/network/api_client.dart';
@@ -24,7 +22,6 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
   final _descController = TextEditingController();
   final _durationController = TextEditingController(text: '60');
   final _maxViolationsController = TextEditingController(text: '3');
-  final _pinController = TextEditingController();
   final _quitPinController = TextEditingController(text: '888888');
   final _minPassController = TextEditingController(text: '50');
 
@@ -66,7 +63,6 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
   @override
   void initState() {
     super.initState();
-    _generateRandomPin();
     _loadInitialData();
   }
 
@@ -76,18 +72,9 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
     _descController.dispose();
     _durationController.dispose();
     _maxViolationsController.dispose();
-    _pinController.dispose();
     _quitPinController.dispose();
     _minPassController.dispose();
     super.dispose();
-  }
-
-  void _generateRandomPin() {
-    final random = Random();
-    final pin = (100000 + random.nextInt(900000)).toString();
-    setState(() {
-      _pinController.text = pin;
-    });
   }
 
   Future<void> _loadInitialData() async {
@@ -121,11 +108,8 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
           final exam = examRes['data']['exam'];
           _titleController.text = exam['exam_title'] ?? '';
           _descController.text = exam['description'] ?? '';
-          _durationController.text = (exam['duration_minutes'] ?? 60)
-              .toString();
-          _maxViolationsController.text = (exam['max_violations'] ?? 3)
-              .toString();
-          _pinController.text = exam['access_pin'] ?? '';
+          _durationController.text = (exam['duration_minutes'] ?? 60).toString();
+          _maxViolationsController.text = (exam['max_violations'] ?? 3).toString();
           _quitPinController.text = exam['exit_pin'] ?? '888888';
           _minPassController.text = (exam['min_pass_percentage'] ?? 50)
               .toString();
@@ -998,9 +982,7 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
         'start_time': _startTime.toIso8601String(),
         'end_time': _endTime.toIso8601String(),
         'duration_minutes': int.tryParse(_durationController.text.trim()) ?? 60,
-        'max_violations':
-            int.tryParse(_maxViolationsController.text.trim()) ?? 3,
-        'access_pin': _pinController.text.trim(),
+        'max_violations': int.tryParse(_maxViolationsController.text.trim()) ?? 3,
         'exit_pin': _quitPinController.text.trim(),
         'min_pass_percentage':
             int.tryParse(_minPassController.text.trim()) ?? 50,
@@ -1762,73 +1744,6 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                           ),
                           const SizedBox(height: 14),
 
-                          // Cơ chế Mã PIN động 5 phút
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: const Color(0xFFE2E8F0),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.sync_lock,
-                                  color: Color(0xFF1E3A5F),
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 8),
-                                const Expanded(
-                                  child: Text(
-                                    'Mã PIN động phòng thi',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                      color: Color(0xFF0F172A),
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 3,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFECFDF5),
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(
-                                      color: const Color(0xFFA7F3D0),
-                                    ),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.timer_outlined,
-                                        size: 12,
-                                        color: Color(0xFF047857),
-                                      ),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'Tự đổi mỗi 5 phút',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF047857),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 14),
 
                           /*
                           // Mã thoát Kiosk khẩn cấp (Quit PIN / Safe Exam Browser standard)

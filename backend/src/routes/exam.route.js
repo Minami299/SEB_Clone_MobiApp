@@ -8,8 +8,6 @@ router.get('/classes/:class_id/students', authenticate, authorize('LECTURER', 'H
 router.get('/students/search', authenticate, authorize('LECTURER', 'HEAD_OF_SUBJECT', 'ADMIN'), controller.searchStudents);
 router.get('/', authenticate, controller.getExams);
 router.get('/:id', authenticate, controller.getExamDetail);
-router.get('/:id/live-pin', authenticate, controller.getLivePin);
-router.post('/:id/refresh-pin', authenticate, authorize('LECTURER', 'HEAD_OF_SUBJECT', 'ADMIN'), controller.refreshPin);
 router.get('/:id/statistics', authenticate, authorize('LECTURER', 'HEAD_OF_SUBJECT', 'ADMIN'), controller.getExamStatistics);
 router.get('/:id/export', authenticate, authorize('LECTURER', 'HEAD_OF_SUBJECT', 'ADMIN'), controller.exportExamGrades);
 router.post('/', authenticate, authorize('LECTURER', 'HEAD_OF_SUBJECT', 'ADMIN'), controller.createExam);
