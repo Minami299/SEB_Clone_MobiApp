@@ -9,11 +9,16 @@ const canContributeToSubject = async (user, subjectId) => {
       department_id: user.department_id
     }));
   }
-  return !!(await SubjectAccess.exists({
+  const hasApprovedAccess = await SubjectAccess.exists({
     subject_id: subjectId,
     lecturer_id: user._id,
     status: 'APPROVED'
-  }));
+  });
+  const teachesClass = await Class.exists({
+    subject_id: subjectId,
+    lecturer_id: user._id
+  });
+  return !!(hasApprovedAccess || teachesClass);
 };
 
 const createQuestion = async (req, res) => {
@@ -43,29 +48,14 @@ const createQuestion = async (req, res) => {
     }
 
     if (!await canContributeToSubject(req.user, subject_id)) {
-      return res.status(403).json({ success: false, message: 'Bạn chưa được cấp quyền đóng góp câu hỏi cho môn học này' });
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn chưa được cấp quyền đóng góp câu hỏi cho môn học này. Vui lòng gửi yêu cầu đăng ký môn học và chờ Trưởng bộ môn phê duyệt.'
+      });
     }
     const chapter = await Chapter.findOne({ _id: chapter_id, subject_id });
     if (!chapter) {
       return res.status(400).json({ success: false, message: 'Chương không thuộc môn học đã chọn' });
-    }
-
-    if (req.user.role === 'LECTURER') {
-      const hasApprovedAccess = await SubjectAccess.exists({
-        subject_id,
-        lecturer_id: req.user._id,
-        status: 'APPROVED'
-      });
-      const teachesClass = await Class.exists({
-        subject_id,
-        lecturer_id: req.user._id
-      });
-      if (!hasApprovedAccess && !teachesClass) {
-        return res.status(403).json({
-          success: false,
-          message: 'Bạn chưa được cấp quyền tạo câu hỏi cho môn học này. Vui lòng gửi yêu cầu đăng ký môn học và chờ Trưởng bộ môn phê duyệt.'
-        });
-      }
     }
 
     // Xác định scope theo vai trò người tạo
@@ -351,17 +341,10 @@ const deleteQuestion = async (req, res) => {
     const question = await Question.findById(id).select('subject_id created_by');
     if (!question) return res.status(404).json({ success: false, message: 'Không tìm thấy câu hỏi' });
     if (req.user.role === 'LECTURER' && question.created_by.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ success: false, message: 'Bạn chỉ có thể xóa câu hỏi do mình tạo' });
+      return res.status(403).json({ success: false, message: 'Bạn chỉ có quyền xóa câu hỏi thuộc Kho riêng do mình tạo' });
     }
     if (!await canContributeToSubject(req.user, question.subject_id)) {
       return res.status(403).json({ success: false, message: 'Bạn không còn quyền truy cập môn học này' });
-    }
-
-    if (req.user.role === 'LECTURER' && question.created_by.toString() !== req.user._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: 'Bạn chỉ có quyền xóa câu hỏi thuộc Kho riêng của mình'
-      });
     }
 
     await QuestionOption.deleteMany({ question_id: id });
