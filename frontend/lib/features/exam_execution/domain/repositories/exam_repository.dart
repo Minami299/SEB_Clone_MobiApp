@@ -6,6 +6,7 @@ abstract class ExamRepository {
 
   Future<ExamAttemptEntity> startExam({
     required String examId,
+    required String accessPin,
   });
 
   Future<void> saveAnswer({

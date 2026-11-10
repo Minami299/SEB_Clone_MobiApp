@@ -10,6 +10,18 @@ const {
   User,
   SubjectAccess
 } = require('../models');
+const crypto = require('crypto');
+
+const getCurrentPin = (exam) => {
+  if (!exam.entry_pin_secret) return null;
+  const refreshSeconds = Number(exam.pin_refresh_seconds) || 300;
+  const slot = Math.floor(Date.now() / (refreshSeconds * 1000));
+  const digest = crypto
+    .createHmac('sha256', exam.entry_pin_secret)
+    .update(`${exam._id}:${slot}`)
+    .digest('hex');
+  return String(parseInt(digest.slice(0, 12), 16) % 1000000).padStart(6, '0');
+};
 
 const hasSubjectScope = async (user, subjectId) => {
   if (user.role === 'ADMIN') return true;
@@ -62,7 +74,8 @@ const createExam = async (req, res) => {
       allow_review,
       question_ids,
       student_ids,
-      matrix_config
+      matrix_config,
+      entry_pin
     } = req.body;
 
     if (!subject_id || !exam_title || !start_time || !end_time || !duration_minutes) {
@@ -82,6 +95,10 @@ const createExam = async (req, res) => {
       }
     }
 
+    if (!/^\d{6}$/.test(String(entry_pin || ''))) {
+      return res.status(400).json({ success: false, message: 'Mã vào thi phải gồm đúng 6 chữ số' });
+    }
+
     const exam = await Exam.create({
       subject_id,
       class_id: class_id || null,
@@ -92,7 +109,8 @@ const createExam = async (req, res) => {
       end_time: new Date(end_time),
       duration_minutes: Number(duration_minutes),
       max_violations: max_violations !== undefined ? Number(max_violations) : 3,
-      exit_pin: req.body.exit_pin || '888888',
+      entry_pin_secret: entry_pin || null,
+      pin_refresh_seconds: 300,
       mcq_grading_method: mcq_grading_method || 'ALL_CORRECT',
       min_pass_percentage: min_pass_percentage !== undefined ? Number(min_pass_percentage) : 50,
       shuffle_questions: !!shuffle_questions,
@@ -403,7 +421,8 @@ const updateExam = async (req, res) => {
       question_ids,
       student_ids,
       matrix_config,
-      status
+      status,
+      entry_pin
     } = req.body;
 
     if (class_id !== undefined) exam.class_id = class_id || null;
@@ -419,7 +438,12 @@ const updateExam = async (req, res) => {
     if (end_time) exam.end_time = new Date(end_time);
     if (duration_minutes) exam.duration_minutes = Number(duration_minutes);
     if (max_violations !== undefined) exam.max_violations = Number(max_violations);
-    if (req.body.exit_pin !== undefined) exam.exit_pin = req.body.exit_pin;
+    if (entry_pin !== undefined) {
+      if (!/^\d{6}$/.test(String(entry_pin))) {
+        return res.status(400).json({ success: false, message: 'Mã vào thi phải gồm đúng 6 chữ số' });
+      }
+      exam.entry_pin_secret = entry_pin;
+    }
     if (min_pass_percentage !== undefined) exam.min_pass_percentage = Number(min_pass_percentage);
     if (mcq_grading_method !== undefined) exam.mcq_grading_method = mcq_grading_method;
     if (shuffle_questions !== undefined) exam.shuffle_questions = !!shuffle_questions;
@@ -458,6 +482,30 @@ const updateExam = async (req, res) => {
       success: false,
       message: error.message
     });
+  }
+};
+
+const getExamCurrentPin = async (req, res) => {
+  try {
+    const exam = await Exam.findById(req.params.id).select('+entry_pin_secret');
+    if (!exam) return res.status(404).json({ success: false, message: 'Ca thi không tồn tại' });
+    if (!await canAccessExam(req.user, req.params.id)) {
+      return res.status(403).json({ success: false, message: 'Bạn không có quyền với kỳ thi này' });
+    }
+    if (!exam.entry_pin_secret) {
+      exam.entry_pin_secret = '123456';
+      await exam.save();
+    }
+    res.status(200).json({
+      success: true,
+      data: {
+        access_pin: getCurrentPin(exam),
+        refresh_seconds: exam.pin_refresh_seconds || 300,
+        server_time: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -789,6 +837,6 @@ module.exports = {
   exportExamGrades,
   getClassesBySubject,
   getClassStudents,
-  searchStudents
+  searchStudents,
+  getExamCurrentPin
 };
-

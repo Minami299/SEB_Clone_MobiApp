@@ -102,13 +102,14 @@ const examSchema = new mongoose.Schema(
       type: Number,
       default: 3
     },
-    exit_pin_hash: {
+    entry_pin_secret: {
       type: String,
-      default: null
+      default: '123456',
+      select: false
     },
-    exit_pin: {
-      type: String,
-      default: '888888'
+    pin_refresh_seconds: {
+      type: Number,
+      default: 300
     },
     qr_secret: {
       type: String,
@@ -153,4 +154,3 @@ const examSchema = new mongoose.Schema(
 examSchema.index({ subject_id: 1, class_id: 1 });
 
 module.exports = mongoose.model('Exam', examSchema);
-

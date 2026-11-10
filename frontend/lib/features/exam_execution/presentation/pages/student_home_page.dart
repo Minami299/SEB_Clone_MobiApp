@@ -4,7 +4,6 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/services/session_service.dart';
 import '../../../../core/utils/smooth_page_route.dart';
-import '../../../auth/presentation/pages/login_page.dart';
 import '../../../auth/presentation/pages/profile_page.dart';
 import '../../data/repositories/exam_repository_impl.dart';
 import '../../domain/entities/exam_entity.dart';
@@ -387,17 +386,6 @@ class _StudentHomePageState extends State<StudentHomePage> {
                       ),
                     ],
                   ),
-                );
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.logout_outlined, color: Color(0xFF334155)),
-              tooltip: 'Đăng xuất',
-              onPressed: () {
-                SessionService().clearSession();
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginPage()),
                 );
               },
             ),

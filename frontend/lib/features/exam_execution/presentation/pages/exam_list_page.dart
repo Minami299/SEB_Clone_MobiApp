@@ -4,8 +4,6 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/services/session_service.dart';
 import '../../../../core/utils/smooth_page_route.dart';
-import '../../../auth/presentation/pages/login_page.dart';
-import '../../../auth/presentation/pages/profile_page.dart';
 import '../../data/repositories/exam_repository_impl.dart';
 import '../../domain/entities/exam_entity.dart';
 import '../../domain/usecases/get_exams_usecase.dart';
@@ -14,6 +12,7 @@ import 'student_home_page.dart';
 import '../widgets/exam_card_widget.dart';
 import '../../../exam_management/presentation/pages/create_edit_exam_page.dart';
 import '../../../question_bank/presentation/pages/lecturer_question_bank_view.dart';
+import '../../../auth/presentation/pages/profile_page.dart';
 
 class ExamListPage extends StatefulWidget {
   const ExamListPage({super.key});
@@ -94,39 +93,6 @@ class _ExamListPageState extends State<ExamListPage> {
         });
       }
     }
-  }
-
-  void _handleLogout() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Xác nhận đăng xuất'),
-        content: const Text(
-          'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Hủy'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              SessionService().clearSession();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginPage()),
-              );
-            },
-            child: const Text('Đăng xuất'),
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _handleEnterExam(ExamEntity exam) async {
@@ -221,37 +187,7 @@ class _ExamListPageState extends State<ExamListPage> {
         ),
         backgroundColor: Colors.white,
         elevation: 0.5,
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.account_circle_outlined,
-              color: Color(0xFF1E293B),
-              size: 20,
-            ),
-            tooltip: 'Hồ sơ cá nhân',
-            onPressed: () {
-              if (user?.role == 'LECTURER') {
-                setState(() => _lecturerNavIndex = 2);
-              } else if (isStudent) {
-                setState(() => _bottomNavIndex = 2);
-              } else {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ProfilePage()),
-                ).then((_) => setState(() {}));
-              }
-            },
-          ),
-          IconButton(
-            icon: const Icon(
-              Icons.logout_outlined,
-              color: Color(0xFFEF4444),
-              size: 20,
-            ),
-            tooltip: 'Đăng xuất',
-            onPressed: _handleLogout,
-          ),
-        ],
+        actions: [],
       ),
       body: (!isStudent && _lecturerNavIndex == 1)
           ? const LecturerQuestionBankView()
