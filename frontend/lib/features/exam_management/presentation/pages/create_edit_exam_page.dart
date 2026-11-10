@@ -21,7 +21,7 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
   final _descController = TextEditingController();
   final _durationController = TextEditingController(text: '60');
   final _maxViolationsController = TextEditingController(text: '3');
-  final _quitPinController = TextEditingController(text: '888888');
+  final _entryPinController = TextEditingController();
   final _minPassController = TextEditingController(text: '50');
 
   DateTime _startTime = DateTime.now().add(const Duration(minutes: 10));
@@ -70,7 +70,7 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
     _descController.dispose();
     _durationController.dispose();
     _maxViolationsController.dispose();
-    _quitPinController.dispose();
+    _entryPinController.dispose();
     _minPassController.dispose();
     super.dispose();
   }
@@ -106,7 +106,6 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
           _descController.text = exam['description'] ?? '';
           _durationController.text = (exam['duration_minutes'] ?? 60).toString();
           _maxViolationsController.text = (exam['max_violations'] ?? 3).toString();
-          _quitPinController.text = exam['exit_pin'] ?? '888888';
           _minPassController.text = (exam['min_pass_percentage'] ?? 50).toString();
           _selectedGradingMethod = exam['mcq_grading_method'] ?? 'ALL_CORRECT';
           _allowReview = exam['allow_review'] == true;
@@ -803,7 +802,6 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
         'end_time': _endTime.toIso8601String(),
         'duration_minutes': int.tryParse(_durationController.text.trim()) ?? 60,
         'max_violations': int.tryParse(_maxViolationsController.text.trim()) ?? 3,
-        'exit_pin': _quitPinController.text.trim(),
         'min_pass_percentage': int.tryParse(_minPassController.text.trim()) ?? 50,
         'mcq_grading_method': _selectedGradingMethod,
         'allow_review': _allowReview,
@@ -818,6 +816,9 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
         if (!_isDynamicMatrix)
           'question_ids': _selectedQuestionIds.toList(),
       };
+      if (_entryPinController.text.trim().isNotEmpty) {
+        body['entry_pin'] = _entryPinController.text.trim();
+      }
 
       String examId;
 
@@ -1306,6 +1307,27 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                             ],
                           ),
                           const SizedBox(height: 14),
+                          TextFormField(
+                            controller: _entryPinController,
+                            keyboardType: TextInputType.number,
+                            maxLength: 6,
+                            obscureText: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Mã vào thi của sinh viên *',
+                              helperText: 'Mã hiện tại sẽ tự đổi mỗi 5 phút. Khi chỉnh sửa, để trống nếu giữ mã cũ.',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.password_outlined),
+                              counterText: '',
+                            ),
+                            validator: (value) {
+                              final pin = value?.trim() ?? '';
+                              if (isEditing && pin.isEmpty) return null;
+                              return RegExp(r'^\d{6}$').hasMatch(pin)
+                                  ? null
+                                  : 'Nhập đúng 6 chữ số';
+                            },
+                          ),
+                          const SizedBox(height: 14),
 
                           // Tách dòng cho trường "Cách chấm điểm trắc nghiệm" (Dễ hiểu, rõ ràng)
                           DropdownButtonFormField<String>(
@@ -1331,65 +1353,6 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
                             },
                           ),
                           const SizedBox(height: 14),
-
-                          /*
-                          // Mã thoát Kiosk khẩn cấp (Quit PIN / Safe Exam Browser standard)
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(Icons.emergency_outlined, color: Color(0xFFDC2626), size: 18),
-                                    const SizedBox(width: 8),
-                                    const Expanded(
-                                      child: Text(
-                                        'Mã thoát Kiosk khẩn cấp (Master Quit PIN)',
-                                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFFEF2F2),
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(color: const Color(0xFFFECACA)),
-                                      ),
-                                      child: const Text('SEB Kiosk', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                TextFormField(
-                                  controller: _quitPinController,
-                                  keyboardType: TextInputType.number,
-                                  maxLength: 6,
-                                  decoration: InputDecoration(
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    hintText: 'Mặc định 888888',
-                                    counterText: '',
-                                    prefixIcon: const Icon(Icons.key, size: 18, color: Color(0xFF64748B)),
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  'Dùng khi sinh viên bị treo máy hoặc gặp sự cố khẩn cấp cần thoát Kiosk Safe Exam Browser sớm.',
-                                  style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          */
 
                           // 3 Switch bảo mật
                           Container(

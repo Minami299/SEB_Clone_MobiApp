@@ -58,6 +58,7 @@ class ApiEndpoints {
   // Exams
   static String get exams => '$baseUrl/exams';
   static String examDetail(String id) => '$baseUrl/exams/$id';
+  static String examCurrentPin(String id) => '$baseUrl/exams/$id/current-pin';
   static String examStatistics(String id) => '$baseUrl/exams/$id/statistics';
   static String examExport(String id) => '$baseUrl/exams/$id/export';
   static String examQuestions(String id) => '$baseUrl/exams/$id/questions';

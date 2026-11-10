@@ -6,6 +6,7 @@ const { authenticate, authorize } = require('../middlewares/auth.middleware');
 router.get('/classes/by-subject/:subject_id', authenticate, authorize('LECTURER', 'HEAD_OF_SUBJECT', 'ADMIN'), controller.getClassesBySubject);
 router.get('/classes/:class_id/students', authenticate, authorize('LECTURER', 'HEAD_OF_SUBJECT', 'ADMIN'), controller.getClassStudents);
 router.get('/students/search', authenticate, authorize('LECTURER', 'HEAD_OF_SUBJECT', 'ADMIN'), controller.searchStudents);
+router.get('/:id/current-pin', authenticate, authorize('LECTURER', 'HEAD_OF_SUBJECT', 'ADMIN'), controller.getExamCurrentPin);
 router.get('/', authenticate, controller.getExams);
 router.get('/:id', authenticate, controller.getExamDetail);
 router.get('/:id/statistics', authenticate, authorize('LECTURER', 'HEAD_OF_SUBJECT', 'ADMIN'), controller.getExamStatistics);
@@ -19,4 +20,3 @@ router.patch('/:id/publish', authenticate, authorize('LECTURER', 'HEAD_OF_SUBJEC
 router.patch('/:id/close', authenticate, authorize('LECTURER', 'HEAD_OF_SUBJECT', 'ADMIN'), controller.closeExam);
 
 module.exports = router;
-

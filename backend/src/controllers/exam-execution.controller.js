@@ -9,10 +9,22 @@ const {
   ViolationLog,
   Chapter
 } = require('../models');
+const crypto = require('crypto');
+
+const getCurrentPin = (exam) => {
+  if (!exam.entry_pin_secret) return null;
+  const refreshSeconds = Number(exam.pin_refresh_seconds) || 300;
+  const slot = Math.floor(Date.now() / (refreshSeconds * 1000));
+  const digest = crypto
+    .createHmac('sha256', exam.entry_pin_secret)
+    .update(`${exam._id}:${slot}`)
+    .digest('hex');
+  return String(parseInt(digest.slice(0, 12), 16) % 1000000).padStart(6, '0');
+};
 
 const startAttempt = async (req, res) => {
   try {
-    const { exam_id } = req.body;
+    const { exam_id, access_pin } = req.body;
     const student_id = req.user._id;
 
     if (!exam_id) {
@@ -22,7 +34,7 @@ const startAttempt = async (req, res) => {
       });
     }
 
-    const exam = await Exam.findById(exam_id);
+    const exam = await Exam.findById(exam_id).select('+entry_pin_secret');
     if (!exam) {
       return res.status(404).json({
         success: false,
@@ -35,6 +47,14 @@ const startAttempt = async (req, res) => {
         success: false,
         message: 'Kỳ thi chưa được mở hoặc đã kết thúc'
       });
+    }
+
+    if (!exam.entry_pin_secret) {
+      exam.entry_pin_secret = '123456';
+      await exam.save();
+    }
+    if (typeof access_pin !== 'string' || access_pin !== getCurrentPin(exam)) {
+      return res.status(403).json({ success: false, message: 'Mã vào thi không đúng hoặc đã hết hạn' });
     }
 
     // Kiểm tra danh sách thí sinh hợp lệ (nếu có phân bổ)
@@ -717,4 +737,3 @@ module.exports = {
   unlockAttempt,
   getMySubmissions
 };
-

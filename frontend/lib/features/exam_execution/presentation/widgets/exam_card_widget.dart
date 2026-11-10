@@ -5,6 +5,7 @@ import '../../domain/entities/exam_entity.dart';
 import '../../../exam_management/presentation/pages/create_edit_exam_page.dart';
 import '../../../monitoring_reports/presentation/pages/live_monitoring_page.dart';
 import '../../../monitoring_reports/presentation/pages/exam_report_detail_page.dart';
+import 'exam_pin_dialog.dart';
 
 class ExamCardWidget extends StatelessWidget {
   final ExamEntity exam;
@@ -169,6 +170,33 @@ class ExamCardWidget extends StatelessWidget {
                       ),
                     ),
                     if (isPublished) ...[
+                      const SizedBox(width: 6),
+                      Tooltip(
+                        message: 'Hiển thị mã vào thi',
+                        child: InkWell(
+                          onTap: () => showDialog(
+                            context: context,
+                            builder: (_) => ExamPinDialog(
+                              examId: exam.id,
+                              examTitle: exam.title,
+                            ),
+                          ),
+                          borderRadius: BorderRadius.circular(6),
+                          child: Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF6FF),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFFBFDBFE)),
+                            ),
+                            child: const Icon(
+                              Icons.password_outlined,
+                              size: 16,
+                              color: Color(0xFF1D4ED8),
+                            ),
+                          ),
+                        ),
+                      ),
                       const SizedBox(width: 6),
                       // Nút Kết thúc ca thi (Chỉ hiện khi ca đang mở)
                       Tooltip(
