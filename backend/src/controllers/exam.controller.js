@@ -309,6 +309,7 @@ const getExams = async (req, res) => {
     const exams = await Exam.find(filter)
       .populate('subject_id', 'subject_code subject_name')
       .populate('class_id', 'class_code semester')
+      .populate('created_by', 'full_name user_code')
       .sort({ start_time: -1 });
 
     res.status(200).json({
