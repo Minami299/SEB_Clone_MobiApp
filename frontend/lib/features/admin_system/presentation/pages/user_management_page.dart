@@ -390,8 +390,9 @@ class _UserManagementPageState extends State<UserManagementPage> {
     final allCount = _allUsers.length;
     final studentCount = _allUsers.where((u) => u.role == 'STUDENT').length;
     final lecturerCount = _allUsers.where((u) => u.role == 'LECTURER').length;
-    final headOfSubjectCount =
-        _allUsers.where((u) => u.role == 'HEAD_OF_SUBJECT').length;
+    final headOfSubjectCount = _allUsers
+        .where((u) => u.role == 'HEAD_OF_SUBJECT')
+        .length;
     final adminCount = _allUsers.where((u) => u.role == 'ADMIN').length;
 
     return Scaffold(
@@ -769,10 +770,9 @@ class _UserManagementPageState extends State<UserManagementPage> {
           if (idx == 0) {
             setState(() => _currentNavIndex = 0);
           } else if (idx == 1) {
-            Navigator.push(
-              context,
-              smoothPageRoute(const ProfilePage()),
-            ).then((_) {
+            Navigator.push(context, smoothPageRoute(const ProfilePage())).then((
+              _,
+            ) {
               if (mounted) setState(() => _currentNavIndex = 0);
             });
           }
