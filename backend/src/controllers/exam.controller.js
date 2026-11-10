@@ -34,7 +34,6 @@ const createExam = async (req, res) => {
       end_time,
       duration_minutes,
       max_violations,
-      access_pin,
       min_pass_percentage,
       mcq_grading_method,
       shuffle_questions,
@@ -72,7 +71,6 @@ const createExam = async (req, res) => {
       end_time: new Date(end_time),
       duration_minutes: Number(duration_minutes),
       max_violations: max_violations !== undefined ? Number(max_violations) : 3,
-      access_pin: access_pin || null,
       exit_pin: req.body.exit_pin || '888888',
       mcq_grading_method: mcq_grading_method || 'ALL_CORRECT',
       min_pass_percentage: min_pass_percentage !== undefined ? Number(min_pass_percentage) : 50,
@@ -375,7 +373,6 @@ const updateExam = async (req, res) => {
       end_time,
       duration_minutes,
       max_violations,
-      access_pin,
       min_pass_percentage,
       mcq_grading_method,
       shuffle_questions,
@@ -400,7 +397,6 @@ const updateExam = async (req, res) => {
     if (end_time) exam.end_time = new Date(end_time);
     if (duration_minutes) exam.duration_minutes = Number(duration_minutes);
     if (max_violations !== undefined) exam.max_violations = Number(max_violations);
-    if (access_pin !== undefined) exam.access_pin = access_pin;
     if (req.body.exit_pin !== undefined) exam.exit_pin = req.body.exit_pin;
     if (min_pass_percentage !== undefined) exam.min_pass_percentage = Number(min_pass_percentage);
     if (mcq_grading_method !== undefined) exam.mcq_grading_method = mcq_grading_method;
@@ -757,118 +753,6 @@ const getClassStudents = async (req, res) => {
   }
 };
 
-const getLivePin = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const exam = await Exam.findById(id);
-
-    if (!exam) {
-      return res.status(404).json({
-        success: false,
-        message: 'Ca thi không tồn tại'
-      });
-    }
-
-    const now = Date.now();
-    const lastUpdated = exam.pin_updated_at ? new Date(exam.pin_updated_at).getTime() : now;
-    const elapsedSeconds = Math.floor((now - lastUpdated) / 1000);
-    const interval = exam.pin_rotate_interval_seconds || 300;
-
-    const totalCandidates = await ExamEligibility.countDocuments({ exam_id: id });
-    const activeAttempts = await ExamAttempt.countDocuments({
-      exam_id: id,
-      status: { $in: ['IN_PROGRESS', 'SUBMITTED', 'COMPLETED', 'DISQUALIFIED'] }
-    });
-
-    // Nếu chưa có PIN hoặc đã hết chu kỳ 5 phút thì tự động sinh PIN mới
-    if (!exam.access_pin || elapsedSeconds >= interval) {
-      const newPin = Math.floor(100000 + Math.random() * 900000).toString();
-      exam.previous_pin = exam.access_pin || null;
-      exam.access_pin = newPin;
-      exam.pin_updated_at = new Date();
-      await exam.save();
-
-      return res.status(200).json({
-        success: true,
-        data: {
-          access_pin: exam.access_pin,
-          previous_pin: exam.previous_pin,
-          remaining_seconds: interval,
-          interval_seconds: interval,
-          pin_updated_at: exam.pin_updated_at,
-          total_candidates: totalCandidates,
-          active_attempts: activeAttempts
-        }
-      });
-    }
-
-    const remainingSeconds = Math.max(0, interval - elapsedSeconds);
-    return res.status(200).json({
-      success: true,
-      data: {
-        access_pin: exam.access_pin,
-        previous_pin: exam.previous_pin,
-        remaining_seconds: remainingSeconds,
-        interval_seconds: interval,
-        pin_updated_at: exam.pin_updated_at,
-        total_candidates: totalCandidates,
-        active_attempts: activeAttempts
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
-
-const refreshPin = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const exam = await Exam.findById(id);
-
-    if (!exam) {
-      return res.status(404).json({
-        success: false,
-        message: 'Ca thi không tồn tại'
-      });
-    }
-
-    const newPin = Math.floor(100000 + Math.random() * 900000).toString();
-    exam.previous_pin = exam.access_pin || null;
-    exam.access_pin = newPin;
-    exam.pin_updated_at = new Date();
-    await exam.save();
-
-    const totalCandidates = await ExamEligibility.countDocuments({ exam_id: id });
-    const activeAttempts = await ExamAttempt.countDocuments({
-      exam_id: id,
-      status: { $in: ['IN_PROGRESS', 'SUBMITTED', 'COMPLETED', 'DISQUALIFIED'] }
-    });
-
-    const interval = exam.pin_rotate_interval_seconds || 300;
-    return res.status(200).json({
-      success: true,
-      message: 'Đã đổi mã PIN ca thi thành công',
-      data: {
-        access_pin: exam.access_pin,
-        previous_pin: exam.previous_pin,
-        remaining_seconds: interval,
-        interval_seconds: interval,
-        pin_updated_at: exam.pin_updated_at,
-        total_candidates: totalCandidates,
-        active_attempts: activeAttempts
-      }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
-
 module.exports = {
   createExam,
   assignQuestions,
@@ -883,8 +767,6 @@ module.exports = {
   exportExamGrades,
   getClassesBySubject,
   getClassStudents,
-  getLivePin,
-  refreshPin,
   searchStudents
 };
 

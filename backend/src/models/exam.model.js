@@ -102,24 +102,6 @@ const examSchema = new mongoose.Schema(
       type: Number,
       default: 3
     },
-    access_pin: {
-      type: String,
-      maxlength: 6,
-      default: null
-    },
-    previous_pin: {
-      type: String,
-      maxlength: 6,
-      default: null
-    },
-    pin_updated_at: {
-      type: Date,
-      default: Date.now
-    },
-    pin_rotate_interval_seconds: {
-      type: Number,
-      default: 300 // 5 minutes
-    },
     exit_pin_hash: {
       type: String,
       default: null

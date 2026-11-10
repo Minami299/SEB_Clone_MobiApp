@@ -4,7 +4,6 @@ class ExamEntity {
   final String? description;
   final int durationMinutes;
   final int maxViolations;
-  final String? accessPin;
   final String status;
   final DateTime? startTime;
   final DateTime? endTime;
@@ -19,7 +18,6 @@ class ExamEntity {
     this.description,
     required this.durationMinutes,
     required this.maxViolations,
-    this.accessPin,
     required this.status,
     this.startTime,
     this.endTime,

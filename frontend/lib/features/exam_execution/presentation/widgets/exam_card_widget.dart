@@ -5,7 +5,6 @@ import '../../domain/entities/exam_entity.dart';
 import '../../../exam_management/presentation/pages/create_edit_exam_page.dart';
 import '../../../monitoring_reports/presentation/pages/live_monitoring_page.dart';
 import '../../../monitoring_reports/presentation/pages/exam_report_detail_page.dart';
-import 'exam_live_pin_dialog.dart';
 
 class ExamCardWidget extends StatelessWidget {
   final ExamEntity exam;
@@ -264,7 +263,7 @@ class ExamCardWidget extends StatelessWidget {
           // Row 4: Actions (Thao tác cho Giám thị / Nút Vào thi cho Sinh viên)
           if (isProctor) ...[
             if (isEnded) ...[
-              // Khi ca thi Đã kết thúc: Ẩn nút Cấp mã PIN, hiện nút Xem báo cáo & Nhật ký giám sát
+              // Khi ca thi Đã kết thúc: hiện nút Xem báo cáo & Nhật ký giám sát
               Row(
                 children: [
                   Expanded(
@@ -320,7 +319,7 @@ class ExamCardWidget extends StatelessWidget {
                 ],
               ),
             ] else ...[
-              // Khi ca thi đang mở hoặc bản nháp: Hiện đủ 3 nút Báo cáo, Giám sát, Cấp mã PIN
+              // Khi ca thi đang mở hoặc bản nháp: Hiện nút Báo cáo, Giám sát
               Row(
                 children: [
                   Expanded(
@@ -368,29 +367,6 @@ class ExamCardWidget extends StatelessWidget {
                         side: const BorderSide(color: Color(0xFFCBD5E1)),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (_) => ExamLivePinDialog(
-                            exam: exam,
-                            onRefresh: onRefresh,
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E3A5F),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        elevation: 1,
-                      ),
-                      icon: const Icon(Icons.qr_code_2, size: 16),
-                      label: const Text('Cấp mã PIN', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],

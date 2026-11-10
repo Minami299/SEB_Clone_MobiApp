@@ -8,11 +8,9 @@ class StartExamUseCase {
 
   Future<ExamAttemptEntity> call({
     required String examId,
-    String? accessPin,
   }) async {
     return await repository.startExam(
       examId: examId,
-      accessPin: accessPin,
     );
   }
 }
