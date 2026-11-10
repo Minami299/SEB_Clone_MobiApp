@@ -4,20 +4,20 @@ class StudentReportTile extends StatelessWidget {
   final Map<String, dynamic> student;
   final VoidCallback? onTap;
 
-  const StudentReportTile({
-    super.key,
-    required this.student,
-    this.onTap,
-  });
+  const StudentReportTile({super.key, required this.student, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final status = (student['status'] ?? 'NOT_STARTED').toString().toUpperCase();
+    final status = (student['status'] ?? 'NOT_STARTED')
+        .toString()
+        .toUpperCase();
     final isDisqualified = status == 'DISQUALIFIED' || status == 'SUSPENDED';
     final isSubmitted = status == 'SUBMITTED';
 
     final fullName = student['full_name'] ?? 'Sinh viên';
-    final initial = fullName.trim().isNotEmpty ? fullName.trim().split(' ').last[0].toUpperCase() : 'S';
+    final initial = fullName.trim().isNotEmpty
+        ? fullName.trim().split(' ').last[0].toUpperCase()
+        : 'S';
 
     return InkWell(
       onTap: onTap,
@@ -28,12 +28,14 @@ class StudentReportTile extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isDisqualified ? const Color(0xFFFECACA) : const Color(0xFFE2E8F0),
+            color: isDisqualified
+                ? const Color(0xFFFECACA)
+                : const Color(0xFFE2E8F0),
             width: isDisqualified ? 1.2 : 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),
@@ -52,7 +54,9 @@ class StudentReportTile extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
-                  color: isDisqualified ? const Color(0xFFDC2626) : const Color(0xFF1D4ED8),
+                  color: isDisqualified
+                      ? const Color(0xFFDC2626)
+                      : const Color(0xFF1D4ED8),
                 ),
               ),
             ),
@@ -65,7 +69,11 @@ class StudentReportTile extends StatelessWidget {
                 children: [
                   Text(
                     fullName,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Color(0xFF0F172A),
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -74,15 +82,26 @@ class StudentReportTile extends StatelessWidget {
                     children: [
                       Text(
                         '${student['user_code'] ?? ""}',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                      const Text(' • ', style: TextStyle(color: Color(0xFF94A3B8))),
+                      const Text(
+                        ' • ',
+                        style: TextStyle(color: Color(0xFF94A3B8)),
+                      ),
                       Text(
                         'Vi phạm: ${student['violation_count'] ?? 0} lần',
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: (student['violation_count'] ?? 0) > 0 ? FontWeight.bold : FontWeight.normal,
-                          color: (student['violation_count'] ?? 0) > 0 ? const Color(0xFFDC2626) : const Color(0xFF64748B),
+                          fontWeight: (student['violation_count'] ?? 0) > 0
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: (student['violation_count'] ?? 0) > 0
+                              ? const Color(0xFFDC2626)
+                              : const Color(0xFF64748B),
                         ),
                       ),
                     ],
@@ -101,14 +120,20 @@ class StudentReportTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: student['is_passed'] == true ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                      color: student['is_passed'] == true
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFEF4444),
                     ),
                   ),
                   const SizedBox(width: 8),
                 ],
                 _buildStatusBadge(isDisqualified, isSubmitted, status),
                 const SizedBox(width: 4),
-                const Icon(Icons.chevron_right, size: 18, color: Color(0xFF94A3B8)),
+                const Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: Color(0xFF94A3B8),
+                ),
               ],
             ),
           ],
@@ -117,7 +142,11 @@ class StudentReportTile extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusBadge(bool isDisqualified, bool isSubmitted, String status) {
+  Widget _buildStatusBadge(
+    bool isDisqualified,
+    bool isSubmitted,
+    String status,
+  ) {
     if (isDisqualified) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -133,7 +162,11 @@ class StudentReportTile extends StatelessWidget {
             SizedBox(width: 4),
             Text(
               'Đã đình chỉ',
-              style: TextStyle(color: Color(0xFFDC2626), fontSize: 11, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Color(0xFFDC2626),
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -147,7 +180,9 @@ class StudentReportTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: isPassed ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: isPassed ? const Color(0xFF10B981) : const Color(0xFFEF4444)),
+          border: Border.all(
+            color: isPassed ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+          ),
         ),
         child: Text(
           isPassed ? 'Đạt' : 'Trượt',
@@ -170,7 +205,11 @@ class StudentReportTile extends StatelessWidget {
         ),
         child: const Text(
           'Đang thi',
-          style: TextStyle(color: Color(0xFF1D4ED8), fontSize: 11, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Color(0xFF1D4ED8),
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       );
     }
@@ -184,7 +223,11 @@ class StudentReportTile extends StatelessWidget {
       ),
       child: const Text(
         'Chưa thi',
-        style: TextStyle(color: Color(0xFF475569), fontSize: 11, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: Color(0xFF475569),
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

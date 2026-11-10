@@ -38,7 +38,7 @@ class ChapterMatrixRuleCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -50,7 +50,11 @@ class ChapterMatrixRuleCard extends StatelessWidget {
           // Tiêu đề chương
           Text(
             'Chương $chapterNum: $chapterTitle',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              color: Color(0xFF0F172A),
+            ),
           ),
           const SizedBox(height: 12),
 
@@ -98,10 +102,7 @@ class ChapterMatrixRuleCard extends StatelessWidget {
         Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 8),
 
@@ -133,9 +134,13 @@ class ChapterMatrixRuleCard extends StatelessWidget {
         // Cụm nút [-]  Số  [+] to, rõ ràng, dễ bấm bằng ngón tay
         Container(
           decoration: BoxDecoration(
-            color: isExceeded ? const Color(0xFFFEF2F2) : const Color(0xFFF8FAFC),
+            color: isExceeded
+                ? const Color(0xFFFEF2F2)
+                : const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: isExceeded ? Colors.red : const Color(0xFFE2E8F0)),
+            border: Border.all(
+              color: isExceeded ? Colors.red : const Color(0xFFE2E8F0),
+            ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
           child: Row(
@@ -145,7 +150,11 @@ class ChapterMatrixRuleCard extends StatelessWidget {
               IconButton(
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                icon: const Icon(Icons.remove, size: 16, color: Color(0xFF475569)),
+                icon: const Icon(
+                  Icons.remove,
+                  size: 16,
+                  color: Color(0xFF475569),
+                ),
                 onPressed: current > 0 ? () => onChanged(current - 1) : null,
               ),
 

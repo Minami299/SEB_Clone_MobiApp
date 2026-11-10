@@ -4,7 +4,6 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import 'batch_import_questions_page.dart';
 import 'create_question_page.dart';
-import 'question_detail_page.dart';
 import '../widgets/question_item_card.dart';
 import '../widgets/question_matrix_summary_card.dart';
 
@@ -135,11 +134,13 @@ class _QuestionListPageState extends State<QuestionListPage> {
     }
   }
 
-  int get _publicQuestionsCount =>
-      _questions.where((q) => (q['scope'] == 'PUBLIC' || q['is_public'] == true)).length;
+  int get _publicQuestionsCount => _questions
+      .where((q) => (q['scope'] == 'PUBLIC' || q['is_public'] == true))
+      .length;
 
-  int get _privateQuestionsCount =>
-      _questions.where((q) => !(q['scope'] == 'PUBLIC' || q['is_public'] == true)).length;
+  int get _privateQuestionsCount => _questions
+      .where((q) => !(q['scope'] == 'PUBLIC' || q['is_public'] == true))
+      .length;
 
   int get _currentTabTotalQuestions =>
       _selectedScopeTab == 0 ? _publicQuestionsCount : _privateQuestionsCount;
@@ -321,7 +322,10 @@ class _QuestionListPageState extends State<QuestionListPage> {
                     ListTile(
                       leading: const CircleAvatar(
                         backgroundColor: Color(0xFFECFDF5),
-                        child: Icon(Icons.playlist_add, color: Color(0xFF10B981)),
+                        child: Icon(
+                          Icons.playlist_add,
+                          color: Color(0xFF10B981),
+                        ),
                       ),
                       title: const Text(
                         'Nhập nhanh từ văn bản',
@@ -553,8 +557,9 @@ class _QuestionListPageState extends State<QuestionListPage> {
                           ),
                         ],
                         onChanged: (val) {
-                          if (val != null)
+                          if (val != null) {
                             setState(() => _selectedChapter = val);
+                          }
                         },
                       ),
                     ),
@@ -582,8 +587,9 @@ class _QuestionListPageState extends State<QuestionListPage> {
                           DropdownMenuItem(value: 'HARD', child: Text('Khó')),
                         ],
                         onChanged: (val) {
-                          if (val != null)
+                          if (val != null) {
                             setState(() => _selectedDifficulty = val);
+                          }
                         },
                       ),
                     ),
@@ -616,7 +622,11 @@ class _QuestionListPageState extends State<QuestionListPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.shield_outlined, size: 48, color: Color(0xFFEF4444)),
+                          const Icon(
+                            Icons.shield_outlined,
+                            size: 48,
+                            color: Color(0xFFEF4444),
+                          ),
                           const SizedBox(height: 12),
                           Text(
                             _errorMessage!,
@@ -648,7 +658,8 @@ class _QuestionListPageState extends State<QuestionListPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            _selectedScopeTab == 1 && _privateQuestionsCount == 0
+                            _selectedScopeTab == 1 &&
+                                    _privateQuestionsCount == 0
                                 ? Icons.lock_person_outlined
                                 : Icons.search_off_outlined,
                             size: 48,
@@ -656,7 +667,8 @@ class _QuestionListPageState extends State<QuestionListPage> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            _selectedScopeTab == 1 && _privateQuestionsCount == 0
+                            _selectedScopeTab == 1 &&
+                                    _privateQuestionsCount == 0
                                 ? 'Kho riêng của bạn chưa có câu hỏi nào'
                                 : 'Không tìm thấy câu hỏi nào phù hợp',
                             style: const TextStyle(
@@ -667,11 +679,15 @@ class _QuestionListPageState extends State<QuestionListPage> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            _selectedScopeTab == 1 && _privateQuestionsCount == 0
+                            _selectedScopeTab == 1 &&
+                                    _privateQuestionsCount == 0
                                 ? 'Bạn có thể tự do tạo các câu hỏi trắc nghiệm riêng tại đây bằng nút "+ Thêm câu hỏi".'
                                 : 'Hãy thử thay đổi từ khóa tìm kiếm hoặc bỏ bớt các bộ lọc.',
                             textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF94A3B8),
+                            ),
                           ),
                         ],
                       ),
