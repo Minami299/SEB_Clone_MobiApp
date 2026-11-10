@@ -16,6 +16,9 @@ class ExamSummaryReportCard extends StatelessWidget {
     final status = exam['status'] ?? 'DRAFT';
     final subjectName = exam['subject_id']?['subject_name'] ?? '';
     final subjectCode = exam['subject_id']?['subject_code'] ?? '';
+    final creatorName = exam['created_by'] is Map
+        ? (exam['created_by']['full_name'] ?? 'Chưa rõ')
+        : 'Chưa rõ';
 
     return Card(
       elevation: 0,
@@ -40,7 +43,7 @@ class ExamSummaryReportCard extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          '${subjectCode.isNotEmpty ? "$subjectCode - " : ""}$subjectName\nTrạng thái: ${_statusLabel(status)}',
+          '${subjectCode.isNotEmpty ? "$subjectCode - " : ""}$subjectName\nNgười tạo: $creatorName · ${_statusLabel(status)}',
           style: const TextStyle(fontSize: 12),
         ),
         isThreeLine: true,
