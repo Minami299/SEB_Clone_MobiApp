@@ -1,5 +1,20 @@
 const mongoose = require('mongoose');
-const { Question, QuestionOption, Chapter, SubjectAccess, Class } = require('../models');
+const { Question, QuestionOption, Chapter, Subject, SubjectAccess, Class } = require('../models');
+
+const canContributeToSubject = async (user, subjectId) => {
+  if (user.role === 'ADMIN') return true;
+  if (user.role === 'HEAD_OF_SUBJECT') {
+    return !!user.department_id && !!(await Subject.exists({
+      _id: subjectId,
+      department_id: user.department_id
+    }));
+  }
+  return !!(await SubjectAccess.exists({
+    subject_id: subjectId,
+    lecturer_id: user._id,
+    status: 'APPROVED'
+  }));
+};
 
 const createQuestion = async (req, res) => {
   try {
@@ -27,6 +42,14 @@ const createQuestion = async (req, res) => {
       });
     }
 
+    if (!await canContributeToSubject(req.user, subject_id)) {
+      return res.status(403).json({ success: false, message: 'Bạn chưa được cấp quyền đóng góp câu hỏi cho môn học này' });
+    }
+    const chapter = await Chapter.findOne({ _id: chapter_id, subject_id });
+    if (!chapter) {
+      return res.status(400).json({ success: false, message: 'Chương không thuộc môn học đã chọn' });
+    }
+
     if (req.user.role === 'LECTURER') {
       const hasApprovedAccess = await SubjectAccess.exists({
         subject_id,
@@ -45,6 +68,7 @@ const createQuestion = async (req, res) => {
       }
     }
 
+    // Xác định scope theo vai trò người tạo
     // Phân định rõ ràng: Giảng viên chỉ tạo câu hỏi vào Kho riêng (PRIVATE),
     // Trưởng bộ môn tạo câu hỏi chuẩn cho Ngân hàng bộ môn (PUBLIC).
     let resolvedScope = 'PUBLIC';
@@ -324,12 +348,13 @@ const getChaptersBySubject = async (req, res) => {
 const deleteQuestion = async (req, res) => {
   try {
     const { id } = req.params;
-    const question = await Question.findById(id);
-    if (!question) {
-      return res.status(404).json({
-        success: false,
-        message: 'Không tìm thấy câu hỏi'
-      });
+    const question = await Question.findById(id).select('subject_id created_by');
+    if (!question) return res.status(404).json({ success: false, message: 'Không tìm thấy câu hỏi' });
+    if (req.user.role === 'LECTURER' && question.created_by.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'Bạn chỉ có thể xóa câu hỏi do mình tạo' });
+    }
+    if (!await canContributeToSubject(req.user, question.subject_id)) {
+      return res.status(403).json({ success: false, message: 'Bạn không còn quyền truy cập môn học này' });
     }
 
     if (req.user.role === 'LECTURER' && question.created_by.toString() !== req.user._id.toString()) {
@@ -380,17 +405,20 @@ const updateQuestion = async (req, res) => {
     }
 
     if (req.user.role === 'LECTURER' && question.created_by.toString() !== req.user._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: 'Bạn chỉ có quyền cập nhật câu hỏi thuộc Kho riêng của mình'
-      });
+      return res.status(403).json({ success: false, message: 'Bạn chỉ có quyền cập nhật câu hỏi thuộc Kho riêng của mình' });
+    }
+    if (!await canContributeToSubject(req.user, question.subject_id)) {
+      return res.status(403).json({ success: false, message: 'Bạn không còn quyền truy cập môn học này' });
     }
 
     if (chapter_id) {
+      const chapter = await Chapter.findOne({ _id: chapter_id, subject_id: question.subject_id });
+      if (!chapter) {
+        return res.status(400).json({ success: false, message: 'Chương không thuộc môn học của câu hỏi' });
+      }
       question.chapter_id = chapter_id;
       if (!chapter_num) {
-        const ch = await Chapter.findById(chapter_id);
-        if (ch) question.chapter_num = ch.chapter_number;
+        question.chapter_num = chapter.chapter_number;
       }
     }
     if (chapter_num !== undefined) question.chapter_num = Number(chapter_num);

@@ -5,6 +5,10 @@ const { authenticate, authorize } = require('../middlewares/auth.middleware');
 
 router.get('/subjects', authenticate, controller.getAllSubjects);
 router.patch('/subjects/:id/status', authenticate, authorize('HEAD_OF_SUBJECT', 'ADMIN'), controller.updateSubjectStatus);
+router.get('/lecturers', authenticate, authorize('HEAD_OF_SUBJECT', 'ADMIN'), controller.getGrantableLecturers);
+router.get('/subjects/:id/access', authenticate, authorize('HEAD_OF_SUBJECT', 'ADMIN'), controller.getSubjectAccessRecords);
+router.post('/subjects/:id/access', authenticate, authorize('HEAD_OF_SUBJECT', 'ADMIN'), controller.grantLecturerAccess);
+router.delete('/subjects/:id/access/:accessId', authenticate, authorize('HEAD_OF_SUBJECT', 'ADMIN'), controller.revokeLecturerAccess);
 router.post('/request', authenticate, authorize('LECTURER'), controller.requestAccess);
 router.get('/my-requests', authenticate, authorize('LECTURER'), controller.getMyRequests);
 router.get('/pending', authenticate, authorize('HEAD_OF_SUBJECT', 'ADMIN'), controller.getPendingRequests);

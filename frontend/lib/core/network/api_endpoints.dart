@@ -34,6 +34,11 @@ class ApiEndpoints {
   static String subjectStatus(String id) => '$baseUrl/subject-access/subjects/$id/status';
   static String get subjectAccessPending => '$baseUrl/subject-access/pending';
   static String subjectAccessReview(String id) => '$baseUrl/subject-access/$id/review';
+  static String get subjectAccessLecturers => '$baseUrl/subject-access/lecturers';
+  static String subjectAccessForSubject(String id) => '$baseUrl/subject-access/subjects/$id/access';
+  static String subjectAccessGrant(String id) => '$baseUrl/subject-access/subjects/$id/access';
+  static String subjectAccessRevoke(String subjectId, String accessId) =>
+      '$baseUrl/subject-access/subjects/$subjectId/access/$accessId';
   static String get subjectAccessRequest => '$baseUrl/subject-access/request';
   static String get subjectAccessMyRequests => '$baseUrl/subject-access/my-requests';
 

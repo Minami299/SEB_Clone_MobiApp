@@ -17,9 +17,12 @@ class PendingAccessRequestCard extends StatelessWidget {
     final lecEmail = request['lecturer_id']?['email'] ?? '';
     final subjCode = request['subject_id']?['subject_code'] ?? '';
     final subjName = request['subject_id']?['subject_name'] ?? '';
-    final grantType = request['grant_type'] == 'QUESTION_CONTRIBUTION'
-        ? 'Đóng góp câu hỏi'
-        : (request['grant_type'] ?? 'Chưa xác định').toString();
+    final rawGrantType = request['grant_type']?.toString() ?? '';
+    final grantType = rawGrantType == 'REQUEST'
+        ? 'Yêu cầu từ giảng viên'
+        : rawGrantType == 'INVITATION'
+        ? 'Mời từ trưởng bộ môn'
+        : rawGrantType;
 
     return Card(
       elevation: 0,

@@ -12,12 +12,14 @@ class QuestionListPage extends StatefulWidget {
   final String subjectId;
   final String subjectCode;
   final String subjectName;
+  final bool showPrivateTab;
 
   const QuestionListPage({
     super.key,
     required this.subjectId,
     required this.subjectCode,
     required this.subjectName,
+    this.showPrivateTab = true,
   });
 
   @override
@@ -403,13 +405,14 @@ class _QuestionListPageState extends State<QuestionListPage> {
                           ),
                         ],
                       ),
-                    ),
+                  ),
                   ),
                 ),
-                Expanded(
-                  child: InkWell(
-                    onTap: () => setState(() => _selectedScopeTab = 1),
-                    child: Container(
+                if (widget.showPrivateTab)
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => setState(() => _selectedScopeTab = 1),
+                      child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
                         border: Border(
@@ -446,9 +449,9 @@ class _QuestionListPageState extends State<QuestionListPage> {
                           ),
                         ],
                       ),
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
@@ -464,14 +467,19 @@ class _QuestionListPageState extends State<QuestionListPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      widget.subjectName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
+                    Expanded(
+                      child: Text(
+                        widget.subjectName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Text(
                       _isFilterActive
                           ? '${filtered.length} / $_currentTabTotalQuestions câu'
