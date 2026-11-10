@@ -981,7 +981,6 @@ class _CreateEditExamPageState extends State<CreateEditExamPage> {
         'end_time': _endTime.toIso8601String(),
         'duration_minutes': int.tryParse(_durationController.text.trim()) ?? 60,
         'max_violations': int.tryParse(_maxViolationsController.text.trim()) ?? 3,
-        'exit_pin': _quitPinController.text.trim(),
         'min_pass_percentage':
             int.tryParse(_minPassController.text.trim()) ?? 50,
         'mcq_grading_method': _selectedGradingMethod,
