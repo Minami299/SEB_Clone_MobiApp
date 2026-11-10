@@ -8,7 +8,6 @@ import 'exam_taking_page.dart';
 
 class ExamLobbyPage extends StatefulWidget {
   final String examId;
-  final String accessPin;
   final String examTitle;
   final String subjectCode;
   final int durationMinutes;
@@ -17,7 +16,6 @@ class ExamLobbyPage extends StatefulWidget {
   const ExamLobbyPage({
     super.key,
     required this.examId,
-    required this.accessPin,
     required this.examTitle,
     required this.subjectCode,
     required this.durationMinutes,
@@ -54,7 +52,6 @@ class _ExamLobbyPageState extends State<ExamLobbyPage> {
     try {
       final attempt = await _startExamUseCase(
         examId: widget.examId,
-        accessPin: widget.accessPin,
       );
 
       if (!mounted) return;
@@ -110,8 +107,7 @@ class _ExamLobbyPageState extends State<ExamLobbyPage> {
               examTitle: widget.examTitle,
               durationMinutes: widget.durationMinutes,
               maxViolations: widget.maxViolations,
-              accessPin: widget.accessPin,
-            ),
+                  ),
 
             const SizedBox(height: 20),
 

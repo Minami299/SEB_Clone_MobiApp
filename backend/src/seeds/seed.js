@@ -159,7 +159,7 @@ async function main() {
     ['MAX_LOGIN_ATTEMPTS', '5', 'Failed logins before the account is temporarily locked'],
     ['MAX_VIOLATIONS', '3', 'Violations allowed before the exam is terminated (BR_SEC_04)'],
     ['QR_REFRESH_SECONDS', '30', 'Dynamic QR code refresh interval'],
-    ['ACCESS_PIN_LENGTH', '6', 'Length of the exam access PIN and proctor exit PIN'],
+    ['ACCESS_PIN_LENGTH', '6', 'Length of the proctor exit PIN'],
     ['MAX_IMPORT_FILE_MB', '10', 'Maximum size of user import files (.xlsx/.csv)'],
     ['AUTOSAVE_INTERVAL_SECONDS', '15', 'Interval between answer autosaves on the mobile app'],
     ['EXIT_AUTH_METHODS', 'PIN,NFC', 'Allowed proctor authentication methods for emergency exit'],
@@ -328,7 +328,6 @@ async function main() {
       shuffle_questions: true,
       shuffle_options: o.shuffleOptions !== false,
       max_violations: 3,
-      access_pin: secured ? o.pin : null,
       exit_pin_hash: secured ? exitPinHash : null,
       qr_secret: secured ? crypto.randomBytes(16).toString('hex') : null,
       qr_refresh_seconds: 30,
@@ -344,31 +343,31 @@ async function main() {
       title: 'PRM393 - Progress Test 1', description: 'Chapters 1-3. Closed book, 30 minutes.',
       classCode: 'PRM393_SE1801', subjectCode: 'PRM393', lecCode: 'LEC001', importance: 1,
       start: daysAgo(14), end: new Date(daysAgo(14).getTime() + 3 * 60 * MIN), duration: 30,
-      source: 'FIXED', mcqWeight: 100, status: 'COMPLETED', pin: '112233'
+      source: 'FIXED', mcqWeight: 100, status: 'COMPLETED'
     }),
     E2: mkExam({
       title: 'PRM393 - Midterm Exam', description: 'Chapters 1-5. 10 multiple choice + 2 essays. Exam window stays open for testing.',
       classCode: 'PRM393_SE1802', subjectCode: 'PRM393', lecCode: 'LEC002', importance: 2,
       start: minAgo(60), end: daysAhead(7), duration: 60,
-      source: 'FIXED', mcqWeight: 80, status: 'ONGOING', pin: '123456'
+      source: 'FIXED', mcqWeight: 80, status: 'ONGOING'
     }),
     E3: mkExam({
       title: 'DBI202 - Midterm Exam', description: 'Randomized from the master question bank by chapter and difficulty.',
       classCode: 'DBI202_SE1801', subjectCode: 'DBI202', lecCode: 'LEC003', importance: 2,
       start: daysAhead(1), end: new Date(daysAhead(1).getTime() + 2 * 60 * MIN), duration: 60,
-      source: 'RANDOM', mcqWeight: 80, status: 'SCHEDULED', pin: '482915'
+      source: 'RANDOM', mcqWeight: 80, status: 'SCHEDULED'
     }),
     E4: mkExam({
       title: 'DBI202 - Quiz 1', description: 'Chapters 1-5 quiz.',
       classCode: 'DBI202_SE1802', subjectCode: 'DBI202', lecCode: 'LEC004', importance: 1,
       start: daysAgo(30), end: new Date(daysAgo(30).getTime() + 2 * 60 * MIN), duration: 45,
-      source: 'FIXED', mcqWeight: 80, status: 'COMPLETED', pin: '778899'
+      source: 'FIXED', mcqWeight: 80, status: 'COMPLETED'
     }),
     E5: mkExam({
       title: 'PRN231 - Practical Quiz', description: 'Draft - question rules not finalized yet.',
       classCode: 'PRN231_SE1803', subjectCode: 'PRN231', lecCode: 'LEC005', importance: 1,
       start: daysAhead(10), end: new Date(daysAhead(10).getTime() + 2 * 60 * MIN), duration: 45,
-      source: 'RANDOM', mcqWeight: 70, status: 'DRAFT', pin: null
+      source: 'RANDOM', mcqWeight: 70, status: 'DRAFT'
     })
   };
 
@@ -647,8 +646,7 @@ async function main() {
   console.log('  Head of Subject:  HOS001, HOS002');
   console.log('  Lecturers:        LEC001-LEC005 (LEC006 inactive)');
   console.log('  Students:         SE180001-SE180030 (SE180029 inactive)');
-  console.log(`Ongoing exam "${exams.E2.exam_title}": access PIN ${exams.E2.access_pin}, proctor exit PIN ${EXIT_PIN}`);
-  console.log(`Scheduled exam "${exams.E3.exam_title}": access PIN ${exams.E3.access_pin}`);
+  console.log(`Ongoing exam "${exams.E2.exam_title}": proctor exit PIN ${EXIT_PIN}`);
 
   await mongoose.disconnect();
 }

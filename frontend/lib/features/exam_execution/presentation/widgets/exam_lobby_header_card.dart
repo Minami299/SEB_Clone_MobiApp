@@ -5,7 +5,6 @@ class ExamLobbyHeaderCard extends StatelessWidget {
   final String examTitle;
   final int durationMinutes;
   final int maxViolations;
-  final String accessPin;
 
   const ExamLobbyHeaderCard({
     super.key,
@@ -13,7 +12,6 @@ class ExamLobbyHeaderCard extends StatelessWidget {
     required this.examTitle,
     required this.durationMinutes,
     required this.maxViolations,
-    required this.accessPin,
   });
 
   @override
@@ -66,7 +64,6 @@ class ExamLobbyHeaderCard extends StatelessWidget {
                 '$maxViolations lần',
                 'Giới hạn vi phạm',
               ),
-              _buildHeaderInfo(Icons.pin, accessPin, 'Mã PIN'),
             ],
           ),
         ],
