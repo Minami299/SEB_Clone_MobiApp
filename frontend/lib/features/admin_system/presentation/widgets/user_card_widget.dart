@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
+
 import '../../../auth/data/models/user_model.dart';
 
 class UserCardWidget extends StatelessWidget {
   final UserModel user;
   final VoidCallback onTap;
 
-  const UserCardWidget({
-    super.key,
-    required this.user,
-    required this.onTap,
-  });
+  const UserCardWidget({super.key, required this.user, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +23,7 @@ class UserCardWidget extends StatelessWidget {
           border: Border.all(color: const Color(0xFFE2E8F0)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -41,7 +38,9 @@ class UserCardWidget extends StatelessWidget {
                   radius: 22,
                   backgroundColor: const Color(0xFFEEF2FF),
                   child: Text(
-                    user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : 'U',
+                    user.fullName.isNotEmpty
+                        ? user.fullName[0].toUpperCase()
+                        : 'U',
                     style: const TextStyle(
                       color: Color(0xFF4F46E5),
                       fontWeight: FontWeight.bold,
@@ -56,12 +55,11 @@ class UserCardWidget extends StatelessWidget {
                     width: 10,
                     height: 10,
                     decoration: BoxDecoration(
-                      color: isActive ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                      color: isActive
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFEF4444),
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 1.5,
-                      ),
+                      border: Border.all(color: Colors.white, width: 1.5),
                     ),
                   ),
                 ),
@@ -158,7 +156,11 @@ class UserCardWidget extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(color: text, fontSize: 11, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          color: text,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -187,7 +189,9 @@ class UserCardWidget extends StatelessWidget {
           Text(
             isActive ? 'Hoạt động' : 'Khóa',
             style: TextStyle(
-              color: isActive ? const Color(0xFF059669) : const Color(0xFFDC2626),
+              color: isActive
+                  ? const Color(0xFF059669)
+                  : const Color(0xFFDC2626),
               fontSize: 11,
               fontWeight: FontWeight.bold,
             ),

@@ -488,11 +488,11 @@ class _CreateQuestionPageState extends State<CreateQuestionPage>
         title: Text(
           isEditing
               ? (isHeadOfSubject
-                  ? 'Sửa câu hỏi - Bộ môn ${widget.subjectCode}'
-                  : 'Sửa câu hỏi - Kho riêng ${widget.subjectCode}')
+                    ? 'Sửa câu hỏi - Bộ môn ${widget.subjectCode}'
+                    : 'Sửa câu hỏi - Kho riêng ${widget.subjectCode}')
               : (isHeadOfSubject
-                  ? 'Soạn câu hỏi - Bộ môn ${widget.subjectCode}'
-                  : 'Thêm câu hỏi - Kho riêng ${widget.subjectCode}'),
+                    ? 'Soạn câu hỏi - Bộ môn ${widget.subjectCode}'
+                    : 'Thêm câu hỏi - Kho riêng ${widget.subjectCode}'),
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
@@ -764,8 +764,9 @@ class _CreateQuestionPageState extends State<CreateQuestionPage>
               alignLabelWithHint: true,
             ),
             validator: (v) {
-              if (v == null || v.trim().isEmpty)
+              if (v == null || v.trim().isEmpty) {
                 return 'Vui lòng nhập nội dung đề bài';
+              }
               return null;
             },
           ),

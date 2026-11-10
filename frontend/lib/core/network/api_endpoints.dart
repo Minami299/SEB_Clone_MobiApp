@@ -64,6 +64,8 @@ class ApiEndpoints {
   static String examStudents(String id) => '$baseUrl/exams/$id/students';
   static String examPublish(String id) => '$baseUrl/exams/$id/publish';
   static String examClose(String id) => '$baseUrl/exams/$id/close';
+  static String examLivePin(String id) => '$baseUrl/exams/$id/live-pin';
+  static String examRefreshPin(String id) => '$baseUrl/exams/$id/refresh-pin';
   static String examClassesBySubject(String subjectId) => '$baseUrl/exams/classes/by-subject/$subjectId';
   static String examClassStudents(String classId) => '$baseUrl/exams/classes/$classId/students';
   static String examSearchStudents({String? q}) => '$baseUrl/exams/students/search${q != null && q.isNotEmpty ? '?q=$q' : ''}';
