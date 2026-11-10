@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/services/session_service.dart';
+import '../../../../core/utils/smooth_page_route.dart';
+import '../../../admin_system/presentation/pages/user_management_page.dart';
 import '../../data/datasources/auth_remote_datasource.dart';
 import '../../data/models/user_model.dart';
 import 'login_page.dart';
@@ -229,6 +232,7 @@ class _ProfilePageState extends State<ProfilePage> {
               backgroundColor: Colors.white,
               foregroundColor: const Color(0xFF1E293B),
               elevation: 0.5,
+              automaticallyImplyLeading: role != 'ADMIN',
             )
           : null,
       body: SingleChildScrollView(
@@ -582,6 +586,39 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
       ),
+      bottomNavigationBar: role == 'ADMIN'
+          ? NavigationBar(
+              selectedIndex: 1,
+              height: 64,
+              backgroundColor: Colors.white,
+              indicatorColor: const Color(0xFFE2E8F0),
+              elevation: 3,
+              onDestinationSelected: (idx) {
+                if (idx == 0) {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  } else {
+                    Navigator.pushReplacement(
+                      context,
+                      smoothPageRoute(const UserManagementPage()),
+                    );
+                  }
+                }
+              },
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.people_outline),
+                  selectedIcon: Icon(Icons.people, color: Color(0xFF0F172A)),
+                  label: 'Người dùng',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.person_outline),
+                  selectedIcon: Icon(Icons.person, color: Color(0xFF0F172A)),
+                  label: 'Cá nhân',
+                ),
+              ],
+            )
+          : null,
     );
   }
 }

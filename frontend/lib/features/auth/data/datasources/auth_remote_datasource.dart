@@ -41,11 +41,7 @@ class AuthRemoteDataSource {
   }) async {
     final response = await apiClient.post(
       ApiEndpoints.authForgotVerifyOtp,
-      body: {
-        'identifier': identifier,
-        'otp': otp,
-        'new_password': newPassword,
-      },
+      body: {'identifier': identifier, 'otp': otp, 'new_password': newPassword},
     );
     return response['message'] as String? ?? 'Đặt lại mật khẩu thành công';
   }
@@ -61,10 +57,7 @@ class AuthRemoteDataSource {
   }) async {
     final response = await apiClient.post(
       ApiEndpoints.authForgotPassword,
-      body: {
-        'identifier': identifier,
-        'new_password': newPassword,
-      },
+      body: {'identifier': identifier, 'new_password': newPassword},
     );
     return response['message'] as String? ?? 'Đặt lại mật khẩu thành công';
   }
@@ -89,10 +82,12 @@ class AuthRemoteDataSource {
     final body = <String, dynamic>{};
     if (fullName != null && fullName.isNotEmpty) body['full_name'] = fullName;
     if (email != null && email.isNotEmpty) body['email'] = email;
-    if (currentPassword != null && currentPassword.isNotEmpty)
+    if (currentPassword != null && currentPassword.isNotEmpty) {
       body['current_password'] = currentPassword;
-    if (newPassword != null && newPassword.isNotEmpty)
+    }
+    if (newPassword != null && newPassword.isNotEmpty) {
       body['new_password'] = newPassword;
+    }
     if (otp != null && otp.isNotEmpty) body['otp'] = otp;
 
     final response = await apiClient.put(ApiEndpoints.authMe, body: body);
@@ -140,10 +135,7 @@ class AuthRemoteDataSource {
     if (departmentId != null) body['department_id'] = departmentId;
     if (status != null) body['status'] = status;
 
-    final response = await apiClient.post(
-      ApiEndpoints.authUsers,
-      body: body,
-    );
+    final response = await apiClient.post(ApiEndpoints.authUsers, body: body);
     return UserModel.fromJson(response['data'] as Map<String, dynamic>);
   }
 

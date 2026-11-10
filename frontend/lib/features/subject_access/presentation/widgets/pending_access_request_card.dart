@@ -31,31 +31,22 @@ class PendingAccessRequestCard extends StatelessWidget {
         side: const BorderSide(color: Color(0xFFE2E8F0)),
       ),
       child: Padding(
-          padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               lecName,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
             ),
             Text(
               '$lecEmail | Môn: $subjCode ($subjName)',
-              style: const TextStyle(
-                color: const Color(0xFF64748B),
-                fontSize: 13,
-              ),
+              style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
             ),
             const SizedBox(height: 4),
             Text(
               'Loại quyền: $grantType',
-              style: const TextStyle(
-                color: const Color(0xFF64748B),
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
             ),
             const SizedBox(height: 8),
             Row(

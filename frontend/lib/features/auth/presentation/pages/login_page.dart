@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/network/api_endpoints.dart';
 import '../../data/datasources/auth_remote_datasource.dart';
 import '../widgets/top_wave_clipper.dart';
@@ -57,7 +58,9 @@ class _LoginPageState extends State<LoginPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Đăng nhập thành công: ${user.fullName} (${user.role})'),
+          content: Text(
+            'Đăng nhập thành công: ${user.fullName} (${user.role})',
+          ),
           backgroundColor: Colors.green,
         ),
       );
@@ -89,7 +92,8 @@ class _LoginPageState extends State<LoginPage> {
       if (msg.contains('Connection refused') ||
           msg.contains('Failed host lookup') ||
           msg.contains('Network Connection Error')) {
-        msg = 'Không thể kết nối đến máy chủ (${ApiEndpoints.baseUrl}).\n'
+        msg =
+            'Không thể kết nối đến máy chủ (${ApiEndpoints.baseUrl}).\n'
             'Hãy kiểm tra backend hoặc bấm Cài đặt để cập nhật Host IP.';
       }
       setState(() {
@@ -106,7 +110,9 @@ class _LoginPageState extends State<LoginPage> {
 
   void _showForgotPasswordSheet() {
     final formKey = GlobalKey<FormState>();
-    final identifierCtrl = TextEditingController(text: _identifierController.text.trim());
+    final identifierCtrl = TextEditingController(
+      text: _identifierController.text.trim(),
+    );
     final otpCtrl = TextEditingController();
     final newPasswordCtrl = TextEditingController();
     final confirmPasswordCtrl = TextEditingController();
@@ -163,7 +169,11 @@ class _LoginPageState extends State<LoginPage> {
                               color: const Color(0xFFEFF6FF),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Icon(Icons.mark_email_read_outlined, color: Color(0xFF0062FF), size: 24),
+                            child: const Icon(
+                              Icons.mark_email_read_outlined,
+                              color: Color(0xFF0062FF),
+                              size: 24,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -182,7 +192,10 @@ class _LoginPageState extends State<LoginPage> {
                                   currentStep == 1
                                       ? 'Bước 1: Xác nhận tài khoản và nhận mã OTP'
                                       : 'Bước 2: Nhập mã OTP và tạo mật khẩu mới',
-                                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF64748B),
+                                  ),
                                 ),
                               ],
                             ),
@@ -201,7 +214,10 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           child: Text(
                             localError!,
-                            style: TextStyle(color: Colors.red.shade800, fontSize: 13),
+                            style: TextStyle(
+                              color: Colors.red.shade800,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -217,7 +233,10 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           child: Text(
                             localSuccess!,
-                            style: TextStyle(color: Colors.green.shade800, fontSize: 13),
+                            style: TextStyle(
+                              color: Colors.green.shade800,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -229,9 +248,19 @@ class _LoginPageState extends State<LoginPage> {
                           decoration: const InputDecoration(
                             labelText: 'Mã số sinh viên / Email',
                             hintText: 'Nhập mã số hoặc email đã đăng ký',
-                            prefixIcon: Icon(Icons.person_outline, color: Color(0xFF0066FF)),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                            prefixIcon: Icon(
+                              Icons.person_outline,
+                              color: Color(0xFF0066FF),
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 14,
+                            ),
                           ),
                           validator: (val) {
                             if (val == null || val.trim().isEmpty) {
@@ -247,12 +276,16 @@ class _LoginPageState extends State<LoginPage> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF0062FF),
                               foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                             onPressed: isSubmitting
                                 ? null
                                 : () async {
-                                    if (!formKey.currentState!.validate()) return;
+                                    if (!formKey.currentState!.validate()) {
+                                      return;
+                                    }
                                     setModalState(() {
                                       isSubmitting = true;
                                       localError = null;
@@ -260,16 +293,26 @@ class _LoginPageState extends State<LoginPage> {
                                     });
 
                                     try {
-                                      final res = await _authDataSource.sendForgotOtp(identifierCtrl.text.trim());
+                                      final res = await _authDataSource
+                                          .sendForgotOtp(
+                                            identifierCtrl.text.trim(),
+                                          );
                                       setModalState(() {
-                                        maskedEmail = res['data']?['email'] ?? identifierCtrl.text.trim();
+                                        maskedEmail =
+                                            res['data']?['email'] ??
+                                            identifierCtrl.text.trim();
                                         devOtpHint = res['data']?['dev_otp'];
                                         currentStep = 2;
-                                        localSuccess = res['message'] ?? 'Mã OTP đã được gửi đến email.';
+                                        localSuccess =
+                                            res['message'] ??
+                                            'Mã OTP đã được gửi đến email.';
                                       });
                                     } catch (e) {
                                       setModalState(() {
-                                        localError = e.toString().replaceAll('Exception:', '').trim();
+                                        localError = e
+                                            .toString()
+                                            .replaceAll('Exception:', '')
+                                            .trim();
                                       });
                                     } finally {
                                       setModalState(() {
@@ -281,9 +324,18 @@ class _LoginPageState extends State<LoginPage> {
                                 ? const SizedBox(
                                     height: 22,
                                     width: 22,
-                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
                                   )
-                                : const Text('Gửi mã OTP qua Email', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                : const Text(
+                                    'Gửi mã OTP qua Email',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                         ),
                       ] else ...[
@@ -296,12 +348,20 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.email, color: Color(0xFF0062FF), size: 20),
+                              const Icon(
+                                Icons.email,
+                                color: Color(0xFF0062FF),
+                                size: 20,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   'Gửi đến: ${maskedEmail ?? identifierCtrl.text}',
-                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF1E293B)),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                    color: Color(0xFF1E293B),
+                                  ),
                                 ),
                               ),
                               TextButton(
@@ -315,9 +375,16 @@ class _LoginPageState extends State<LoginPage> {
                                 style: TextButton.styleFrom(
                                   padding: EdgeInsets.zero,
                                   minimumSize: const Size(40, 24),
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
                                 ),
-                                child: const Text('Đổi email', style: TextStyle(fontSize: 12, color: Color(0xFF0062FF))),
+                                child: const Text(
+                                  'Đổi email',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF0062FF),
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -326,7 +393,11 @@ class _LoginPageState extends State<LoginPage> {
                           const SizedBox(height: 8),
                           Text(
                             'Mã OTP thử nghiệm: $devOtpHint',
-                            style: const TextStyle(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                         const SizedBox(height: 16),
@@ -338,7 +409,10 @@ class _LoginPageState extends State<LoginPage> {
                             labelText: 'Mã xác thực OTP (6 chữ số)',
                             hintText: 'Nhập mã 6 số từ email',
                             counterText: '',
-                            prefixIcon: const Icon(Icons.shield_outlined, color: Color(0xFF0062FF)),
+                            prefixIcon: const Icon(
+                              Icons.shield_outlined,
+                              color: Color(0xFF0062FF),
+                            ),
                             suffixIcon: TextButton(
                               onPressed: isSubmitting
                                   ? null
@@ -349,14 +423,20 @@ class _LoginPageState extends State<LoginPage> {
                                         localSuccess = null;
                                       });
                                       try {
-                                        final res = await _authDataSource.sendForgotOtp(identifierCtrl.text.trim());
+                                        final res = await _authDataSource
+                                            .sendForgotOtp(
+                                              identifierCtrl.text.trim(),
+                                            );
                                         setModalState(() {
                                           devOtpHint = res['data']?['dev_otp'];
                                           localSuccess = 'Đã gửi lại mã OTP mới vào hòm thư!';
                                         });
                                       } catch (e) {
                                         setModalState(() {
-                                          localError = e.toString().replaceAll('Exception:', '').trim();
+                                          localError = e
+                                              .toString()
+                                              .replaceAll('Exception:', '')
+                                              .trim();
                                         });
                                       } finally {
                                         setModalState(() {
@@ -364,10 +444,23 @@ class _LoginPageState extends State<LoginPage> {
                                         });
                                       }
                                     },
-                              child: const Text('Gửi lại mã', style: TextStyle(fontSize: 12, color: Color(0xFF0062FF))),
+                              child: const Text(
+                                'Gửi lại mã',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF0062FF),
+                                ),
+                              ),
                             ),
-                            border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                            border: const OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 14,
+                            ),
                           ),
                           validator: (val) {
                             if (val == null || val.trim().length != 6) {
@@ -383,10 +476,15 @@ class _LoginPageState extends State<LoginPage> {
                           decoration: InputDecoration(
                             labelText: 'Mật khẩu mới',
                             hintText: 'Tối thiểu 6 ký tự',
-                            prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF0062FF)),
+                            prefixIcon: const Icon(
+                              Icons.lock_outline,
+                              color: Color(0xFF0062FF),
+                            ),
                             suffixIcon: IconButton(
                               icon: Icon(
-                                obscureNew ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                obscureNew
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
                                 color: const Color(0xFF94A3B8),
                               ),
                               onPressed: () {
@@ -395,8 +493,15 @@ class _LoginPageState extends State<LoginPage> {
                                 });
                               },
                             ),
-                            border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                            border: const OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 14,
+                            ),
                           ),
                           validator: (val) {
                             if (val == null || val.trim().isEmpty) {
@@ -424,10 +529,15 @@ class _LoginPageState extends State<LoginPage> {
                           decoration: InputDecoration(
                             labelText: 'Xác nhận mật khẩu mới',
                             hintText: 'Nhập lại mật khẩu mới',
-                            prefixIcon: const Icon(Icons.lock_reset, color: Color(0xFF0062FF)),
+                            prefixIcon: const Icon(
+                              Icons.lock_reset,
+                              color: Color(0xFF0062FF),
+                            ),
                             suffixIcon: IconButton(
                               icon: Icon(
-                                obscureConfirm ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                obscureConfirm
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
                                 color: const Color(0xFF94A3B8),
                               ),
                               onPressed: () {
@@ -436,8 +546,15 @@ class _LoginPageState extends State<LoginPage> {
                                 });
                               },
                             ),
-                            border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                            border: const OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 14,
+                            ),
                           ),
                           validator: (val) {
                             if (val == null || val.isEmpty) {
@@ -456,12 +573,16 @@ class _LoginPageState extends State<LoginPage> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF0062FF),
                               foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                             onPressed: isSubmitting
                                 ? null
                                 : () async {
-                                    if (!formKey.currentState!.validate()) return;
+                                    if (!formKey.currentState!.validate()) {
+                                      return;
+                                    }
                                     setModalState(() {
                                       isSubmitting = true;
                                       localError = null;
@@ -469,26 +590,34 @@ class _LoginPageState extends State<LoginPage> {
                                     });
 
                                     try {
-                                      final msg = await _authDataSource.verifyForgotOtpAndReset(
-                                        identifier: identifierCtrl.text.trim(),
-                                        otp: otpCtrl.text.trim(),
-                                        newPassword: newPasswordCtrl.text.trim(),
-                                      );
+                                      final msg = await _authDataSource
+                                          .verifyForgotOtpAndReset(
+                                            identifier: identifierCtrl.text
+                                                .trim(),
+                                            otp: otpCtrl.text.trim(),
+                                            newPassword: newPasswordCtrl.text
+                                                .trim(),
+                                          );
                                       if (!mounted) return;
                                       Navigator.pop(ctx);
                                       setState(() {
-                                        _identifierController.text = identifierCtrl.text.trim();
+                                        _identifierController.text =
+                                            identifierCtrl.text.trim();
                                         _passwordController.clear();
                                       });
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(msg),
-                                          backgroundColor: Colors.green,
-                                        ),
-                                      );
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                            SnackBar(
+                                              content: Text(msg),
+                                              backgroundColor: Colors.green,
+                                            ),
+                                          );
                                     } catch (e) {
                                       setModalState(() {
-                                        localError = e.toString().replaceAll('Exception:', '').trim();
+                                        localError = e
+                                            .toString()
+                                            .replaceAll('Exception:', '')
+                                            .trim();
                                       });
                                     } finally {
                                       setModalState(() {
@@ -500,16 +629,28 @@ class _LoginPageState extends State<LoginPage> {
                                 ? const SizedBox(
                                     height: 22,
                                     width: 22,
-                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
                                   )
-                                : const Text('Xác nhận đặt lại mật khẩu', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                : const Text(
+                                    'Xác nhận đặt lại mật khẩu',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                         ),
                       ],
                       const SizedBox(height: 8),
                       TextButton(
                         onPressed: () => Navigator.pop(ctx),
-                        child: const Text('Đóng', style: TextStyle(color: Color(0xFF64748B))),
+                        child: const Text(
+                          'Đóng',
+                          style: TextStyle(color: Color(0xFF64748B)),
+                        ),
                       ),
                     ],
                   ),
@@ -554,7 +695,8 @@ class _LoginPageState extends State<LoginPage> {
                         width: 90,
                         height: 90,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF003CB3).withOpacity(0.55),
+                          color: const Color(0xFF003CB3)
+                              .withValues(alpha: 0.55),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -566,7 +708,8 @@ class _LoginPageState extends State<LoginPage> {
                         width: 55,
                         height: 55,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF003CB3).withOpacity(0.45),
+                          color: const Color(0xFF003CB3)
+                              .withValues(alpha: 0.45),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -578,7 +721,7 @@ class _LoginPageState extends State<LoginPage> {
                         width: 35,
                         height: 35,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1A75FF).withOpacity(0.4),
+                          color: const Color(0xFF1A75FF).withValues(alpha: 0.4),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -587,12 +730,19 @@ class _LoginPageState extends State<LoginPage> {
                     // Nội dung Header: Nút back & Chữ "Welcome Back"
                     SafeArea(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24.0,
+                          vertical: 12.0,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                              icon: const Icon(
+                                Icons.arrow_back_ios_new,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                               padding: EdgeInsets.zero,
                               alignment: Alignment.centerLeft,
                               onPressed: () {
@@ -640,7 +790,11 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         child: Text(
                           _errorMessage!,
-                          style: TextStyle(color: Colors.red.shade800, fontSize: 13, height: 1.3),
+                          style: TextStyle(
+                            color: Colors.red.shade800,
+                            fontSize: 13,
+                            height: 1.3,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -652,18 +806,37 @@ class _LoginPageState extends State<LoginPage> {
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         hintText: 'Mã số sinh viên / Email',
-                        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-                        prefixIcon: const Icon(Icons.mail_outline, color: Color(0xFF0066FF), size: 22),
+                        hintStyle: const TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 14,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.mail_outline,
+                          color: Color(0xFF0066FF),
+                          size: 22,
+                        ),
                         suffixIcon: hasValidIdentifier
-                            ? const Icon(Icons.check, color: Color(0xFF0066FF), size: 20)
+                            ? const Icon(
+                                Icons.check,
+                                color: Color(0xFF0066FF),
+                                size: 20,
+                              )
                             : null,
                         enabledBorder: const UnderlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+                          borderSide: BorderSide(
+                            color: Color(0xFFE2E8F0),
+                            width: 1.5,
+                          ),
                         ),
                         focusedBorder: const UnderlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF0066FF), width: 2),
+                          borderSide: BorderSide(
+                            color: Color(0xFF0066FF),
+                            width: 2,
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                        ),
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -681,11 +854,20 @@ class _LoginPageState extends State<LoginPage> {
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
                         hintText: 'Mật khẩu',
-                        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-                        prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF94A3B8), size: 22),
+                        hintStyle: const TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 14,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.lock_outline,
+                          color: Color(0xFF94A3B8),
+                          size: 22,
+                        ),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                            _obscurePassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
                             color: const Color(0xFF94A3B8),
                             size: 20,
                           ),
@@ -696,12 +878,20 @@ class _LoginPageState extends State<LoginPage> {
                           },
                         ),
                         enabledBorder: const UnderlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
+                          borderSide: BorderSide(
+                            color: Color(0xFFE2E8F0),
+                            width: 1.5,
+                          ),
                         ),
                         focusedBorder: const UnderlineInputBorder(
-                          borderSide: BorderSide(color: Color(0xFF0066FF), width: 2),
+                          borderSide: BorderSide(
+                            color: Color(0xFF0066FF),
+                            width: 2,
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                        ),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -744,7 +934,8 @@ class _LoginPageState extends State<LoginPage> {
                           backgroundColor: const Color(0xFF0062FF),
                           foregroundColor: Colors.white,
                           elevation: 3,
-                          shadowColor: const Color(0xFF0062FF).withOpacity(0.4),
+                          shadowColor: const Color(0xFF0062FF)
+                              .withValues(alpha: 0.4),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
@@ -753,16 +944,19 @@ class _LoginPageState extends State<LoginPage> {
                             ? const SizedBox(
                                 height: 22,
                                 width: 22,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
                               )
-                          : const Text(
-                              'Log in',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.3,
+                            : const Text(
+                                'Log in',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.3,
+                                ),
                               ),
-                            ),
                       ),
                     ),
                   ],
