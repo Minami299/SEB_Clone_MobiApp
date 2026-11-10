@@ -39,7 +39,7 @@ class _ExamLivePinDialogState extends State<ExamLivePinDialog> {
   @override
   void initState() {
     super.initState();
-    _currentPin = widget.exam.accessPin ?? '------';
+    _currentPin = '------';
     _fetchLivePin();
   }
 
@@ -374,6 +374,30 @@ class _ExamLivePinDialogState extends State<ExamLivePinDialog> {
                       ),
                     ),
                   ],
+                ),
+              ),
+            ],
+
+            if (_errorMessage != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF2F2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFFCA5A5)),
+                ),
+                child: Text(
+                  _errorMessage!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFFDC2626),
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
             ],
