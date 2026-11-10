@@ -133,10 +133,22 @@ class _StudentHomePageState extends State<StudentHomePage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      body: _currentTabIndex == 2
-          ? const ProfilePage(showAppBar: false)
-          : SafeArea(
-        child: RefreshIndicator(
+      appBar: _currentTabIndex == 2
+          ? AppBar(
+              automaticallyImplyLeading: false,
+              title: const Text(
+                'Thông tin cá nhân',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+              ),
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFF0F172A),
+              elevation: 0.5,
+            )
+          : null,
+      body: SafeArea(
+        child: _currentTabIndex == 2
+            ? const ProfilePage(showAppBar: false)
+            : RefreshIndicator(
           onRefresh: _loadDashboardData,
           color: const Color(0xFF0F172A),
           child: SingleChildScrollView(
