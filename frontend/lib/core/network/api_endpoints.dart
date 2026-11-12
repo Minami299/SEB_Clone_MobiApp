@@ -31,6 +31,7 @@ class ApiEndpoints {
 
   // Subject Access & Head of Subject
   static String get subjectAccessSubjects => '$baseUrl/subject-access/subjects';
+  static String get subjectCreate => '$baseUrl/subject-access/subjects';
   static String subjectStatus(String id) => '$baseUrl/subject-access/subjects/$id/status';
   static String get subjectAccessPending => '$baseUrl/subject-access/pending';
   static String subjectAccessReview(String id) => '$baseUrl/subject-access/$id/review';

@@ -1,4 +1,4 @@
-const { SubjectAccess, Subject, Notification, User, Class } = require('../models');
+const { SubjectAccess, Subject, Notification, User, Class, Department } = require('../models');
 
 const getSubjectScope = (user) => user.role === 'ADMIN'
   ? {}
@@ -419,6 +419,54 @@ const updateSubjectStatus = async (req, res) => {
   }
 };
 
+const createSubject = async (req, res) => {
+  try {
+    const { subject_code, subject_name, description = '', allow_auto_grading = false } = req.body;
+    if (!subject_code?.trim() || !subject_name?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mã môn học và tên môn học là bắt buộc'
+      });
+    }
+
+    let departmentId;
+    if (req.user.role === 'HEAD_OF_SUBJECT') {
+      departmentId = req.user.department_id;
+      if (!departmentId) {
+        return res.status(403).json({ success: false, message: 'Tài khoản chưa được gán khoa' });
+      }
+    } else {
+      departmentId = req.body.department_id;
+      if (!departmentId || !await Department.exists({ _id: departmentId })) {
+        return res.status(400).json({ success: false, message: 'Khoa của môn học không hợp lệ' });
+      }
+    }
+
+    const subject = await Subject.create({
+      subject_code: subject_code.trim(),
+      subject_name: subject_name.trim(),
+      description: (description ?? '').toString().trim(),
+      allow_auto_grading: allow_auto_grading === true,
+      department_id: departmentId,
+      created_by: req.user._id,
+      status: 'ACTIVE'
+    });
+    await subject.populate([
+      { path: 'department_id', select: 'department_code department_name' },
+      { path: 'created_by', select: 'full_name email' }
+    ]);
+    res.status(201).json({ success: true, message: 'Tạo môn học thành công', data: subject });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ success: false, message: 'Mã môn học đã tồn tại' });
+    }
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   requestAccess,
   getMyRequests,
@@ -426,6 +474,7 @@ module.exports = {
   reviewRequest,
   getAllSubjects,
   updateSubjectStatus,
+  createSubject,
   getSubjectAccessRecords,
   getGrantableLecturers,
   grantLecturerAccess,

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
-import '../../../../core/services/session_service.dart';
 import '../../../auth/presentation/pages/profile_page.dart';
 import '../../../question_bank/presentation/pages/question_list_page.dart';
 import '../widgets/subject_card_widget.dart';
@@ -122,6 +121,135 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
       setState(() => _pendingRequestCount = (response['data'] as List).length);
     } catch (_) {
       // Keep the last known count when the network is unavailable.
+    }
+  }
+
+  Future<void> _createSubject() async {
+    final codeController = TextEditingController();
+    final nameController = TextEditingController();
+    final descriptionController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool allowAutoGrading = false;
+    bool saving = false;
+    String? errorMessage;
+
+    final created = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Tạo môn học'),
+          content: SizedBox(
+            width: 440,
+            child: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: codeController,
+                      textCapitalization: TextCapitalization.characters,
+                      decoration: const InputDecoration(
+                        labelText: 'Mã môn học',
+                        hintText: 'Ví dụ: PRM393',
+                      ),
+                      validator: (value) => value == null || value.trim().isEmpty
+                          ? 'Vui lòng nhập mã môn học'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: nameController,
+                      decoration: const InputDecoration(labelText: 'Tên môn học'),
+                      validator: (value) => value == null || value.trim().isEmpty
+                          ? 'Vui lòng nhập tên môn học'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: descriptionController,
+                      minLines: 2,
+                      maxLines: 4,
+                      decoration: const InputDecoration(labelText: 'Mô tả (không bắt buộc)'),
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Cho phép chấm tự động'),
+                      value: allowAutoGrading,
+                      onChanged: saving
+                          ? null
+                          : (value) => setDialogState(() => allowAutoGrading = value),
+                    ),
+                    if (errorMessage != null)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          errorMessage!,
+                          style: const TextStyle(color: Color(0xFFDC2626)),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: saving ? null : () => Navigator.pop(dialogContext, false),
+              child: const Text('Hủy'),
+            ),
+            FilledButton(
+              onPressed: saving
+                  ? null
+                  : () async {
+                      if (!formKey.currentState!.validate()) return;
+                      setDialogState(() {
+                        saving = true;
+                        errorMessage = null;
+                      });
+                      try {
+                        final response = await _apiClient.post(
+                          ApiEndpoints.subjectCreate,
+                          body: {
+                            'subject_code': codeController.text.trim().toUpperCase(),
+                            'subject_name': nameController.text.trim(),
+                            'description': descriptionController.text.trim(),
+                            'allow_auto_grading': allowAutoGrading,
+                          },
+                        );
+                        if (response['success'] != true) {
+                          throw Exception(response['message'] ?? 'Không thể tạo môn học');
+                        }
+                        if (dialogContext.mounted) Navigator.pop(dialogContext, true);
+                      } catch (e) {
+                        if (!dialogContext.mounted) return;
+                        setDialogState(() {
+                          saving = false;
+                          errorMessage = e.toString().replaceAll('Exception:', '').trim();
+                        });
+                      }
+                    },
+              child: saving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Tạo môn'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    codeController.dispose();
+    nameController.dispose();
+    descriptionController.dispose();
+    if (created == true && mounted) {
+      await _fetchSubjects();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tạo môn học thành công')),
+      );
     }
   }
 
@@ -396,9 +524,20 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildPageHeading(
-                  'Môn học',
-                  'Quản lý trạng thái môn học và phân công giảng dạy.',
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildPageHeading(
+                        'Môn học',
+                        'Quản lý trạng thái môn học và phân công giảng dạy.',
+                      ),
+                    ),
+                    IconButton.filledTonal(
+                      tooltip: 'Tạo môn học',
+                      onPressed: _createSubject,
+                      icon: const Icon(Icons.add),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -754,8 +893,6 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
         break;
     }
 
-    final currentUser = SessionService().currentUser;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
       appBar: AppBar(
@@ -763,62 +900,36 @@ class _HeadOfSubjectPageState extends State<HeadOfSubjectPage> {
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1E293B),
         elevation: 0.5,
-        title: InkWell(
-          onTap: () {
-            setState(() => _currentTabIndex = 4);
-          },
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-            child: Row(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircleAvatar(
+              radius: 17,
+              backgroundColor: Color(0xFF173A5E),
+              child: Icon(Icons.school_outlined, color: Colors.white, size: 19),
+            ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircleAvatar(
-                  radius: 17,
-                  backgroundColor: const Color(0xFF1E3A5F),
-                  child: Text(
-                    (currentUser?.fullName.isNotEmpty == true)
-                        ? currentUser!.fullName[0].toUpperCase()
-                        : 'U',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
+                const Text(
+                  'SEB Exam',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        currentUser?.fullName ?? 'Trưởng bộ môn',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E293B),
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                Text(
+                  'Hệ thống thi trực tuyến',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: const Color(0xFF64748B),
                       ),
-                      Text(
-                        currentUser?.userCode.isNotEmpty == true
-                            ? 'Mã: ${currentUser!.userCode}'
-                            : (currentUser?.role == 'HEAD_OF_SUBJECT'
-                                  ? 'Trưởng bộ môn'
-                                  : (currentUser?.role ?? '')),
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ],
             ),
-          ),
+          ],
         ),
       ),
       body: SafeArea(child: currentBody),
