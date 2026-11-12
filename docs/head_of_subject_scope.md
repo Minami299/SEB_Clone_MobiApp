@@ -23,7 +23,7 @@ Tương tự, một công việc có thể có nhiều vai trò tham gia ở cá
 | --- | --- | --- |
 | ADM-01 | Chỉ xem khoa mình, nhân sự và môn trực thuộc; không CRUD khoa. | Admin CRUD; Head of Subject xem theo khoa được gán. |
 | ADM-02–ADM-06 | Không thuộc phạm vi mặc định. | Admin. |
-| EDU-01 | Xem và quản lý chuyên môn môn thuộc khoa; CRUD môn chỉ giao nếu quy trình trường cho phép. | Admin tạo danh mục nền; Head of Subject quản lý môn được ủy quyền. Cần nhóm xác nhận ai được tạo/xóa môn. |
+| EDU-01 | Tạo môn mới trong khoa phụ trách; xem và quản lý trạng thái các môn thuộc khoa. | Head of Subject được tạo môn sau yêu cầu mới; Admin vẫn quản lý toàn hệ thống. Sửa và xóa môn chưa được mở trong giao diện này. |
 | EDU-02 | Quản lý chương mục môn phụ trách. | Head of Subject chịu trách nhiệm cấu trúc/chương; Lecturer có thể được cấp quyền đóng góp nội dung nếu nghiệp vụ yêu cầu. |
 | EDU-03 | Duyệt hoặc từ chối yêu cầu cấp quyền cho môn thuộc phạm vi mình. | Lecturer gửi yêu cầu; Head of Subject xét duyệt; Admin xử lý ngoại lệ. |
 | EDU-04–EDU-05 | Theo dõi lớp và sĩ số; không tự sửa lớp/ghi danh nếu không được giao. | Lecturer quản lý lớp được phân công; Admin hoặc đơn vị đào tạo quản lý danh mục/lớp và ghi danh. Head of Subject xem báo cáo theo bộ môn. |
@@ -39,7 +39,7 @@ Màn hình hiện có bốn nhóm chính: danh sách môn và bật/tắt trạn
 
 Backend hiện cho Head of Subject tạo/sửa/xóa/xuất bản kỳ thi và gán câu hỏi/thí sinh cho các kỳ thi trong khoa được gán. Quyền đã bị giới hạn theo khoa ở backend, nhưng vẫn rộng hơn vai trò “chỉ giám sát” trong đề xuất trên. Tài liệu này không tự ý gỡ quyền đó; cần xác nhận quyền tổ chức thi thuộc Lecturer hay Head of Subject trước khi thu hẹp API.
 
-1. Head of Subject có được tạo/sửa/xóa môn (EDU-01) hay chỉ thay đổi trạng thái?
+1. Head of Subject đã được cho phép tạo môn trong khoa phụ trách; nhóm có muốn mở tiếp sửa/xóa môn (EDU-01) không?
 2. Head of Subject có được CRUD chương mục (EDU-02)?
 3. Head of Subject có quyền chỉnh sửa câu hỏi, hay chỉ xem/duyệt?
 4. Head of Subject có quyền tạo, sửa, xuất bản hoặc xóa kỳ thi, hay chỉ xem báo cáo?

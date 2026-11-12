@@ -4,6 +4,7 @@ const controller = require('../controllers/subject-access.controller');
 const { authenticate, authorize } = require('../middlewares/auth.middleware');
 
 router.get('/subjects', authenticate, controller.getAllSubjects);
+router.post('/subjects', authenticate, authorize('HEAD_OF_SUBJECT', 'ADMIN'), controller.createSubject);
 router.patch('/subjects/:id/status', authenticate, authorize('HEAD_OF_SUBJECT', 'ADMIN'), controller.updateSubjectStatus);
 router.get('/lecturers', authenticate, authorize('HEAD_OF_SUBJECT', 'ADMIN'), controller.getGrantableLecturers);
 router.get('/subjects/:id/access', authenticate, authorize('HEAD_OF_SUBJECT', 'ADMIN'), controller.getSubjectAccessRecords);
